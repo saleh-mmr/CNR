@@ -97,20 +97,27 @@ class DQNAgent:
         # compare current guess vs target (criterion is MSELoss)
         loss = self.criterion(predicted_q, targets)
 
-        # logging
+        # Accumulate loss
         self.running_loss += loss.item()
         self.learned_counts += 1
-        if episode_done:
-            self.loss_history.append(self.running_loss / self.learned_counts)
-            self.running_loss = 0
-            self.learned_counts = 0
 
         # Backprop
         self.optimizer.zero_grad()          # Clear old gradients
         loss.backward()                     # Compute gradients
         self.optimizer.step()               # Update weights
 
-        return loss.item()
+        # If episode finished → return average loss
+        if episode_done:
+            avg_loss = (
+                self.running_loss / self.learned_counts
+                if self.learned_counts > 0 else 0.0
+            )
+            # Reset counters here
+            self.running_loss = 0
+            self.learned_counts = 0
+            return avg_loss
+
+        return None
 
     # Epsilon update using ε(t) = ε_min + (ε_max − ε_min) * exp(−λ * t)
     def update_epsilon(self, steps_done):

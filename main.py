@@ -1,7 +1,7 @@
 from config import device
 from trainer import Trainer
 
-train_mode = False                                  # True = Train RL model, False = Load and Test
+train_mode = True                                  # True = Train RL model, False = Load and Test
 render = False                                      # Enable/disable environment visualization
 max_episodes = 300 if train_mode else 10
 

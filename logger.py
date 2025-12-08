@@ -24,29 +24,33 @@ class TrainingLogger:
         self.csv_path = os.path.join(csv_dir, csv_name)
         self.weights_path = os.path.join(weights_dir, weights_name)
         self.rewards_plot_path = os.path.join(results_dir, reward_plot_name)
+        self.loss_plot_path = os.path.join(results_dir, "loss.png")
+
 
         self.episode_rewards = []
         self.epsilon_values = []
+        self.loss_values = []
 
         # Create CSV header
         with open(self.csv_path, "w", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["episode", "reward", "epsilon"])
+            writer.writerow(["episode", "reward", "epsilon", "loss"])
 
-    def log_episode(self, episode: int, reward: float, epsilon: float):
+    def log_episode(self, episode: int, reward: float, epsilon: float, loss: float):
         self.episode_rewards.append(reward)
         self.epsilon_values.append(epsilon)
+        self.loss_values.append(loss)
 
-        # Append CSV row
         with open(self.csv_path, "a", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([episode, reward, epsilon])
+            writer.writerow([episode, reward, epsilon, loss])
 
     def finalize_results(self, model):
         """Save trained weights + reward plot"""
         torch.save(model.state_dict(), self.weights_path)
         print(f"Saved model weights to: {self.weights_path}")
 
+        # Save Reward Plot
         plt.figure(figsize=(10, 5))
         plt.plot(self.episode_rewards, label="Episode Reward")
         plt.xlabel("Episode")
@@ -58,5 +62,18 @@ class TrainingLogger:
         plt.savefig(self.rewards_plot_path)
         plt.close()
         print(f"Saved rewards plot to: {self.rewards_plot_path}")
+
+        # Save Loss Plot
+        plt.figure(figsize=(10, 5))
+        plt.plot(self.loss_values, label="Loss")
+        plt.xlabel("Episode")
+        plt.ylabel("Loss")
+        plt.title("Training Loss")
+        plt.grid(True)
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(self.loss_plot_path)
+        plt.close()
+        print(f"Saved loss plot to: {self.loss_plot_path}")
 
         print(f"Training log saved to: {self.csv_path}")
