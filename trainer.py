@@ -40,8 +40,10 @@ class Trainer:
             epsilon_decay=self.epsilon_decay,
             learning_rate=self.learning_rate,
             discount=self.discount_factor,
-            memory_capacity=self.memory_capacity
+            memory_capacity=self.memory_capacity,
+            weight_datafile_path=hyperparams["weight_datafile_path"],
         )
+
 
         # Create logger
         self.logger = TrainingLogger()
@@ -94,7 +96,6 @@ class Trainer:
                 f"Reward: {episode_reward:.2f}, "
                 f"Epsilon: {self.agent.epsilon:.2f}"
             )
-
         self.logger.finalize_results(self.agent.q_network)
 
     # TEST LOOP

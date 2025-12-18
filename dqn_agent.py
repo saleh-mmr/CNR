@@ -5,6 +5,7 @@ from torch import nn, optim
 from config import seed, device
 from network import DQNNetwork
 from replay_memory import ReplayMemory
+from manhattan_weight_controller import ManhattanWeightController
 
 
 class DQNAgent:
@@ -23,7 +24,7 @@ class DQNAgent:
         learning_rate,                                            # Optimizer step size
         discount,                                                 # future reward discount factor
         memory_capacity,                                          # Replay buffer size
-    ):
+        weight_datafile_path):
 
         # Logging fields
         self.loss_history = []
@@ -49,11 +50,16 @@ class DQNAgent:
         output_dim = self.action_space.n                                  # network output = number of actions (2)
         self.q_network = DQNNetwork(output_dim, input_dim).to(device)
 
-        self.optimizer = optim.RMSprop(                                   # Updates weights
-            self.q_network.parameters(),
-            lr=learning_rate
+        # We still use a squared-error loss just to get gradients,
+        # but NO standard optimizer – updates are handled by ManhattanWeightController.
+        self.criterion = nn.MSELoss()
+
+        # Manhattan-style discrete weight controller
+        self.weight_controller = ManhattanWeightController(
+            self.q_network,
+            weight_datafile_path,
         )
-        self.criterion = nn.MSELoss()                                     # Measures error in Q-values (Bellman target difference)
+
 
     # Action Selection (epsilon-greedy)
     def select_action(self, state):
@@ -64,6 +70,8 @@ class DQNAgent:
         # exploitation
         if not torch.is_tensor(state):
             state = torch.as_tensor(state, dtype=torch.float32, device=device)  # Convert state to tensor
+
+        state = state.unsqueeze(0)
 
         with torch.no_grad():                                   # Disable gradient tracking (faster + no memory waste)
             q_values = self.q_network(state)                    # Compute Q-values: [Q_left, Q_right]
@@ -102,9 +110,9 @@ class DQNAgent:
         self.learned_counts += 1
 
         # Backprop
-        self.optimizer.zero_grad()          # Clear old gradients
+        self.q_network.zero_grad()
         loss.backward()                     # Compute gradients
-        self.optimizer.step()               # Update weights
+        self.weight_controller.step()
 
         # If episode finished → return average loss
         if episode_done:

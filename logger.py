@@ -1,6 +1,7 @@
 import csv
 import os
 import matplotlib.pyplot as plt
+import pandas as pd
 import torch
 
 
@@ -26,7 +27,7 @@ class TrainingLogger:
         self.rewards_plot_path = os.path.join(results_dir, reward_plot_name)
         self.loss_plot_path = os.path.join(results_dir, "loss.png")
 
-
+        self.weight_history = []
         self.episode_rewards = []
         self.epsilon_values = []
         self.loss_values = []
