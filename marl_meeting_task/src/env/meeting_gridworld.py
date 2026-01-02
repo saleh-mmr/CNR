@@ -20,10 +20,15 @@ class MeetingGridworldEnv:
         # Environment-owned RNG
         self.rng = np.random.default_rng()
 
-        # Episode state (invalid until reset)
-        self.agent_pos = {i: None for i in range(self.n_agents)}
+        # Episode state
+        self.agent_pos = {i: (None,None) for i in range(self.n_agents)}
         self.goal_pos = None
         self.step_count = None
+
+
+    def __str__(self):
+        return f'{self.grid_size}x{self.grid_size} environment with {self.n_agents} agents'
+
 
     # --------------------------------------------------
     # Reset
@@ -38,7 +43,8 @@ class MeetingGridworldEnv:
         chosen = self.rng.choice(all_cells, size=n_entities, replace=False)
 
         def idx_to_xy(idx):
-            return (idx // self.grid_size, idx % self.grid_size)
+            pos = (idx // self.grid_size, idx % self.grid_size)
+            return pos
 
         agent_cells = chosen[:self.n_agents]
         goal_cell = chosen[-1]
@@ -58,7 +64,9 @@ class MeetingGridworldEnv:
     # --------------------------------------------------
     def step(self, actions):
         assert self.step_count is not None, "Call reset() before step()."
+        assert isinstance(actions, dict), "Actions must be a dict keyed by agent id."
         assert len(actions) == self.n_agents, "Must provide one action per agent."
+        assert all(i in actions for i in range(self.n_agents)), "Actions must contain keys for all agent ids."
 
         def move(x, y, action):
             if action == 0:      # up
