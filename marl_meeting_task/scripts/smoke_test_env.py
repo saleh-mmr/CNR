@@ -23,7 +23,8 @@ def main():
     for agent_id, agent_obs in obs.items():
         print(f"  Agent {agent_id+1}: {agent_obs}")
     print("Goal position:", env.goal_pos)
-    print()
+    print("\nInitial grid state:")
+    env.render()
 
     # --------------------------------------------------
     # RNG for action sampling (policy-side randomness)
@@ -40,13 +41,15 @@ def main():
 
         obs, reward, terminated, truncated, info = env.step(actions)
 
-        print(f"Step {step}")
-        print("  Actions:", actions)
-        print("  Agent positions:", env.agent_pos)
-        print("  Reward:", reward)
-        print("  Terminated:", terminated)
-        print("  Truncated:", truncated)
-        print()
+        print(f"Step {step+1}")
+        # Show action names for readability
+        action_names = {i: env.ACTIONS[actions[i]] for i in range(env.n_agents)}
+        print(f"  Actions: {action_names}")
+        print(f"  Agent positions: {env.agent_pos}")
+        print(f"  Reward: {reward}")
+        print(f"  Terminated: {terminated}, Truncated: {truncated}")
+        print("  Grid state:")
+        env.render()
 
         if terminated or truncated:
             print("Episode ended")

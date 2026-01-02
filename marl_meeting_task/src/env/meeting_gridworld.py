@@ -127,3 +127,31 @@ class MeetingGridworldEnv:
             )
 
         return obs
+
+    # --------------------------------------------------
+    # Render (debug tool)
+    # --------------------------------------------------
+    def render(self):
+        """Render the gridworld state as ASCII art.
+        A = agent, G = goal, . = empty cell
+        """
+        assert self.step_count is not None, "Call reset() before render()."
+        
+        # Create empty grid
+        grid = [['.' for _ in range(self.grid_size)] for _ in range(self.grid_size)]
+        
+        # Mark goal position
+        if self.goal_pos is not None:
+            gx, gy = self.goal_pos
+            grid[gx][gy] = 'G'
+        
+        # Mark agent positions (overwrites goal if same cell)
+        for i in range(self.n_agents):
+            if self.agent_pos[i] is not None:
+                ax, ay = self.agent_pos[i]
+                grid[ax][ay] = 'A'
+        
+        # Print grid
+        for row in grid:
+            print(' '.join(row))
+        print()  # Empty line after grid
