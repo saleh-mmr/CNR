@@ -1,4 +1,5 @@
 import numpy as np
+from marl_meeting_task.src import config
 
 
 class MeetingGridworldEnv:
@@ -18,7 +19,7 @@ class MeetingGridworldEnv:
         self.max_steps = max_steps
 
         # Environment-owned RNG
-        self.rng = np.random.default_rng()
+        self.rng = np.random.default_rng(config.seed)
 
         # Episode state
         self.agent_pos = {i: (None,None) for i in range(self.n_agents)}
@@ -36,6 +37,8 @@ class MeetingGridworldEnv:
     def reset(self, seed=None):
         if seed is not None:
             self.rng = np.random.default_rng(seed)
+        else:
+            self.rng = np.random.default_rng(config.seed)
 
         # Sample distinct cells for all agents + goal
         n_entities = self.n_agents + 1

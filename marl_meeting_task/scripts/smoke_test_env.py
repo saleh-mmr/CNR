@@ -1,6 +1,7 @@
 import numpy as np
 
 from marl_meeting_task.src.env.meeting_gridworld import MeetingGridworldEnv
+from marl_meeting_task.src.config import seed
 
 
 def main():
@@ -13,12 +14,10 @@ def main():
     print("Initial agent positions (before reset):", env.agent_pos)
     print()
 
-    # --------------------------------------------------
-    # Reset with fixed seed
-    # --------------------------------------------------
-    obs, info = env.reset(seed=42)
 
-    print("Environment reset with seed=42")
+    obs, info = env.reset(seed=seed)
+
+    print(f"Environment reset with seed={seed}")
     print("Initial observations:")
     for agent_id, agent_obs in obs.items():
         print(f"  Agent {agent_id+1}: {agent_obs}")
@@ -29,7 +28,7 @@ def main():
     # --------------------------------------------------
     # RNG for action sampling (policy-side randomness)
     # --------------------------------------------------
-    rng = np.random.default_rng(123)
+    rng = np.random.default_rng(seed)
 
     # --------------------------------------------------
     # Run a few random steps

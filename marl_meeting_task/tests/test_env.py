@@ -5,6 +5,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from marl_meeting_task.src.env.meeting_gridworld import MeetingGridworldEnv
+from marl_meeting_task.src.config import seed
 
 
 def test_reset_uniqueness():
@@ -13,7 +14,7 @@ def test_reset_uniqueness():
     
     # Reset multiple times to check uniqueness
     for _ in range(10):
-        obs, info = env.reset()
+        obs, info = env.reset(seed=seed)
         
         # Check agent 0 != agent 1
         assert env.agent_pos[0] != env.agent_pos[1], "Agents should be at different positions"
@@ -28,7 +29,7 @@ def test_reset_uniqueness():
 def test_boundary_movement():
     """Test 2: Agents cannot move outside boundaries"""
     env = MeetingGridworldEnv(grid_size=5, n_agents=2, max_steps=50)
-    obs, info = env.reset(seed=42)
+    obs, info = env.reset(seed=seed)
     
     # Manually place agent 0 at (0, 0)
     env.agent_pos[0] = (0, 0)
@@ -49,7 +50,7 @@ def test_boundary_movement():
 def test_success_reward():
     """Test 3: When all agents are on goal and take stay, reward=10.0 and terminated=True"""
     env = MeetingGridworldEnv(grid_size=5, n_agents=2, max_steps=50)
-    obs, info = env.reset(seed=42)
+    obs, info = env.reset(seed=seed)
     
     # Manually place both agents on the goal
     goal_pos = env.goal_pos
@@ -70,7 +71,7 @@ def test_timeout():
     """Test 4: After max_steps without success, truncated=True"""
     env = MeetingGridworldEnv(grid_size=5, n_agents=2, max_steps=5)  # Small max_steps for testing
     
-    obs, info = env.reset(seed=42)
+    obs, info = env.reset(seed=seed)
     
     # Run max_steps steps without reaching goal (just take random/stay actions)
     for step in range(env.max_steps):
