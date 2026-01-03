@@ -319,13 +319,21 @@ class QMIX:
         q_tot = q_tot.squeeze(1)  # [batch_size]
         
         # Compute target Q_tot(s_next, a_1', a_2', ...)
-        # Use greedy actions from target networks
+        # Double-Q: Select actions using online networks, evaluate with target networks
         with torch.no_grad():
+            # Step 1: Select greedy actions using online (main) networks
+            next_actions = []
+            for agent_id in range(self.n_agents):
+                next_q_values_online = self.agents[agent_id].q_network(next_observations[agent_id])  # [batch_size, num_actions]
+                next_action = next_q_values_online.argmax(1)  # [batch_size] - greedy action from online network
+                next_actions.append(next_action)
+            
+            # Step 2: Evaluate selected actions using target networks
             next_agent_qs = []
             for agent_id in range(self.n_agents):
-                next_q_values = self.agents[agent_id].target_network(next_observations[agent_id])  # [batch_size, num_actions]
-                # Greedy action: argmax Q_i
-                next_agent_q = next_q_values.max(1)[0]  # [batch_size]
+                next_q_values_target = self.agents[agent_id].target_network(next_observations[agent_id])  # [batch_size, num_actions]
+                # Evaluate the action selected by online network using target network
+                next_agent_q = next_q_values_target.gather(1, next_actions[agent_id].unsqueeze(1)).squeeze(1)  # [batch_size]
                 next_agent_qs.append(next_agent_q)
             
             # Stack: [batch_size, n_agents]
@@ -344,8 +352,11 @@ class QMIX:
         # Gradient step
         self.optimizer.zero_grad()
         loss.backward()
-        # Gradient clipping for stability
-        torch.nn.utils.clip_grad_norm_(self.optimizer.param_groups[0]['params'], max_norm=10.0)
+        # Gradient clipping for stability - clip all parameters (agent networks + mixing network)
+        all_params = []
+        for param_group in self.optimizer.param_groups:
+            all_params.extend(param_group['params'])
+        torch.nn.utils.clip_grad_norm_(all_params, max_norm=10.0)
         self.optimizer.step()
         
         return loss.item()
