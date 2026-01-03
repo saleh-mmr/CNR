@@ -93,11 +93,10 @@ class MixingNetwork(nn.Module):
         agent_qs = agent_qs.unsqueeze(1)  # [batch_size, 1, n_agents]
         
         # Generate positive weights from state using hypernetworks
-        # Use softplus to ensure strictly positive weights (monotonicity constraint)
-        # Softplus: softplus(x) = log(1 + exp(x)) > 0 for all x, with better gradient flow than abs
+        # Use absolute value to ensure positivity (monotonicity constraint)
         
         # First layer weights: [batch_size, n_agents * mixing_hidden_dim]
-        w1 = F.softplus(self.hyper_w1(states))  # Strictly positive
+        w1 = torch.abs(self.hyper_w1(states))  # Ensure positive
         w1 = w1.view(batch_size, self.n_agents, self.mixing_hidden_dim)
         
         # First layer bias: [batch_size, mixing_hidden_dim]
@@ -108,7 +107,7 @@ class MixingNetwork(nn.Module):
         hidden = F.elu(torch.bmm(agent_qs, w1) + b1)
         
         # Second layer weights: [batch_size, mixing_hidden_dim, 1]
-        w2 = F.softplus(self.hyper_w2(states))  # Strictly positive
+        w2 = torch.abs(self.hyper_w2(states))  # Ensure positive
         w2 = w2.view(batch_size, self.mixing_hidden_dim, 1)
         
         # Second layer bias: [batch_size, 1]

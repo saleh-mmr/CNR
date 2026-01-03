@@ -54,8 +54,6 @@ class QMIXReplayMemory:
         """
         Store a transition.
         
-        Deep-copies all inputs to prevent silent mutation that destroys training signal.
-        
         Parameters:
         -----------
         state : np.ndarray
@@ -73,13 +71,12 @@ class QMIXReplayMemory:
         done : bool
             Whether episode ended
         """
-        # Deep-copy to prevent reference mutation
-        self.states.append(state.copy())
-        self.observations.append({agent_id: obs.copy() for agent_id, obs in observations.items()})
-        self.actions.append(actions.copy())  # Dict copy (shallow is fine for ints)
+        self.states.append(state)
+        self.observations.append(observations)
+        self.actions.append(actions)
         self.rewards.append(reward)
-        self.next_states.append(next_state.copy())
-        self.next_observations.append({agent_id: obs.copy() for agent_id, obs in next_observations.items()})
+        self.next_states.append(next_state)
+        self.next_observations.append(next_observations)
         self.dones.append(done)
     
     def sample(self, batch_size: int, n_agents: int):
