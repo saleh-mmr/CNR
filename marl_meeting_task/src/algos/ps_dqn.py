@@ -2,9 +2,9 @@ import os
 import numpy as np
 import torch
 from typing import Dict, Optional, Any
-from torch.utils.tensorboard import SummaryWriter
 from marl_meeting_task.src.algos.ps_dqn_agent import PS_DQNAgent
 from marl_meeting_task.src.config import device
+from marl_meeting_task.src.utils.logger import Logger
 
 
 class PS_DQN:
@@ -99,21 +99,22 @@ class PS_DQN:
             batch_size=batch_size,
         )
         
-        self._print_initialization_summary()
+        # Logger will be initialized in train() method
+        self._logger: Optional[Logger] = None
     
-    def _print_initialization_summary(self) -> None:
+    def _print_initialization_summary(self, logger: Logger) -> None:
         """Print initialization summary."""
-        print(f"PS-DQN initialized with {self.n_agents} agents sharing parameters")
-        print(f"  - Input dimension: {self.input_dim}")
-        print(f"  - Number of actions: {self.num_actions}")
-        print(f"  - Shared Q-value network: {self.input_dim} -> {self.hidden_dim} -> {self.hidden_dim} -> {self.num_actions}")
-        print(f"  - Target network: (updates every {self.target_update_freq} steps)")
-        print(f"  - Shared optimizer: Adam (lr={self.learning_rate})")
-        print(f"  - Shared replay buffer: capacity={self.memory_capacity}")
-        print(f"  - Hyperparameters:")
-        print(f"    * Gamma (discount): {self.gamma}")
-        print(f"    * Epsilon: {self.epsilon_start} -> {self.epsilon_end} over {self.epsilon_decay_steps} steps")
-        print(f"    * Batch size: {self.batch_size}")
+        logger.info(f"PS-DQN initialized with {self.n_agents} agents sharing parameters")
+        logger.info(f"  - Input dimension: {self.input_dim}")
+        logger.info(f"  - Number of actions: {self.num_actions}")
+        logger.info(f"  - Shared Q-value network: {self.input_dim} -> {self.hidden_dim} -> {self.hidden_dim} -> {self.num_actions}")
+        logger.info(f"  - Target network: (updates every {self.target_update_freq} steps)")
+        logger.info(f"  - Shared optimizer: Adam (lr={self.learning_rate})")
+        logger.info(f"  - Shared replay buffer: capacity={self.memory_capacity}")
+        logger.info(f"  - Hyperparameters:")
+        logger.info(f"    * Gamma (discount): {self.gamma}")
+        logger.info(f"    * Epsilon: {self.epsilon_start} -> {self.epsilon_end} over {self.epsilon_decay_steps} steps")
+        logger.info(f"    * Batch size: {self.batch_size}")
     
     # ========================================================================
     # Exploration Schedule
@@ -294,7 +295,6 @@ class PS_DQN:
         min_buffer_size: int = 1000,
         verbose: bool = True,
         log_dir: Optional[str] = "runs/ps_dqn",
-        eval_freq: int = 100,
         eval_episodes: int = 20,
         env_seed: Optional[int] = None,
     ) -> Dict[str, Any]:
@@ -318,9 +318,6 @@ class PS_DQN:
         log_dir : Optional[str]
             Directory for TensorBoard logs (default: "runs/ps_dqn")
             If None, TensorBoard logging is disabled
-        eval_freq : int
-            Run evaluation every N episodes (default: 100)
-            Set to 0 to disable evaluation
         eval_episodes : int
             Number of episodes to run during evaluation (default: 20)
         env_seed : Optional[int]
@@ -331,11 +328,12 @@ class PS_DQN:
         training_stats : dict
             Dictionary containing training statistics
         """
-        # Initialize TensorBoard writer
-        writer = None
-        if log_dir is not None:
-            os.makedirs(log_dir, exist_ok=True)
-            writer = SummaryWriter(log_dir=log_dir)
+        # Initialize logger
+        logger = Logger(verbose=verbose, log_dir=log_dir)
+        self._logger = logger
+        
+        # Print initialization summary
+        self._print_initialization_summary(logger)
         
         # Episode statistics
         episode_rewards = []
@@ -418,66 +416,67 @@ class PS_DQN:
                 length_window.pop(0)
                 return_window.pop(0)
             
-            # Log to TensorBoard
-            if writer is not None:
-                # Per-episode metrics
-                writer.add_scalar('episode/success', episode_success, episode)
-                writer.add_scalar('episode/length', episode_length, episode)
-                writer.add_scalar('episode/return', episode_reward, episode)
-                
-                # Moving averages (computed over window)
-                if len(success_window) >= window_size:
-                    success_rate = np.mean(success_window)
-                    avg_episode_length = np.mean(length_window)
-                    avg_return = np.mean(return_window)
-                    
-                    writer.add_scalar('metrics/success_rate', success_rate, episode)
-                    writer.add_scalar('metrics/episode_length', avg_episode_length, episode)
-                    writer.add_scalar('metrics/return', avg_return, episode)
-                
-                # Log loss
-                if episode_losses[-1] is not None:
-                    writer.add_scalar('loss/training', episode_losses[-1], episode)
-                
-                # Log epsilon
-                writer.add_scalar('exploration/epsilon', self.get_epsilon(), episode)
+            # Log to TensorBoard and console
+            logger.tensorboard_log_metrics(
+                episode=episode,
+                success=episode_success,
+                length=episode_length,
+                return_val=episode_reward,
+                loss=episode_losses[-1],
+                epsilon=self.get_epsilon(),
+            )
             
-            # Run evaluation periodically (with greedy policy, epsilon=0)
-            if eval_freq > 0 and (episode + 1) % eval_freq == 0:
-                eval_metrics = self.evaluate(env, n_episodes=eval_episodes, max_steps=max_steps)
+            # Moving averages (computed over window)
+            if len(success_window) >= window_size:
+                success_rate = np.mean(success_window)
+                avg_episode_length = np.mean(length_window)
+                avg_return = np.mean(return_window)
                 
-                # Log evaluation metrics to TensorBoard
-                if writer is not None:
-                    writer.add_scalar('eval/success_rate', eval_metrics['success_rate'], episode)
-                    writer.add_scalar('eval/episode_length', eval_metrics['avg_episode_length'], episode)
-                    writer.add_scalar('eval/return', eval_metrics['avg_return'], episode)
-                
-                # Print evaluation results
-                if verbose:
-                    print(f"\n[Evaluation at Episode {episode + 1}] "
-                          f"Success Rate: {eval_metrics['success_rate']:.2%} | "
-                          f"Avg Length: {eval_metrics['avg_episode_length']:.1f} | "
-                          f"Avg Return: {eval_metrics['avg_return']:.2f}\n")
+                logger.tensorboard_log_moving_averages(
+                    episode=episode,
+                    success_rate=success_rate,
+                    avg_episode_length=avg_episode_length,
+                    avg_return=avg_return,
+                )
             
             # Print progress
-            if verbose and (episode + 1) % 100 == 0:
+            if (episode + 1) % 100 == 0:
                 avg_reward = np.mean(episode_rewards[-100:])
                 avg_length = np.mean(episode_lengths[-100:])
                 success_rate = np.mean(episode_successes[-100:])
                 current_epsilon = self.get_epsilon()
-                print(f"Episode {episode + 1}/{max_episodes} | "
-                      f"Avg Reward (last 100): {avg_reward:.2f} | "
-                      f"Avg Length: {avg_length:.1f} | "
-                      f"Success Rate: {success_rate:.2%} | "
-                      f"Epsilon: {current_epsilon:.3f} | "
-                      f"Total Steps: {self.total_steps}")
+                logger.progress(
+                    episode=episode + 1,
+                    max_episodes=max_episodes,
+                    avg_reward=avg_reward,
+                    avg_length=avg_length,
+                    success_rate=success_rate,
+                    epsilon=current_epsilon,
+                    total_steps=self.total_steps,
+                )
         
-        # Close TensorBoard writer
-        if writer is not None:
-            writer.close()
-            if verbose:
-                print(f"\nTensorBoard logs saved to: {log_dir}")
-                print(f"View with: tensorboard --logdir {log_dir}")
+        # Run final evaluation after all training episodes
+        final_eval_metrics = self.evaluate(env, n_episodes=eval_episodes, max_steps=max_steps)
+        
+        # Log final evaluation metrics
+        logger.tensorboard_log_evaluation(
+            episode=max_episodes - 1,
+            success_rate=final_eval_metrics['success_rate'],
+            avg_episode_length=final_eval_metrics['avg_episode_length'],
+            avg_return=final_eval_metrics['avg_return'],
+        )
+        
+        # Print final evaluation results
+        logger.evaluation(
+            episode=None,
+            success_rate=final_eval_metrics['success_rate'],
+            avg_episode_length=final_eval_metrics['avg_episode_length'],
+            avg_return=final_eval_metrics['avg_return'],
+            is_final=True,
+        )
+        
+        # Close logger (closes TensorBoard writer)
+        logger.close()
         
         return {
             'episode_rewards': episode_rewards,
@@ -485,4 +484,5 @@ class PS_DQN:
             'episode_successes': episode_successes,
             'episode_losses': episode_losses,
             'total_steps': self.total_steps,
+            'final_eval_metrics': final_eval_metrics,
         }

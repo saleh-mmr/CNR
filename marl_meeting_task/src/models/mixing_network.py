@@ -48,22 +48,28 @@ class MixingNetwork(nn.Module):
         # Hypernetworks: generate mixing weights from state
         # These ensure monotonicity by producing positive weights
         
-        # First layer hypernetwork: state -> hidden weights
+        # First layer hypernetwork: state -> [n_agents, mixing_hidden_dim] weights
         self.hyper_w1 = nn.Sequential(
             nn.Linear(state_dim, mixing_hidden_dim),
             nn.ReLU(),
             nn.Linear(mixing_hidden_dim, n_agents * mixing_hidden_dim)
         )
         
-        # Second layer hypernetwork: state -> output weights
+        # First layer hypernetwork: state -> [mixing_hidden_dim] bias
+        self.hyper_b1 = nn.Sequential(
+            nn.Linear(state_dim, mixing_hidden_dim),
+            nn.ReLU(),
+            nn.Linear(mixing_hidden_dim, mixing_hidden_dim)
+        )
+        
+        # Second layer hypernetwork: state -> [mixing_hidden_dim, 1] weights
         self.hyper_w2 = nn.Sequential(
             nn.Linear(state_dim, mixing_hidden_dim),
             nn.ReLU(),
             nn.Linear(mixing_hidden_dim, mixing_hidden_dim)
         )
         
-        # Bias networks (also state-dependent)
-        self.hyper_b1 = nn.Linear(state_dim, mixing_hidden_dim)
+        # Second layer hypernetwork: state -> [1] bias
         self.hyper_b2 = nn.Sequential(
             nn.Linear(state_dim, mixing_hidden_dim),
             nn.ReLU(),
@@ -72,50 +78,41 @@ class MixingNetwork(nn.Module):
     
     def forward(self, agent_qs: torch.Tensor, states: torch.Tensor) -> torch.Tensor:
         """
-        Forward pass: mix agent Q-values into joint Q-value.
+        Forward pass through mixing network.
         
         Parameters:
         -----------
         agent_qs : torch.Tensor
-            Agent Q-values of shape [batch_size, n_agents]
-            Each column is Q_i(o_i, a_i) for agent i
+            Individual agent Q-values of shape [batch_size, n_agents]
         states : torch.Tensor
             Global states of shape [batch_size, state_dim]
             
         Returns:
         --------
         torch.Tensor
-            Joint Q-values Q_tot of shape [batch_size, 1]
+            Joint Q-value Q_tot of shape [batch_size, 1]
         """
         batch_size = agent_qs.shape[0]
-        
-        # Reshape agent Qs: [batch_size, n_agents] -> [batch_size, 1, n_agents]
         agent_qs = agent_qs.unsqueeze(1)  # [batch_size, 1, n_agents]
         
-        # Generate positive weights from state using hypernetworks
-        # Use softplus to ensure strictly positive weights (monotonicity constraint)
-        # Softplus: softplus(x) = log(1 + exp(x)) > 0 for all x, with better gradient flow than abs
-        
-        # First layer weights: [batch_size, n_agents * mixing_hidden_dim]
-        w1 = F.softplus(self.hyper_w1(states))  # Strictly positive
+        # Generate positive weights using hypernetworks and softplus
+        w1 = F.softplus(self.hyper_w1(states))  # [batch_size, n_agents * mixing_hidden_dim]
         w1 = w1.view(batch_size, self.n_agents, self.mixing_hidden_dim)
         
-        # First layer bias: [batch_size, mixing_hidden_dim]
-        b1 = self.hyper_b1(states)
+        b1 = self.hyper_b1(states)  # [batch_size, mixing_hidden_dim]
         b1 = b1.unsqueeze(1)  # [batch_size, 1, mixing_hidden_dim]
         
-        # First mixing layer: [batch_size, 1, mixing_hidden_dim]
-        hidden = F.elu(torch.bmm(agent_qs, w1) + b1)
+        # First mixing layer
+        hidden = F.elu(torch.bmm(agent_qs, w1) + b1)  # [batch_size, 1, mixing_hidden_dim]
         
-        # Second layer weights: [batch_size, mixing_hidden_dim, 1]
-        w2 = F.softplus(self.hyper_w2(states))  # Strictly positive
+        # Second layer
+        w2 = F.softplus(self.hyper_w2(states))  # [batch_size, mixing_hidden_dim]
         w2 = w2.view(batch_size, self.mixing_hidden_dim, 1)
         
-        # Second layer bias: [batch_size, 1]
-        b2 = self.hyper_b2(states)
+        b2 = self.hyper_b2(states)  # [batch_size, 1]
         
-        # Final mixing: [batch_size, 1, 1] -> [batch_size, 1]
-        q_tot = torch.bmm(hidden, w2) + b2.unsqueeze(1)
+        # Final mixing
+        q_tot = torch.bmm(hidden, w2) + b2.unsqueeze(1)  # [batch_size, 1, 1]
         q_tot = q_tot.squeeze(1)  # [batch_size, 1]
         
         return q_tot

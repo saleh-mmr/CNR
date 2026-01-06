@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from typing import Optional
-from marl_meeting_task.src.utils.qvalue_network import QValueNetwork
+from marl_meeting_task.src.models.qvalue_network import QValueNetwork
 from marl_meeting_task.src.config import device
 
 

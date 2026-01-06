@@ -13,6 +13,7 @@ from typing import Dict, List, Any
 
 from marl_meeting_task.src.env.meeting_gridworld import MeetingGridworldEnv
 from marl_meeting_task.src.algos.iql import IQL
+from marl_meeting_task.src.utils.logger import Logger
 
 
 def set_seed(seed: int) -> None:
@@ -101,7 +102,6 @@ def run_training(
         min_buffer_size=1000,
         verbose=verbose,
         log_dir=log_dir,
-        eval_freq=100,
         eval_episodes=20,
         env_seed=seed,  # Pass seed for environment resets
     )
@@ -226,6 +226,7 @@ def save_results(
     with open(aggregated_file, 'w') as f:
         json.dump(aggregated, f, indent=2)
     
+    # Results saving message - could use logger but print is fine for file paths
     print(f"\nResults saved:")
     print(f"  Individual seeds: {individual_file}")
     print(f"  Aggregated: {aggregated_file}")
@@ -240,20 +241,24 @@ def main():
     OUTPUT_DIR = "results"
     VERBOSE = True
     
-    print("="*60)
-    print("IQL Multi-Seed Training")
-    print("="*60)
-    print(f"Seeds: {SEEDS}")
-    print(f"Max episodes per seed: {MAX_EPISODES}")
-    print(f"TensorBoard logs: {BASE_LOG_DIR}")
-    print(f"Results directory: {OUTPUT_DIR}")
-    print("="*60)
+    # Initialize logger for training script
+    logger = Logger(verbose=VERBOSE, log_dir=None)
+    
+    logger.summary(
+        title="IQL Multi-Seed Training",
+        items={
+            "Seeds": SEEDS,
+            "Max episodes per seed": MAX_EPISODES,
+            "TensorBoard logs": BASE_LOG_DIR,
+            "Results directory": OUTPUT_DIR,
+        }
+    )
     
     # Run training for each seed
     all_results = []
     
     for i, seed in enumerate(SEEDS, 1):
-        print(f"\n[{i}/{len(SEEDS)}] Starting training with seed {seed}...")
+        logger.info(f"\n[{i}/{len(SEEDS)}] Starting training with seed {seed}...")
         
         try:
             stats = run_training(
@@ -269,46 +274,41 @@ def main():
             final_avg_length = np.mean(stats['episode_lengths'][-100:])
             final_avg_return = np.mean(stats['episode_rewards'][-100:])
             
-            print(f"\n[Seed {seed} Summary]")
-            print(f"  Final Success Rate (last 100): {final_success_rate:.2%}")
-            print(f"  Final Avg Length (last 100): {final_avg_length:.1f}")
-            print(f"  Final Avg Return (last 100): {final_avg_return:.2f}")
-            print(f"  Total Steps: {stats['total_steps']}")
+            logger.info(f"\n[Seed {seed} Summary]")
+            logger.info(f"  Final Success Rate (last 100): {final_success_rate:.2%}")
+            logger.info(f"  Final Avg Length (last 100): {final_avg_length:.1f}")
+            logger.info(f"  Final Avg Return (last 100): {final_avg_return:.2f}")
+            logger.info(f"  Total Steps: {stats['total_steps']}")
             
         except Exception as e:
-            print(f"\n[ERROR] Training failed for seed {seed}: {e}")
+            logger.info(f"\n[ERROR] Training failed for seed {seed}: {e}")
             import traceback
             traceback.print_exc()
             continue
     
     if len(all_results) == 0:
-        print("\n[ERROR] No successful training runs!")
+        logger.info("\n[ERROR] No successful training runs!")
         return
     
     # Aggregate results
-    print(f"\n{'='*60}")
-    print("Aggregating results across seeds...")
-    print(f"{'='*60}\n")
-    
     aggregated = aggregate_results(all_results)
     
-    # Print aggregated summary
-    print("Aggregated Results (across all seeds):")
-    print(f"  Number of seeds: {aggregated['n_seeds']}")
-    print(f"  Seeds used: {aggregated['seeds']}")
-    print(f"\n  Final Metrics (last 100 episodes, mean ± std):")
-    print(f"    Success Rate: {aggregated['final_metrics']['final_success_rate_mean']:.2%} ± {aggregated['final_metrics']['final_success_rate_std']:.2%}")
-    print(f"    Episode Length: {aggregated['final_metrics']['final_episode_length_mean']:.1f} ± {aggregated['final_metrics']['final_episode_length_std']:.1f}")
-    print(f"    Return: {aggregated['final_metrics']['final_return_mean']:.2f} ± {aggregated['final_metrics']['final_return_std']:.2f}")
+    # Print aggregated summary using logger
+    logger.aggregated_results(
+        n_seeds=aggregated['n_seeds'],
+        seeds=aggregated['seeds'],
+        success_rate_mean=aggregated['final_metrics']['final_success_rate_mean'],
+        success_rate_std=aggregated['final_metrics']['final_success_rate_std'],
+        episode_length_mean=aggregated['final_metrics']['final_episode_length_mean'],
+        episode_length_std=aggregated['final_metrics']['final_episode_length_std'],
+        return_mean=aggregated['final_metrics']['final_return_mean'],
+        return_std=aggregated['final_metrics']['final_return_std'],
+    )
     
     # Save results
     save_results(all_results, aggregated, OUTPUT_DIR)
     
-    print(f"\n{'='*60}")
-    print("Training completed!")
-    print(f"{'='*60}")
-    print(f"\nTo view TensorBoard logs:")
-    print(f"  tensorboard --logdir {BASE_LOG_DIR}")
+    logger.training_complete(BASE_LOG_DIR)
 
 
 if __name__ == "__main__":

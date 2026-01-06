@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from typing import Dict, Optional
-from marl_meeting_task.src.utils.qvalue_network import QValueNetwork
+from marl_meeting_task.src.models.qvalue_network import QValueNetwork
 from marl_meeting_task.src.utils.replay_memory import ReplayMemory
 from marl_meeting_task.src.config import device
 
