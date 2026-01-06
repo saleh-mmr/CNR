@@ -119,13 +119,10 @@ class MeetingGridworldEnv:
         for i in range(self.n_agents):
             own_x, own_y = self.agent_pos[i]
 
-            others = []
-            for j in range(self.n_agents):
-                if j != i:
-                    others.extend(self.agent_pos[j])
-
+            # Observation: [own_x, own_y, goal_x, goal_y]
+            # Does NOT include other agent positions
             obs[i] = np.array(
-                [own_x, own_y, *others, *self.goal_pos],
+                [own_x, own_y, *self.goal_pos],
                 dtype=np.int64
             )
 

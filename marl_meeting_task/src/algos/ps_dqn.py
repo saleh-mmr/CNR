@@ -28,7 +28,7 @@ class PS_DQN:
     def __init__(
         self,
         n_agents: int = 2,
-        input_dim: int = 6,  # observation vector: [own_x, own_y, other_x, other_y, goal_x, goal_y]
+        input_dim: int = 4,  # observation vector: [own_x, own_y, goal_x, goal_y]
         num_actions: int = 5,  # actions: up, down, left, right, stay
         hidden_dim: int = 64,
         learning_rate: float = 1e-3,
@@ -48,7 +48,7 @@ class PS_DQN:
         n_agents : int
             Number of agents (default: 2)
         input_dim : int
-            Dimension of observation vector (default: 6)
+            Dimension of observation vector (default: 4)
         num_actions : int
             Number of possible actions (default: 5)
         hidden_dim : int

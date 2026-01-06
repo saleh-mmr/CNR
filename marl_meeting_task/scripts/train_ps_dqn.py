@@ -70,7 +70,7 @@ def run_training(
     # Initialize PS-DQN
     ps_dqn = PS_DQN(
         n_agents=2,
-        input_dim=6,
+        input_dim=4,
         num_actions=5,
         hidden_dim=64,
         learning_rate=1e-3,
