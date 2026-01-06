@@ -4,12 +4,12 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from typing import Dict, Optional, Any
-from torch.utils.tensorboard import SummaryWriter
 
 from marl_meeting_task.src.algos.qmix_agent import QMIXAgent
-from marl_meeting_task.src.utils.mixing_network import MixingNetwork
+from marl_meeting_task.src.models.mixing_network import MixingNetwork
 from marl_meeting_task.src.utils.qmix_replay_memory import QMIXReplayMemory
 from marl_meeting_task.src.config import device
+from marl_meeting_task.src.utils.logger import Logger
 
 
 class QMIX:
@@ -36,13 +36,13 @@ class QMIX:
         state_dim: int = 6,  # Global state dimension: [a1_x, a1_y, a2_x, a2_y, g_x, g_y]
         num_actions: int = 5,
         hidden_dim: int = 64,
-        mixing_hidden_dim: int = 64,
+        mixing_hidden_dim: int = 128,  # Increased from 64 for better mixing capacity
         learning_rate: float = 1e-3,
         memory_capacity: int = 10000,
         gamma: float = 0.99,
         epsilon_start: float = 1.0,
         epsilon_end: float = 0.05,
-        epsilon_decay_steps: int = 50000,
+        epsilon_decay_steps: int = 75000,  # Slowed down from 50000 for more gradual exploration decay
         batch_size: int = 32,
         target_update_freq: int = 500,
     ):
@@ -98,6 +98,7 @@ class QMIX:
         
         # Training state
         self.total_steps = 0
+        self.grid_size = 5  # Default grid size (will be updated from env if needed)
         
         # Initialize agent Q-networks (one per agent)
         self.agents: Dict[int, QMIXAgent] = {}
@@ -124,33 +125,43 @@ class QMIX:
         ).to(device)
         self.update_target_networks()  # Initialize with same weights
         
-        # Combined optimizer for all networks
-        all_params = list(self.mixing_network.parameters())
+        # Separate optimizers for better control
+        # Agent networks with standard learning rate
+        agent_params = []
         for agent in self.agents.values():
-            all_params.extend(list(agent.q_network.parameters()))
+            agent_params.extend(list(agent.q_network.parameters()))
         
-        self.optimizer = optim.Adam(all_params, lr=learning_rate)
+        # Mixing network with lower learning rate (more stable)
+        mixing_lr = learning_rate * 0.5  # Half the learning rate for mixing network
+        mixing_params = list(self.mixing_network.parameters())
+        
+        # Create separate parameter groups
+        self.optimizer = optim.Adam([
+            {'params': agent_params, 'lr': learning_rate},
+            {'params': mixing_params, 'lr': mixing_lr}
+        ])
         
         # Centralized replay buffer
         self.replay_memory = QMIXReplayMemory(capacity=memory_capacity)
         
-        self._print_initialization_summary()
+        # Logger will be initialized in train() method
+        self._logger: Optional[Logger] = None
     
-    def _print_initialization_summary(self) -> None:
+    def _print_initialization_summary(self, logger: Logger) -> None:
         """Print initialization summary."""
-        print(f"QMIX initialized with {self.n_agents} agents")
-        print(f"  - Local observation dimension: {self.input_dim}")
-        print(f"  - Global state dimension: {self.state_dim}")
-        print(f"  - Number of actions: {self.num_actions}")
-        print(f"  - Agent Q-networks: {self.input_dim} -> {self.hidden_dim} -> {self.hidden_dim} -> {self.num_actions}")
-        print(f"  - Mixing network: combines {self.n_agents} Q-values using state (hidden_dim={self.mixing_hidden_dim})")
-        print(f"  - Target networks: (update every {self.target_update_freq} steps)")
-        print(f"  - Optimizer: Adam (lr={self.learning_rate})")
-        print(f"  - Centralized replay buffer: capacity={self.memory_capacity}")
-        print(f"  - Hyperparameters:")
-        print(f"    * Gamma (discount): {self.gamma}")
-        print(f"    * Epsilon: {self.epsilon_start} -> {self.epsilon_end} over {self.epsilon_decay_steps} steps")
-        print(f"    * Batch size: {self.batch_size}")
+        logger.info(f"QMIX initialized with {self.n_agents} agents")
+        logger.info(f"  - Local observation dimension: {self.input_dim}")
+        logger.info(f"  - Global state dimension: {self.state_dim}")
+        logger.info(f"  - Number of actions: {self.num_actions}")
+        logger.info(f"  - Agent Q-networks: {self.input_dim} -> {self.hidden_dim} -> {self.hidden_dim} -> {self.num_actions}")
+        logger.info(f"  - Mixing network: combines {self.n_agents} Q-values using state (hidden_dim={self.mixing_hidden_dim})")
+        logger.info(f"  - Target networks: (update every {self.target_update_freq} episodes)")
+        logger.info(f"  - Optimizer: Adam (lr={self.learning_rate})")
+        logger.info(f"  - Centralized replay buffer: capacity={self.memory_capacity}")
+        logger.info(f"  - Hyperparameters:")
+        logger.info(f"    * Gamma (discount): {self.gamma}")
+        logger.info(f"    * Epsilon: {self.epsilon_start} -> {self.epsilon_end} over {self.epsilon_decay_steps} steps")
+        logger.info(f"    * Batch size: {self.batch_size}")
     
     # ========================================================================
     # Network Management
@@ -168,9 +179,10 @@ class QMIX:
     
     def _get_global_state(self, env) -> np.ndarray:
         """
-        Extract global state from environment.
+        Extract global state from environment and normalize to [0, 1] range.
         
         Global state: [a1_x, a1_y, a2_x, a2_y, g_x, g_y]
+        Normalized by grid_size to improve mixing network learning.
         
         Parameters:
         -----------
@@ -180,13 +192,20 @@ class QMIX:
         Returns:
         --------
         np.ndarray
-            Global state vector
+            Normalized global state vector in [0, 1] range
         """
+        # Update grid_size from environment if available
+        if hasattr(env, 'grid_size'):
+            self.grid_size = env.grid_size
+        
         state = []
         for agent_id in range(self.n_agents):
             x, y = env.agent_pos[agent_id]
-            state.extend([x, y])
-        state.extend(env.goal_pos)
+            # Normalize coordinates to [0, 1] range
+            state.extend([x / self.grid_size, y / self.grid_size])
+        gx, gy = env.goal_pos
+        # Normalize goal coordinates to [0, 1] range
+        state.extend([gx / self.grid_size, gy / self.grid_size])
         return np.array(state, dtype=np.float32)
     
     # ========================================================================
@@ -319,13 +338,21 @@ class QMIX:
         q_tot = q_tot.squeeze(1)  # [batch_size]
         
         # Compute target Q_tot(s_next, a_1', a_2', ...)
-        # Use greedy actions from target networks
+        # Double-Q: Select actions using online networks, evaluate with target networks
         with torch.no_grad():
+            # Step 1: Select greedy actions using online (main) networks
+            next_actions = []
+            for agent_id in range(self.n_agents):
+                next_q_values_online = self.agents[agent_id].q_network(next_observations[agent_id])  # [batch_size, num_actions]
+                next_action = next_q_values_online.argmax(1)  # [batch_size] - greedy action from online network
+                next_actions.append(next_action)
+            
+            # Step 2: Evaluate selected actions using target networks
             next_agent_qs = []
             for agent_id in range(self.n_agents):
-                next_q_values = self.agents[agent_id].target_network(next_observations[agent_id])  # [batch_size, num_actions]
-                # Greedy action: argmax Q_i
-                next_agent_q = next_q_values.max(1)[0]  # [batch_size]
+                next_q_values_target = self.agents[agent_id].target_network(next_observations[agent_id])  # [batch_size, num_actions]
+                # Evaluate the action selected by online network using target network
+                next_agent_q = next_q_values_target.gather(1, next_actions[agent_id].unsqueeze(1)).squeeze(1)  # [batch_size]
                 next_agent_qs.append(next_agent_q)
             
             # Stack: [batch_size, n_agents]
@@ -344,9 +371,26 @@ class QMIX:
         # Gradient step
         self.optimizer.zero_grad()
         loss.backward()
-        # Gradient clipping for stability
-        torch.nn.utils.clip_grad_norm_(self.optimizer.param_groups[0]['params'], max_norm=10.0)
+        # Gradient clipping for stability - clip all parameters (agent networks + mixing network)
+        all_params = []
+        for param_group in self.optimizer.param_groups:
+            all_params.extend(param_group['params'])
+        torch.nn.utils.clip_grad_norm_(all_params, max_norm=10.0)
         self.optimizer.step()
+        
+        # Diagnostic: log Q-value statistics periodically (every 1000 steps)
+        if self.total_steps % 1000 == 0 and self._logger is not None:
+            with torch.no_grad():
+                avg_q_tot = q_tot.mean().item()
+                avg_target = target.mean().item()
+                avg_agent_qs = agent_qs.mean().item()
+                self._logger.tensorboard_log_diagnostic(
+                    step=self.total_steps,
+                    loss=loss.item(),
+                    q_tot=avg_q_tot,
+                    target=avg_target,
+                    agent_qs=[avg_agent_qs],  # Single value for average
+                )
         
         return loss.item()
     
@@ -463,11 +507,12 @@ class QMIX:
         Dict[str, Any]
             Dictionary containing training statistics
         """
-        # Initialize TensorBoard writer
-        writer = None
-        if log_dir is not None:
-            os.makedirs(log_dir, exist_ok=True)
-            writer = SummaryWriter(log_dir=log_dir)
+        # Initialize logger
+        logger = Logger(verbose=verbose, log_dir=log_dir)
+        self._logger = logger
+        
+        # Print initialization summary
+        self._print_initialization_summary(logger)
         
         # Episode statistics
         episode_rewards = []
@@ -514,17 +559,14 @@ class QMIX:
                     done=done
                 )
                 
-                # Train if buffer is large enough
+                # Train if buffer is large enough (warm-up period enforced by min_buffer_size)
+                # Increased min_buffer_size reduces learning noise by ensuring diverse samples before training
                 if self.total_steps % train_freq == 0:
                     if len(self.replay_memory) >= min_buffer_size:
                         loss = self.train_step()
                         if loss is not None:
                             episode_loss_sum += loss
                             episode_loss_count += 1
-                
-                # Update target networks periodically
-                if self.total_steps > 0 and self.total_steps % self.target_update_freq == 0:
-                    self.update_target_networks()
                 
                 # Update state
                 obs = next_obs
@@ -534,6 +576,10 @@ class QMIX:
                 
                 if done:
                     break
+            
+            # Update target networks every target_update_freq episodes
+            if (episode + 1) % self.target_update_freq == 0:
+                self.update_target_networks()
             
             # Record episode statistics
             episode_length = t + 1
@@ -559,60 +605,66 @@ class QMIX:
                 length_window.pop(0)
                 return_window.pop(0)
             
-            # Log to TensorBoard
-            if writer is not None:
-                writer.add_scalar('episode/success', episode_success, episode)
-                writer.add_scalar('episode/length', episode_length, episode)
-                writer.add_scalar('episode/return', episode_reward, episode)
+            # Log to TensorBoard and console
+            logger.tensorboard_log_metrics(
+                episode=episode,
+                success=episode_success,
+                length=episode_length,
+                return_val=episode_reward,
+                loss=episode_losses[-1],
+                epsilon=self.get_epsilon(),
+            )
+            
+            # Moving averages
+            if len(success_window) >= window_size:
+                success_rate = np.mean(success_window)
+                avg_episode_length = np.mean(length_window)
+                avg_return = np.mean(return_window)
                 
-                if len(success_window) >= window_size:
-                    success_rate = np.mean(success_window)
-                    avg_episode_length = np.mean(length_window)
-                    avg_return = np.mean(return_window)
-                    
-                    writer.add_scalar('metrics/success_rate', success_rate, episode)
-                    writer.add_scalar('metrics/episode_length', avg_episode_length, episode)
-                    writer.add_scalar('metrics/return', avg_return, episode)
-                
-                if episode_losses[-1] is not None:
-                    writer.add_scalar('loss/training', episode_losses[-1], episode)
-                
-                writer.add_scalar('exploration/epsilon', self.get_epsilon(), episode)
+                logger.tensorboard_log_moving_averages(
+                    episode=episode,
+                    success_rate=success_rate,
+                    avg_episode_length=avg_episode_length,
+                    avg_return=avg_return,
+                )
             
             # Run evaluation
             if eval_freq > 0 and (episode + 1) % eval_freq == 0:
                 eval_metrics = self.evaluate(env, n_episodes=eval_episodes, max_steps=max_steps)
                 
-                if writer is not None:
-                    writer.add_scalar('eval/success_rate', eval_metrics['success_rate'], episode)
-                    writer.add_scalar('eval/episode_length', eval_metrics['avg_episode_length'], episode)
-                    writer.add_scalar('eval/return', eval_metrics['avg_return'], episode)
+                logger.tensorboard_log_evaluation(
+                    episode=episode,
+                    success_rate=eval_metrics['success_rate'],
+                    avg_episode_length=eval_metrics['avg_episode_length'],
+                    avg_return=eval_metrics['avg_return'],
+                )
                 
-                if verbose:
-                    print(f"\n[Evaluation at Episode {episode + 1}] "
-                          f"Success Rate: {eval_metrics['success_rate']:.2%} | "
-                          f"Avg Length: {eval_metrics['avg_episode_length']:.1f} | "
-                          f"Avg Return: {eval_metrics['avg_return']:.2f}\n")
+                logger.evaluation(
+                    episode=episode + 1,
+                    success_rate=eval_metrics['success_rate'],
+                    avg_episode_length=eval_metrics['avg_episode_length'],
+                    avg_return=eval_metrics['avg_return'],
+                    is_final=False,
+                )
             
             # Print progress
-            if verbose and (episode + 1) % 100 == 0:
+            if (episode + 1) % 100 == 0:
                 avg_reward = np.mean(episode_rewards[-100:])
                 avg_length = np.mean(episode_lengths[-100:])
                 success_rate = np.mean(episode_successes[-100:])
                 current_epsilon = self.get_epsilon()
-                print(f"Episode {episode + 1}/{max_episodes} | "
-                      f"Avg Reward (last 100): {avg_reward:.2f} | "
-                      f"Avg Length: {avg_length:.1f} | "
-                      f"Success Rate: {success_rate:.2%} | "
-                      f"Epsilon: {current_epsilon:.3f} | "
-                      f"Total Steps: {self.total_steps}")
+                logger.progress(
+                    episode=episode + 1,
+                    max_episodes=max_episodes,
+                    avg_reward=avg_reward,
+                    avg_length=avg_length,
+                    success_rate=success_rate,
+                    epsilon=current_epsilon,
+                    total_steps=self.total_steps,
+                )
         
-        # Close TensorBoard writer
-        if writer is not None:
-            writer.close()
-            if verbose:
-                print(f"\nTensorBoard logs saved to: {log_dir}")
-                print(f"View with: tensorboard --logdir {log_dir}")
+        # Close logger (closes TensorBoard writer)
+        logger.close()
         
         return {
             'episode_rewards': episode_rewards,
