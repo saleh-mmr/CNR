@@ -32,7 +32,7 @@ class QMIX:
     def __init__(
         self,
         n_agents: int = 2,
-        input_dim: int = 6,  # Local observation dimension
+        input_dim: int = 4,  # Local observation dimension: [own_x, own_y, goal_x, goal_y]
         state_dim: int = 6,  # Global state dimension: [a1_x, a1_y, a2_x, a2_y, g_x, g_y]
         num_actions: int = 5,
         hidden_dim: int = 64,
@@ -54,7 +54,7 @@ class QMIX:
         n_agents : int
             Number of agents (default: 2)
         input_dim : int
-            Dimension of local observation (default: 6)
+            Dimension of local observation (default: 4)
         state_dim : int
             Dimension of global state (default: 6)
         num_actions : int

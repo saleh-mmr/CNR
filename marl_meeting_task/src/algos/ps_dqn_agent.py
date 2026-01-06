@@ -26,7 +26,7 @@ class PS_DQNAgent:
     def __init__(
         self,
         n_agents: int = 2,
-        input_dim: int = 6,
+        input_dim: int = 4,
         num_actions: int = 5,
         hidden_dim: int = 64,
         learning_rate: float = 1e-3,
@@ -42,7 +42,7 @@ class PS_DQNAgent:
         n_agents : int
             Number of agents (default: 2)
         input_dim : int
-            Dimension of observation vector (default: 6)
+            Dimension of observation vector (default: 4)
         num_actions : int
             Number of possible actions (default: 5)
         hidden_dim : int
