@@ -70,7 +70,7 @@ def run_training(
     # Initialize QMIX
     qmix = QMIX(
         n_agents=2,
-        input_dim=6,  # Local observation dimension
+        input_dim=4,  # Local observation dimension: [own_x, own_y, goal_x, goal_y]
         state_dim=6,  # Global state dimension: [a1_x, a1_y, a2_x, a2_y, g_x, g_y]
         num_actions=5,
         hidden_dim=64,
@@ -105,8 +105,7 @@ def run_training(
         min_buffer_size=3000,  # Increased warm-up period to reduce learning noise
         verbose=verbose,
         log_dir=log_dir,
-        eval_freq=100,
-        eval_episodes=20,
+            eval_episodes=20,
         env_seed=seed,  # Pass seed for environment resets
     )
     

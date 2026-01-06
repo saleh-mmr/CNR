@@ -24,7 +24,7 @@ class IQLAgent:
     def __init__(
         self,
         agent_id: int,
-        input_dim: int = 6,
+        input_dim: int = 4,
         num_actions: int = 5,
         hidden_dim: int = 64,
         learning_rate: float = 1e-3,
@@ -38,7 +38,7 @@ class IQLAgent:
         agent_id : int
             Unique identifier for this agent
         input_dim : int
-            Dimension of observation vector (default: 6)
+            Dimension of observation vector (default: 4)
         num_actions : int
             Number of possible actions (default: 5)
         hidden_dim : int
@@ -111,19 +111,36 @@ class IQLAgent:
         int
             Selected action index
         """
-        if np.random.random() < epsilon:
-            # Exploration: random action
-            return np.random.randint(0, self.num_actions)
-        else:
-            # Exploitation: greedy action
+        # Ensure epsilon is exactly 0 for greedy policy
+        if epsilon <= 0.0:
+            # Exploitation: greedy action (no exploration)
             with torch.no_grad():
+                # Convert observation to float32 tensor (observations are int64 from env)
                 obs_tensor = torch.as_tensor(
                     obs,
                     dtype=torch.float32,
                     device=device
                 ).unsqueeze(0)  # Add batch dimension: (1, input_dim)
+                # Ensure network is in eval mode (should already be set, but double-check)
+                if self.q_network.training:
+                    self.q_network.eval()
                 q_values = self.q_network(obs_tensor)
                 return q_values.argmax().item()
+        else:
+            # Epsilon-greedy: explore with probability epsilon
+            if np.random.random() < epsilon:
+                # Exploration: random action
+                return np.random.randint(0, self.num_actions)
+            else:
+                # Exploitation: greedy action
+                with torch.no_grad():
+                    obs_tensor = torch.as_tensor(
+                        obs,
+                        dtype=torch.float32,
+                        device=device
+                    ).unsqueeze(0)  # Add batch dimension: (1, input_dim)
+                    q_values = self.q_network(obs_tensor)
+                    return q_values.argmax().item()
     
     # ========================================================================
     # Learning

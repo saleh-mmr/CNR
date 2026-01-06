@@ -26,7 +26,7 @@ class PS_DQNAgent:
     def __init__(
         self,
         n_agents: int = 2,
-        input_dim: int = 6,
+        input_dim: int = 4,
         num_actions: int = 5,
         hidden_dim: int = 64,
         learning_rate: float = 1e-3,
@@ -42,7 +42,7 @@ class PS_DQNAgent:
         n_agents : int
             Number of agents (default: 2)
         input_dim : int
-            Dimension of observation vector (default: 6)
+            Dimension of observation vector (default: 4)
         num_actions : int
             Number of possible actions (default: 5)
         hidden_dim : int
@@ -119,13 +119,15 @@ class PS_DQNAgent:
         """
         actions = {}
         
-        for agent_id in range(self.n_agents):
-            if np.random.random() < epsilon:
-                # Exploration: random action
-                actions[agent_id] = np.random.randint(0, self.num_actions)
-            else:
-                # Exploitation: greedy action using shared network
+        # Ensure epsilon is exactly 0 for greedy policy
+        if epsilon <= 0.0:
+            # Exploitation: greedy actions (no exploration)
+            # Ensure network is in eval mode (should already be set, but double-check)
+            if self.q_network.training:
+                self.q_network.eval()
+            for agent_id in range(self.n_agents):
                 with torch.no_grad():
+                    # Convert observation to float32 tensor (observations are int64 from env)
                     obs_tensor = torch.as_tensor(
                         obs[agent_id],
                         dtype=torch.float32,
@@ -133,6 +135,22 @@ class PS_DQNAgent:
                     ).unsqueeze(0)  # Add batch dimension: (1, input_dim)
                     q_values = self.q_network(obs_tensor)
                     actions[agent_id] = q_values.argmax().item()
+        else:
+            # Epsilon-greedy: explore with probability epsilon
+            for agent_id in range(self.n_agents):
+                if np.random.random() < epsilon:
+                    # Exploration: random action
+                    actions[agent_id] = np.random.randint(0, self.num_actions)
+                else:
+                    # Exploitation: greedy action using shared network
+                    with torch.no_grad():
+                        obs_tensor = torch.as_tensor(
+                            obs[agent_id],
+                            dtype=torch.float32,
+                            device=device
+                        ).unsqueeze(0)  # Add batch dimension: (1, input_dim)
+                        q_values = self.q_network(obs_tensor)
+                        actions[agent_id] = q_values.argmax().item()
         
         return actions
     

@@ -26,7 +26,7 @@ class IQL:
     def __init__(
         self,
         n_agents: int = 2,
-        input_dim: int = 6,                     # observation vector: [own_x, own_y, other_x, other_y, goal_x, goal_y]
+        input_dim: int = 4,                     # observation vector: [own_x, own_y, goal_x, goal_y]
         num_actions: int = 5,                   # actions: up, down, left, right, stay
         hidden_dim: int = 64,
         learning_rate: float = 1e-3,            # Default: 1e-3 as per hyperparameters
@@ -46,7 +46,7 @@ class IQL:
         n_agents : int
             Number of independent agents (default: 2)
         input_dim : int
-            Dimension of observation vector (default: 6)
+            Dimension of observation vector (default: 4)
         num_actions : int
             Number of possible actions (default: 5)
         hidden_dim : int
@@ -282,6 +282,10 @@ class IQL:
             - avg_episode_length: average episode length
             - avg_return: average cumulative reward
         """
+        # Set all networks to eval mode for inference
+        for agent in self.agents.values():
+            agent.q_network.eval()
+        
         eval_successes = []
         eval_lengths = []
         eval_returns = []
@@ -293,9 +297,15 @@ class IQL:
             episode_terminated = False
             
             for t in range(max_steps):
-                # Greedy action selection (epsilon=0)
+                # Greedy action selection (epsilon=0) - use main networks
+                # Ensure networks remain in eval mode
+                for agent in self.agents.values():
+                    if agent.q_network.training:
+                        agent.q_network.eval()
+                
                 actions = {}
                 for agent_id in range(self.n_agents):
+                    # Explicitly pass epsilon=0.0 for greedy policy
                     actions[agent_id] = self.agents[agent_id].select_action(obs[agent_id], epsilon=0.0)
                 
                 # Step environment
@@ -315,6 +325,10 @@ class IQL:
             eval_successes.append(1 if episode_terminated else 0)
             eval_lengths.append(t + 1)
             eval_returns.append(episode_reward)
+        
+        # Set networks back to train mode
+        for agent in self.agents.values():
+            agent.q_network.train()
         
         # Compute evaluation metrics
         success_rate = np.mean(eval_successes)

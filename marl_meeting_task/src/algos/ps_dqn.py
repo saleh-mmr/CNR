@@ -28,7 +28,7 @@ class PS_DQN:
     def __init__(
         self,
         n_agents: int = 2,
-        input_dim: int = 6,  # observation vector: [own_x, own_y, other_x, other_y, goal_x, goal_y]
+        input_dim: int = 4,  # observation vector: [own_x, own_y, goal_x, goal_y]
         num_actions: int = 5,  # actions: up, down, left, right, stay
         hidden_dim: int = 64,
         learning_rate: float = 1e-3,
@@ -48,7 +48,7 @@ class PS_DQN:
         n_agents : int
             Number of agents (default: 2)
         input_dim : int
-            Dimension of observation vector (default: 6)
+            Dimension of observation vector (default: 4)
         num_actions : int
             Number of possible actions (default: 5)
         hidden_dim : int
@@ -234,6 +234,9 @@ class PS_DQN:
             - avg_episode_length: average episode length
             - avg_return: average cumulative reward
         """
+        # Set network to eval mode for inference
+        self.agent.q_network.eval()
+        
         eval_successes = []
         eval_lengths = []
         eval_returns = []
@@ -245,10 +248,15 @@ class PS_DQN:
             episode_terminated = False
             
             for t in range(max_steps):
-                # Greedy action selection (epsilon=0)
+                # Ensure network remains in eval mode
+                if self.agent.q_network.training:
+                    self.agent.q_network.eval()
+                
+                # Greedy action selection (epsilon=0) - use main network
                 actions = {}
                 for agent_id in range(self.n_agents):
                     with torch.no_grad():
+                        # Convert observation to float32 tensor (observations are int64 from env)
                         obs_tensor = torch.as_tensor(
                             obs[agent_id],
                             dtype=torch.float32,
@@ -274,6 +282,9 @@ class PS_DQN:
             eval_successes.append(1 if episode_terminated else 0)
             eval_lengths.append(t + 1)
             eval_returns.append(episode_reward)
+        
+        # Set network back to train mode
+        self.agent.q_network.train()
         
         # Compute evaluation metrics
         success_rate = np.mean(eval_successes)

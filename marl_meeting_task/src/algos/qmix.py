@@ -32,7 +32,7 @@ class QMIX:
     def __init__(
         self,
         n_agents: int = 2,
-        input_dim: int = 6,  # Local observation dimension
+        input_dim: int = 4,  # Local observation dimension: [own_x, own_y, goal_x, goal_y]
         state_dim: int = 6,  # Global state dimension: [a1_x, a1_y, a2_x, a2_y, g_x, g_y]
         num_actions: int = 5,
         hidden_dim: int = 64,
@@ -54,7 +54,7 @@ class QMIX:
         n_agents : int
             Number of agents (default: 2)
         input_dim : int
-            Dimension of local observation (default: 6)
+            Dimension of local observation (default: 4)
         state_dim : int
             Dimension of global state (default: 6)
         num_actions : int
@@ -421,6 +421,11 @@ class QMIX:
         Dict[str, float]
             Dictionary containing evaluation metrics
         """
+        # Set all networks to eval mode for inference
+        for agent in self.agents.values():
+            agent.q_network.eval()
+        self.mixing_network.eval()
+        
         eval_successes = []
         eval_lengths = []
         eval_returns = []
@@ -431,7 +436,15 @@ class QMIX:
             episode_terminated = False
             
             for t in range(max_steps):
-                # Greedy action selection (epsilon=0)
+                # Ensure networks remain in eval mode
+                for agent in self.agents.values():
+                    if agent.q_network.training:
+                        agent.q_network.eval()
+                if self.mixing_network.training:
+                    self.mixing_network.eval()
+                
+                # Greedy action selection (epsilon=0) - use main networks
+                # Explicitly pass epsilon=0.0 for greedy policy
                 actions = {}
                 for agent_id in range(self.n_agents):
                     actions[agent_id] = self.agents[agent_id].select_action(obs[agent_id], epsilon=0.0)
@@ -453,6 +466,11 @@ class QMIX:
             eval_lengths.append(t + 1)
             eval_returns.append(episode_reward)
         
+        # Set networks back to train mode
+        for agent in self.agents.values():
+            agent.q_network.train()
+        self.mixing_network.train()
+        
         success_rate = np.mean(eval_successes)
         avg_episode_length = np.mean(eval_lengths)
         avg_return = np.mean(eval_returns)
@@ -472,7 +490,6 @@ class QMIX:
         min_buffer_size: int = 1000,
         verbose: bool = True,
         log_dir: Optional[str] = "runs/qmix",
-        eval_freq: int = 100,
         eval_episodes: int = 20,
         env_seed: Optional[int] = None,
     ) -> Dict[str, Any]:
@@ -495,8 +512,6 @@ class QMIX:
             Whether to print training progress (default: True)
         log_dir : Optional[str]
             Directory for TensorBoard logs (default: "runs/qmix")
-        eval_freq : int
-            Run evaluation every N episodes (default: 100)
         eval_episodes : int
             Number of episodes to run during evaluation (default: 20)
         env_seed : Optional[int]
@@ -628,25 +643,6 @@ class QMIX:
                     avg_return=avg_return,
                 )
             
-            # Run evaluation
-            if eval_freq > 0 and (episode + 1) % eval_freq == 0:
-                eval_metrics = self.evaluate(env, n_episodes=eval_episodes, max_steps=max_steps)
-                
-                logger.tensorboard_log_evaluation(
-                    episode=episode,
-                    success_rate=eval_metrics['success_rate'],
-                    avg_episode_length=eval_metrics['avg_episode_length'],
-                    avg_return=eval_metrics['avg_return'],
-                )
-                
-                logger.evaluation(
-                    episode=episode + 1,
-                    success_rate=eval_metrics['success_rate'],
-                    avg_episode_length=eval_metrics['avg_episode_length'],
-                    avg_return=eval_metrics['avg_return'],
-                    is_final=False,
-                )
-            
             # Print progress
             if (episode + 1) % 100 == 0:
                 avg_reward = np.mean(episode_rewards[-100:])
@@ -663,6 +659,26 @@ class QMIX:
                     total_steps=self.total_steps,
                 )
         
+        # Run final evaluation after all training episodes
+        final_eval_metrics = self.evaluate(env, n_episodes=eval_episodes, max_steps=max_steps)
+        
+        # Log final evaluation metrics
+        logger.tensorboard_log_evaluation(
+            episode=max_episodes - 1,
+            success_rate=final_eval_metrics['success_rate'],
+            avg_episode_length=final_eval_metrics['avg_episode_length'],
+            avg_return=final_eval_metrics['avg_return'],
+        )
+        
+        # Print final evaluation results
+        logger.evaluation(
+            episode=None,
+            success_rate=final_eval_metrics['success_rate'],
+            avg_episode_length=final_eval_metrics['avg_episode_length'],
+            avg_return=final_eval_metrics['avg_return'],
+            is_final=True,
+        )
+        
         # Close logger (closes TensorBoard writer)
         logger.close()
         
@@ -672,5 +688,6 @@ class QMIX:
             'episode_successes': episode_successes,
             'episode_losses': episode_losses,
             'total_steps': self.total_steps,
+            'final_eval_metrics': final_eval_metrics,
         }
 
