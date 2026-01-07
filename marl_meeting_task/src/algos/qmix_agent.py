@@ -19,7 +19,8 @@ class QMIXAgent:
     def __init__(
         self,
         agent_id: int,
-        input_dim: int = 4,
+        n_agents: int,
+        input_dim: int = 4,  # Base observation dim (will have agent_id appended)
         num_actions: int = 5,
         hidden_dim: int = 64,
     ):
@@ -30,26 +31,34 @@ class QMIXAgent:
         -----------
         agent_id : int
             Unique identifier for this agent
+        n_agents : int
+            Total number of agents (for one-hot encoding)
         input_dim : int
-            Dimension of observation vector (default: 4)
+            Dimension of base observation vector (default: 4)
+            Note: agent_id will be appended as one-hot, so final input_dim = input_dim + n_agents
         num_actions : int
             Number of possible actions (default: 5)
         hidden_dim : int
             Hidden layer dimension for Q-network (default: 64)
         """
         self.agent_id = agent_id
+        self.n_agents = n_agents
+        self.base_input_dim = input_dim  # Base observation dimension
+        self.input_dim = input_dim + n_agents  # Final input dim (base + one-hot agent_id)
         self.num_actions = num_actions
         
         # Agent Q-network (main)
+        # Note: input_dim includes base observation + one-hot agent_id
         self.q_network = QValueNetwork(
-            input_dim=input_dim,
+            input_dim=self.input_dim,
             num_actions=num_actions,
             hidden_dim=hidden_dim
         ).to(device)
         
         # Agent Q-network (target)
+        # Note: input_dim includes base observation + one-hot agent_id
         self.target_network = QValueNetwork(
-            input_dim=input_dim,
+            input_dim=self.input_dim,
             num_actions=num_actions,
             hidden_dim=hidden_dim
         ).to(device)
@@ -58,6 +67,28 @@ class QMIXAgent:
     def update_target_network(self) -> None:
         """Copy weights from main Q-network to target network."""
         self.target_network.load_state_dict(self.q_network.state_dict())
+    
+    def _append_agent_id(self, obs: np.ndarray) -> np.ndarray:
+        """
+        Append one-hot agent ID to observation.
+        
+        Parameters:
+        -----------
+        obs : np.ndarray
+            Base observation vector of shape (base_input_dim,)
+            
+        Returns:
+        --------
+        np.ndarray
+            Observation with one-hot agent ID appended, shape (input_dim,)
+        """
+        # Create one-hot encoding for agent_id
+        agent_id_onehot = np.zeros(self.n_agents, dtype=np.float32)
+        agent_id_onehot[self.agent_id] = 1.0
+        
+        # Concatenate base observation with one-hot agent_id
+        obs_with_id = np.concatenate([obs, agent_id_onehot])
+        return obs_with_id
     
     def select_action(self, obs: np.ndarray, epsilon: float) -> int:
         """
@@ -75,13 +106,16 @@ class QMIXAgent:
         int
             Selected action index
         """
+        # Append one-hot agent ID to observation
+        obs_with_id = self._append_agent_id(obs)
+        
         # Ensure epsilon is exactly 0 for greedy policy
         if epsilon <= 0.0:
             # Exploitation: greedy action (no exploration)
             with torch.no_grad():
                 # Convert observation to float32 tensor (observations are int64 from env)
                 obs_tensor = torch.as_tensor(
-                    obs,
+                    obs_with_id,
                     dtype=torch.float32,
                     device=device
                 ).unsqueeze(0)  # Add batch dimension
@@ -99,7 +133,7 @@ class QMIXAgent:
                 # Exploitation: greedy action
                 with torch.no_grad():
                     obs_tensor = torch.as_tensor(
-                        obs,
+                        obs_with_id,
                         dtype=torch.float32,
                         device=device
                     ).unsqueeze(0)  # Add batch dimension

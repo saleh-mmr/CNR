@@ -75,7 +75,7 @@ def run_training(
         num_actions=5,
         hidden_dim=64,
         mixing_hidden_dim=128,  # Increased for better mixing capacity
-        learning_rate=1e-3,
+        learning_rate=3e-4,
         memory_capacity=10000,
         gamma=0.99,
         epsilon_start=1.0,
@@ -105,7 +105,7 @@ def run_training(
         min_buffer_size=3000,  # Increased warm-up period to reduce learning noise
         verbose=verbose,
         log_dir=log_dir,
-            eval_episodes=20,
+        eval_episodes=200,
         env_seed=seed,  # Pass seed for environment resets
     )
     

@@ -22,12 +22,12 @@ def test_qmix():
     # Initialize QMIX
     qmix = QMIX(
         n_agents=2,
-        input_dim=6,
+        input_dim=4,  # Base observation: [own_x, own_y, goal_x, goal_y]
         state_dim=6,
         num_actions=5,
         hidden_dim=64,
         mixing_hidden_dim=64,
-        learning_rate=1e-3,
+        learning_rate=3e-4,
         memory_capacity=1000,  # Small for testing
         gamma=0.99,
         epsilon_start=1.0,

@@ -37,7 +37,7 @@ class QMIX:
         num_actions: int = 5,
         hidden_dim: int = 64,
         mixing_hidden_dim: int = 128,  # Increased from 64 for better mixing capacity
-        learning_rate: float = 1e-3,
+        learning_rate: float = 3e-4,
         memory_capacity: int = 10000,
         gamma: float = 0.99,
         epsilon_start: float = 1.0,
@@ -101,10 +101,12 @@ class QMIX:
         self.grid_size = 5  # Default grid size (will be updated from env if needed)
         
         # Initialize agent Q-networks (one per agent)
+        # Note: input_dim is base observation dim, agent_id will be appended as one-hot
         self.agents: Dict[int, QMIXAgent] = {}
         for agent_id in range(n_agents):
             self.agents[agent_id] = QMIXAgent(
                 agent_id=agent_id,
+                n_agents=n_agents,
                 input_dim=input_dim,
                 num_actions=num_actions,
                 hidden_dim=hidden_dim,
@@ -150,10 +152,11 @@ class QMIX:
     def _print_initialization_summary(self, logger: Logger) -> None:
         """Print initialization summary."""
         logger.info(f"QMIX initialized with {self.n_agents} agents")
-        logger.info(f"  - Local observation dimension: {self.input_dim}")
+        logger.info(f"  - Base observation dimension: {self.input_dim}")
+        logger.info(f"  - Agent input dimension: {self.input_dim + self.n_agents} (base + one-hot agent_id)")
         logger.info(f"  - Global state dimension: {self.state_dim}")
         logger.info(f"  - Number of actions: {self.num_actions}")
-        logger.info(f"  - Agent Q-networks: {self.input_dim} -> {self.hidden_dim} -> {self.hidden_dim} -> {self.num_actions}")
+        logger.info(f"  - Agent Q-networks: {self.input_dim + self.n_agents} -> {self.hidden_dim} -> {self.hidden_dim} -> {self.num_actions}")
         logger.info(f"  - Mixing network: combines {self.n_agents} Q-values using state (hidden_dim={self.mixing_hidden_dim})")
         logger.info(f"  - Target networks: (update every {self.target_update_freq} episodes)")
         logger.info(f"  - Optimizer: Adam (lr={self.learning_rate})")
@@ -172,6 +175,48 @@ class QMIX:
         self.target_mixing_network.load_state_dict(self.mixing_network.state_dict())
         for agent in self.agents.values():
             agent.update_target_network()
+    
+    # ========================================================================
+    # Helper: Append Agent IDs to Observations
+    # ========================================================================
+    
+    def _append_agent_ids_batch(
+        self, 
+        observations: Dict[int, torch.Tensor]
+    ) -> Dict[int, torch.Tensor]:
+        """
+        Append one-hot agent IDs to batch observations.
+        
+        Parameters:
+        -----------
+        observations : Dict[int, torch.Tensor]
+            Batch observations keyed by agent_id, each of shape [batch_size, base_input_dim]
+            
+        Returns:
+        --------
+        Dict[int, torch.Tensor]
+            Observations with one-hot agent IDs appended, each of shape [batch_size, input_dim]
+        """
+        observations_with_id = {}
+        for agent_id in range(self.n_agents):
+            # Get base observation: [batch_size, base_input_dim]
+            base_obs = observations[agent_id]
+            
+            # Create one-hot agent_id: [batch_size, n_agents]
+            batch_size = base_obs.shape[0]
+            agent_id_onehot = torch.zeros(
+                batch_size, 
+                self.n_agents, 
+                dtype=torch.float32, 
+                device=device
+            )
+            agent_id_onehot[:, agent_id] = 1.0
+            
+            # Concatenate: [batch_size, base_input_dim + n_agents]
+            obs_with_id = torch.cat([base_obs, agent_id_onehot], dim=1)
+            observations_with_id[agent_id] = obs_with_id
+        
+        return observations_with_id
     
     # ========================================================================
     # Helper: Extract Global State
@@ -321,11 +366,15 @@ class QMIX:
         states, observations, actions, rewards, next_states, next_observations, dones = \
             self.replay_memory.sample(self.batch_size, self.n_agents)
         
+        # Append one-hot agent IDs to observations
+        observations_with_id = self._append_agent_ids_batch(observations)
+        next_observations_with_id = self._append_agent_ids_batch(next_observations)
+        
         # Compute current Q_tot(s, a_1, a_2, ...)
         # Get Q_i(o_i, a_i) for each agent
         agent_qs = []
         for agent_id in range(self.n_agents):
-            q_values = self.agents[agent_id].q_network(observations[agent_id])  # [batch_size, num_actions]
+            q_values = self.agents[agent_id].q_network(observations_with_id[agent_id])  # [batch_size, num_actions]
             # Select Q-value for taken action
             agent_q = q_values.gather(1, actions[agent_id].unsqueeze(1)).squeeze(1)  # [batch_size]
             agent_qs.append(agent_q)
@@ -343,14 +392,14 @@ class QMIX:
             # Step 1: Select greedy actions using online (main) networks
             next_actions = []
             for agent_id in range(self.n_agents):
-                next_q_values_online = self.agents[agent_id].q_network(next_observations[agent_id])  # [batch_size, num_actions]
+                next_q_values_online = self.agents[agent_id].q_network(next_observations_with_id[agent_id])  # [batch_size, num_actions]
                 next_action = next_q_values_online.argmax(1)  # [batch_size] - greedy action from online network
                 next_actions.append(next_action)
             
             # Step 2: Evaluate selected actions using target networks
             next_agent_qs = []
             for agent_id in range(self.n_agents):
-                next_q_values_target = self.agents[agent_id].target_network(next_observations[agent_id])  # [batch_size, num_actions]
+                next_q_values_target = self.agents[agent_id].target_network(next_observations_with_id[agent_id])  # [batch_size, num_actions]
                 # Evaluate the action selected by online network using target network
                 next_agent_q = next_q_values_target.gather(1, next_actions[agent_id].unsqueeze(1)).squeeze(1)  # [batch_size]
                 next_agent_qs.append(next_agent_q)
@@ -490,7 +539,7 @@ class QMIX:
         min_buffer_size: int = 1000,
         verbose: bool = True,
         log_dir: Optional[str] = "runs/qmix",
-        eval_episodes: int = 20,
+        eval_episodes: int = 200,
         env_seed: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
