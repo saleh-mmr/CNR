@@ -37,14 +37,14 @@ class QMIX:
         num_actions: int = 5,
         hidden_dim: int = 64,
         mixing_hidden_dim: int = 128,  # Increased from 64 for better mixing capacity
-        learning_rate: float = 3e-4,
+        learning_rate: float = 3e4,
         memory_capacity: int = 10000,
         gamma: float = 0.99,
         epsilon_start: float = 1.0,
         epsilon_end: float = 0.05,
         epsilon_decay_steps: int = 75000,  # Slowed down from 50000 for more gradual exploration decay
         batch_size: int = 32,
-        target_update_freq: int = 500,
+        target_update_freq: int = 100,
     ):
         """
         Initialize QMIX.
@@ -427,8 +427,8 @@ class QMIX:
         torch.nn.utils.clip_grad_norm_(all_params, max_norm=10.0)
         self.optimizer.step()
         
-        # Diagnostic: log Q-value statistics periodically (every 1000 steps)
-        if self.total_steps % 1000 == 0 and self._logger is not None:
+        # Diagnostic: log Q-value statistics periodically
+        if self.total_steps % 1500 == 0 and self._logger is not None:
             with torch.no_grad():
                 avg_q_tot = q_tot.mean().item()
                 avg_target = target.mean().item()
@@ -539,7 +539,7 @@ class QMIX:
         min_buffer_size: int = 1000,
         verbose: bool = True,
         log_dir: Optional[str] = "runs/qmix",
-        eval_episodes: int = 200,
+        eval_episodes: int = 1000,
         env_seed: Optional[int] = None,
     ) -> Dict[str, Any]:
         """

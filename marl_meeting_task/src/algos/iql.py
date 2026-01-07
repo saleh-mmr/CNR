@@ -29,7 +29,7 @@ class IQL:
         input_dim: int = 4,                     # observation vector: [own_x, own_y, goal_x, goal_y]
         num_actions: int = 5,                   # actions: up, down, left, right, stay
         hidden_dim: int = 64,
-        learning_rate: float = 1e-3,            # Default: 1e-3 as per hyperparameters
+        learning_rate: float = 7e-5,
         memory_capacity: int = 10000,
         gamma: float = 0.99,                    # Discount factor
         epsilon_start: float = 1.0,             # Initial epsilon

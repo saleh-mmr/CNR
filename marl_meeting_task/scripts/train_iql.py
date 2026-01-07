@@ -72,7 +72,7 @@ def run_training(
         input_dim=4,
         num_actions=5,
         hidden_dim=64,
-        learning_rate=1e-3,
+        learning_rate=7e-5,
         memory_capacity=10000,
         gamma=0.99,
         epsilon_start=1.0,
@@ -102,7 +102,7 @@ def run_training(
         min_buffer_size=1000,
         verbose=verbose,
         log_dir=log_dir,
-        eval_episodes=20,
+        eval_episodes=200,
         env_seed=seed,  # Pass seed for environment resets
     )
     

@@ -27,7 +27,7 @@ class IQLAgent:
         input_dim: int = 4,
         num_actions: int = 5,
         hidden_dim: int = 64,
-        learning_rate: float = 1e-3,
+        learning_rate: float = 7e-5,
         memory_capacity: int = 10000,
     ):
         """

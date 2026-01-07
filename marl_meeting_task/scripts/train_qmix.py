@@ -38,7 +38,7 @@ def set_seed(seed: int) -> None:
 
 def run_training(
     seed: int,
-    max_episodes: int = 1000,
+    max_episodes: int = 1500,
     log_dir: str = None,
     verbose: bool = True,
 ) -> Dict[str, Any]:
@@ -105,7 +105,7 @@ def run_training(
         min_buffer_size=3000,  # Increased warm-up period to reduce learning noise
         verbose=verbose,
         log_dir=log_dir,
-        eval_episodes=200,
+        eval_episodes=1000,
         env_seed=seed,  # Pass seed for environment resets
     )
     
@@ -238,7 +238,7 @@ def main():
     """Main training function."""
     # Configuration (matching IQL and PS-DQN protocol)
     SEEDS = [2025, 2026, 2027, 2028, 2029]  # Same seeds for fair comparison
-    MAX_EPISODES = 1000
+    MAX_EPISODES = 1500
     BASE_LOG_DIR = "runs/qmix_multi_seed"
     OUTPUT_DIR = "results"
     VERBOSE = True

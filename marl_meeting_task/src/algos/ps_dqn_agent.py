@@ -29,7 +29,7 @@ class PS_DQNAgent:
         input_dim: int = 4,
         num_actions: int = 5,
         hidden_dim: int = 64,
-        learning_rate: float = 1e-3,
+        learning_rate: float = 7e-5,
         memory_capacity: int = 10000,
         gamma: float = 0.99,
         batch_size: int = 32,
