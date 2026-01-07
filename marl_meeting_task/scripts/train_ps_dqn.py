@@ -34,12 +34,7 @@ def set_seed(seed: int) -> None:
         torch.backends.cudnn.benchmark = False
 
 
-def run_training(
-    seed: int,
-    max_episodes: int = 1000,
-    log_dir: str = None,
-    verbose: bool = True,
-) -> Dict[str, Any]:
+def run_training(seed, max_episodes, log_dir, verbose):
     """
     Run training for a single seed.
     
@@ -261,8 +256,6 @@ def main():
             results_data = {
                 'seed': stats['seed'],
                 'total_steps': stats['total_steps'],
-                # 'episode_rewards': stats['episode_rewards'],
-                # 'episode_lengths': stats['episode_lengths'],
                 'episode_successes': stats['episode_successes'],
                 'episode_losses': stats['episode_losses'],
                 'final_eval_metrics': stats['final_eval_metrics'],
