@@ -25,14 +25,14 @@ class PS_DQNAgent:
     
     def __init__(
         self,
-        n_agents: int = 2,
-        input_dim: int = 4,
-        num_actions: int = 5,
-        hidden_dim: int = 64,
-        learning_rate: float = 7e-5,
-        memory_capacity: int = 10000,
-        gamma: float = 0.99,
-        batch_size: int = 32,
+        n_agents: int,
+        input_dim: int,
+        num_actions: int,
+        hidden_dim: int,
+        learning_rate: float,
+        memory_capacity: int,
+        gamma: float,
+        batch_size: int,
     ):
         """
         Initialize Parameter-Shared DQN Agent.

@@ -24,11 +24,11 @@ class IQLAgent:
     def __init__(
         self,
         agent_id: int,
-        input_dim: int = 4,
-        num_actions: int = 5,
-        hidden_dim: int = 64,
-        learning_rate: float = 7e-5,
-        memory_capacity: int = 10000,
+        input_dim: int,
+        num_actions: int,
+        hidden_dim: int,
+        learning_rate: float,
+        memory_capacity: int,
     ):
         """
         Initialize an independent Q-learning agent.

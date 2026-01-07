@@ -31,20 +31,20 @@ class QMIX:
     
     def __init__(
         self,
-        n_agents: int = 2,
-        input_dim: int = 4,  # Local observation dimension: [own_x, own_y, goal_x, goal_y]
-        state_dim: int = 6,  # Global state dimension: [a1_x, a1_y, a2_x, a2_y, g_x, g_y]
-        num_actions: int = 5,
-        hidden_dim: int = 64,
-        mixing_hidden_dim: int = 128,  # Increased from 64 for better mixing capacity
-        learning_rate: float = 3e4,
-        memory_capacity: int = 10000,
-        gamma: float = 0.99,
-        epsilon_start: float = 1.0,
-        epsilon_end: float = 0.05,
-        epsilon_decay_steps: int = 75000,  # Slowed down from 50000 for more gradual exploration decay
-        batch_size: int = 32,
-        target_update_freq: int = 100,
+        n_agents: int,
+        input_dim: int,  # Local observation dimension: [own_x, own_y, goal_x, goal_y]
+        state_dim: int,  # Global state dimension: [a1_x, a1_y, a2_x, a2_y, g_x, g_y]
+        num_actions: int,
+        hidden_dim: int,
+        mixing_hidden_dim: int,  # Increased from 64 for better mixing capacity
+        learning_rate: float,
+        memory_capacity: int,
+        gamma: float,
+        epsilon_start,
+        epsilon_end,
+        epsilon_decay_steps,  # Slowed down from 50000 for more gradual exploration decay
+        batch_size,
+        target_update_freq,
     ):
         """
         Initialize QMIX.
@@ -427,20 +427,6 @@ class QMIX:
         torch.nn.utils.clip_grad_norm_(all_params, max_norm=10.0)
         self.optimizer.step()
         
-        # Diagnostic: log Q-value statistics periodically
-        if self.total_steps % 1500 == 0 and self._logger is not None:
-            with torch.no_grad():
-                avg_q_tot = q_tot.mean().item()
-                avg_target = target.mean().item()
-                avg_agent_qs = agent_qs.mean().item()
-                self._logger.tensorboard_log_diagnostic(
-                    step=self.total_steps,
-                    loss=loss.item(),
-                    q_tot=avg_q_tot,
-                    target=avg_target,
-                    agent_qs=[avg_agent_qs],  # Single value for average
-                )
-        
         return loss.item()
     
     # ========================================================================
@@ -450,7 +436,7 @@ class QMIX:
     def evaluate(
         self,
         env,
-        n_episodes: int = 20,
+        n_episodes: int = 500,
         max_steps: int = 50,
     ) -> Dict[str, float]:
         """
@@ -539,7 +525,7 @@ class QMIX:
         min_buffer_size: int = 1000,
         verbose: bool = True,
         log_dir: Optional[str] = "runs/qmix",
-        eval_episodes: int = 1000,
+        eval_episodes: int = 500,
         env_seed: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
@@ -669,29 +655,6 @@ class QMIX:
                 length_window.pop(0)
                 return_window.pop(0)
             
-            # Log to TensorBoard and console
-            logger.tensorboard_log_metrics(
-                episode=episode,
-                success=episode_success,
-                length=episode_length,
-                return_val=episode_reward,
-                loss=episode_losses[-1],
-                epsilon=self.get_epsilon(),
-            )
-            
-            # Moving averages
-            if len(success_window) >= window_size:
-                success_rate = np.mean(success_window)
-                avg_episode_length = np.mean(length_window)
-                avg_return = np.mean(return_window)
-                
-                logger.tensorboard_log_moving_averages(
-                    episode=episode,
-                    success_rate=success_rate,
-                    avg_episode_length=avg_episode_length,
-                    avg_return=avg_return,
-                )
-            
             # Print progress
             if (episode + 1) % 100 == 0:
                 avg_reward = np.mean(episode_rewards[-100:])
@@ -710,14 +673,6 @@ class QMIX:
         
         # Run final evaluation after all training episodes
         final_eval_metrics = self.evaluate(env, n_episodes=eval_episodes, max_steps=max_steps)
-        
-        # Log final evaluation metrics
-        logger.tensorboard_log_evaluation(
-            episode=max_episodes - 1,
-            success_rate=final_eval_metrics['success_rate'],
-            avg_episode_length=final_eval_metrics['avg_episode_length'],
-            avg_return=final_eval_metrics['avg_return'],
-        )
         
         # Print final evaluation results
         logger.evaluation(

@@ -6,10 +6,8 @@ Matches IQL and PS-DQN training protocol for fair comparison.
 """
 
 import os
-import json
 import numpy as np
 import torch
-from datetime import datetime
 from typing import Dict, List, Any
 
 from marl_meeting_task.src.env.meeting_gridworld import MeetingGridworldEnv
@@ -36,12 +34,7 @@ def set_seed(seed: int) -> None:
         torch.backends.cudnn.benchmark = False
 
 
-def run_training(
-    seed: int,
-    max_episodes: int = 1500,
-    log_dir: str = None,
-    verbose: bool = True,
-) -> Dict[str, Any]:
+def run_training(seed, max_episodes, log_dir, verbose):
     """
     Run training for a single seed.
     
@@ -64,25 +57,55 @@ def run_training(
     # Set seed for reproducibility
     set_seed(seed)
     
+    # Define all important hyperparameters in a single place so that
+    # any change is automatically reflected in the JSON result file.
+    hyperparameters: Dict[str, Any] = {
+        'max_episodes': max_episodes,
+        'learning_rate': 3e-4,
+        'observation_dim': 4,          # local observation base dim
+        'agent_input_dim': 6,          # local obs + one-hot agent id
+        'state_dim': 6,                # global state dim
+        'network_size': 64,            # hidden_dim for agent networks
+        'mixing_network_size': 128,    # mixing_hidden_dim
+        'activation_function': 'ReLU', # agent networks
+        'mixing_activation': 'ELU',    # mixing network
+        'num_actions': 5,
+        'batch_size': 32,
+        'memory_capacity': 10000,
+        'gamma': 0.99,
+        'epsilon_start': 1.0,
+        'epsilon_end': 0.05,
+        'epsilon_decay_steps': 75000,
+        'target_update_freq': 50,
+        'max_steps': 50,
+        'min_buffer_size': 3000,
+        'train_freq': 1,
+        'eval_episodes': 200,
+    }
+    
     # Create environment
-    env = MeetingGridworldEnv(grid_size=5, n_agents=2, max_steps=50)
+    env = MeetingGridworldEnv(
+        grid_size=5,
+        n_agents=2,
+        max_steps=hyperparameters['max_steps'],
+    )
     
     # Initialize QMIX
     qmix = QMIX(
         n_agents=2,
-        input_dim=4,  # Local observation dimension: [own_x, own_y, goal_x, goal_y]
-        state_dim=6,  # Global state dimension: [a1_x, a1_y, a2_x, a2_y, g_x, g_y]
-        num_actions=5,
-        hidden_dim=64,
-        mixing_hidden_dim=128,  # Increased for better mixing capacity
-        learning_rate=3e-4,
-        memory_capacity=10000,
-        gamma=0.99,
-        epsilon_start=1.0,
-        epsilon_end=0.05,
-        epsilon_decay_steps=75000,  # Slowed down for more gradual exploration decay
-        batch_size=32,
-        target_update_freq=50,  # Update target networks every N episodes
+        input_dim=hyperparameters['observation_dim'],   # local observation base dim
+        state_dim=hyperparameters['state_dim'],         # global state dim
+        num_actions=hyperparameters['num_actions'],
+        hidden_dim=hyperparameters['network_size'],
+        mixing_hidden_dim=hyperparameters['mixing_network_size'],
+        learning_rate=hyperparameters['learning_rate'],
+        memory_capacity=hyperparameters['memory_capacity'],
+        gamma=hyperparameters['gamma'],
+        epsilon_start=hyperparameters['epsilon_start'],
+        epsilon_end=hyperparameters['epsilon_end'],
+        epsilon_decay_steps=hyperparameters['epsilon_decay_steps'],
+        batch_size=hyperparameters['batch_size'],
+        target_update_freq=hyperparameters['target_update_freq'],
     )
     
     # Set log directory for this seed
@@ -100,17 +123,20 @@ def run_training(
     stats = qmix.train(
         env=env,
         max_episodes=max_episodes,
-        max_steps=50,
-        train_freq=1,
-        min_buffer_size=3000,  # Increased warm-up period to reduce learning noise
+        max_steps=hyperparameters['max_steps'],
+        train_freq=hyperparameters['train_freq'],
+        min_buffer_size=hyperparameters['min_buffer_size'],
         verbose=verbose,
         log_dir=log_dir,
-        eval_episodes=1000,
+        eval_episodes=hyperparameters['eval_episodes'],
         env_seed=seed,  # Pass seed for environment resets
     )
     
     # Add seed to stats
     stats['seed'] = seed
+    
+    # Attach hyperparameters used for this run
+    stats['hyperparameters'] = hyperparameters
     
     return stats
 
@@ -187,65 +213,18 @@ def aggregate_results(all_results: List[Dict[str, Any]]) -> Dict[str, Any]:
     return aggregated
 
 
-def save_results(
-    all_results: List[Dict[str, Any]],
-    aggregated: Dict[str, Any],
-    output_dir: str = "results",
-) -> None:
-    """
-    Save results to JSON files.
-    
-    Parameters:
-    -----------
-    all_results : List[Dict[str, Any]]
-        Results from each seed
-    aggregated : Dict[str, Any]
-        Aggregated statistics
-    output_dir : str
-        Directory to save results
-    """
-    os.makedirs(output_dir, exist_ok=True)
-    
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    # Save individual seed results
-    individual_file = os.path.join(output_dir, f"qmix_individual_seeds_{timestamp}.json")
-    with open(individual_file, 'w') as f:
-        # Convert numpy arrays to lists for JSON serialization
-        json_results = []
-        for r in all_results:
-            json_r = {
-                'seed': r['seed'],
-                'total_steps': r['total_steps'],
-                'episode_rewards': r['episode_rewards'],
-                'episode_lengths': r['episode_lengths'],
-                'episode_successes': r['episode_successes'],
-            }
-            json_results.append(json_r)
-        json.dump(json_results, f, indent=2)
-    
-    # Save aggregated results
-    aggregated_file = os.path.join(output_dir, f"qmix_aggregated_{timestamp}.json")
-    with open(aggregated_file, 'w') as f:
-        json.dump(aggregated, f, indent=2)
-    
-    print(f"\nResults saved:")
-    print(f"  Individual seeds: {individual_file}")
-    print(f"  Aggregated: {aggregated_file}")
-
-
 def main():
     """Main training function."""
     # Configuration (matching IQL and PS-DQN protocol)
     SEEDS = [2025, 2026, 2027, 2028, 2029]  # Same seeds for fair comparison
-    MAX_EPISODES = 1500
+    MAX_EPISODES = 1000
     BASE_LOG_DIR = "runs/qmix_multi_seed"
-    OUTPUT_DIR = "results"
+    OUTPUT_DIR = "../results"  # Results folder is in marl_meeting_task/
     VERBOSE = True
     
     # Initialize logger for training script
     logger = Logger(verbose=VERBOSE, log_dir=None)
-    
+
     logger.summary(
         title="QMIX Multi-Seed Training",
         items={
@@ -255,13 +234,16 @@ def main():
             "Results directory": OUTPUT_DIR,
         }
     )
-    
+
+    # Create a new run directory under results/qmix/{counter}
+    run_dir = logger.create_run_dir('qmix', base_dir=OUTPUT_DIR)
+
     # Run training for each seed
     all_results = []
-    
+
     for i, seed in enumerate(SEEDS, 1):
         logger.info(f"\n[{i}/{len(SEEDS)}] Starting training with seed {seed}...")
-        
+
         try:
             stats = run_training(
                 seed=seed,
@@ -270,31 +252,57 @@ def main():
                 verbose=VERBOSE,
             )
             all_results.append(stats)
-            
+
             # Print summary for this seed
             final_success_rate = np.mean(stats['episode_successes'][-100:])
             final_avg_length = np.mean(stats['episode_lengths'][-100:])
             final_avg_return = np.mean(stats['episode_rewards'][-100:])
-            
+
             logger.info(f"\n[Seed {seed} Summary]")
             logger.info(f"  Final Success Rate (last 100): {final_success_rate:.2%}")
             logger.info(f"  Final Avg Length (last 100): {final_avg_length:.1f}")
             logger.info(f"  Final Avg Return (last 100): {final_avg_return:.2f}")
             logger.info(f"  Total Steps: {stats['total_steps']}")
-            
+
+            # Save per-seed JSON into the run directory
+            results_data = {
+                'seed': stats['seed'],
+                'total_steps': stats['total_steps'],
+                'episode_rewards': stats['episode_rewards'],
+                'episode_lengths': stats['episode_lengths'],
+                'episode_successes': stats['episode_successes'],
+                'episode_losses': stats['episode_losses'],
+                'final_eval_metrics': stats['final_eval_metrics'],
+            }
+
+            logger.save_seed_result_in_run(
+                run_dir=run_dir,
+                seed=seed,
+                hyperparameters=stats['hyperparameters'],
+                results=results_data,
+            )
+
         except Exception as e:
             logger.info(f"\n[ERROR] Training failed for seed {seed}: {e}")
             import traceback
             traceback.print_exc()
             continue
-    
+
     if len(all_results) == 0:
         logger.info("\n[ERROR] No successful training runs!")
         return
-    
+
     # Aggregate results
     aggregated = aggregate_results(all_results)
-    
+
+    # Save aggregated.json into the run directory (include hyperparameters and per-seed details)
+    aggregated_save = {
+        'hyperparameters': all_results[0]['hyperparameters'] if all_results else {},
+        'aggregated': aggregated,
+        'per_seed': all_results,
+    }
+    logger.save_aggregated_run(run_dir, aggregated_save)
+
     # Print aggregated summary using logger
     logger.aggregated_results(
         n_seeds=aggregated['n_seeds'],
@@ -306,10 +314,7 @@ def main():
         return_mean=aggregated['final_metrics']['final_return_mean'],
         return_std=aggregated['final_metrics']['final_return_std'],
     )
-    
-    # Save results
-    save_results(all_results, aggregated, OUTPUT_DIR)
-    
+
     logger.training_complete(BASE_LOG_DIR)
 
 

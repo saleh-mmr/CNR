@@ -1,8 +1,7 @@
 """
-Training script for Parameter-Shared DQN (PS-DQN) on Meeting Gridworld.
+Training script for VDN on Meeting Gridworld.
 
-Runs training with multiple seeds and collects aggregated results.
-Matches IQL training protocol for fair comparison.
+Matches the structure and protocol used by existing training scripts (QMIX/PS-DQN).
 """
 
 import os
@@ -11,19 +10,11 @@ import torch
 from typing import Dict, List, Any
 
 from marl_meeting_task.src.env.meeting_gridworld import MeetingGridworldEnv
-from marl_meeting_task.src.algos.ps_dqn import PS_DQN
+from marl_meeting_task.src.algos.vdn import VDN
 from marl_meeting_task.src.utils.logger import Logger
 
 
 def set_seed(seed: int) -> None:
-    """
-    Set random seed for reproducibility.
-    
-    Parameters:
-    -----------
-    seed : int
-        Random seed value
-    """
     np.random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     torch.manual_seed(seed)
@@ -34,59 +25,35 @@ def set_seed(seed: int) -> None:
         torch.backends.cudnn.benchmark = False
 
 
-def run_training(
-    seed: int,
-    max_episodes: int = 1000,
-    log_dir: str = None,
-    verbose: bool = True,
-) -> Dict[str, Any]:
-    """
-    Run training for a single seed.
-    
-    Parameters:
-    -----------
-    seed : int
-        Random seed for this run
-    max_episodes : int
-        Maximum number of training episodes
-    log_dir : str
-        Directory for TensorBoard logs (None = default)
-    verbose : bool
-        Whether to print progress
-        
-    Returns:
-    --------
-    Dict[str, Any]
-        Training statistics for this seed
-    """
-    # Set seed for reproducibility
+def run_training(seed, max_episodes, log_dir, verbose):
     set_seed(seed)
-    
-    # Define all important hyperparameters in a single place so that
-    # any change is automatically reflected in the JSON result file.
+
     hyperparameters: Dict[str, Any] = {
         'max_episodes': max_episodes,
         'learning_rate': 3e-4,
         'observation_dim': 4,
-        'network_size': 64,  # hidden_dim
-        'activation_function': 'ReLU',
+        'state_dim': 6,
+        'network_size': 64,
         'num_actions': 5,
         'batch_size': 32,
         'memory_capacity': 10000,
         'gamma': 0.99,
         'epsilon_start': 1.0,
         'epsilon_end': 0.05,
-        'epsilon_decay_steps': 50000,
-        'target_update_freq': 500,
+        'epsilon_decay_steps': 75000,
+        'target_update_freq': 50,
+        'max_steps': 50,
+        'min_buffer_size': 3000,
+        'train_freq': 1,
+        'eval_episodes': 200,
     }
-    
-    # Create environment
-    env = MeetingGridworldEnv(grid_size=5, n_agents=2, max_steps=50)
-    
-    # Initialize PS-DQN
-    ps_dqn = PS_DQN(
+
+    env = MeetingGridworldEnv(grid_size=5, n_agents=2, max_steps=hyperparameters['max_steps'])
+
+    vdn = VDN(
         n_agents=2,
         input_dim=hyperparameters['observation_dim'],
+        state_dim=hyperparameters['state_dim'],
         num_actions=hyperparameters['num_actions'],
         hidden_dim=hyperparameters['network_size'],
         learning_rate=hyperparameters['learning_rate'],
@@ -98,80 +65,54 @@ def run_training(
         batch_size=hyperparameters['batch_size'],
         target_update_freq=hyperparameters['target_update_freq'],
     )
-    
-    # Set log directory for this seed
+
     if log_dir is None:
-        log_dir = f"runs/ps_dqn_seed_{seed}"
+        log_dir = f"runs/vdn_seed_{seed}"
     else:
         log_dir = f"{log_dir}/seed_{seed}"
-    
-    # Train
+
     if verbose:
         print(f"\n{'='*60}")
-        print(f"Training with seed: {seed}")
+        print(f"Training VDN with seed: {seed}")
         print(f"{'='*60}\n")
-    
-    stats = ps_dqn.train(
+
+    stats = vdn.train(
         env=env,
         max_episodes=max_episodes,
-        max_steps=50,
-        train_freq=1,
-        min_buffer_size=1000,
+        max_steps=hyperparameters['max_steps'],
+        train_freq=hyperparameters['train_freq'],
+        min_buffer_size=hyperparameters['min_buffer_size'],
         verbose=verbose,
         log_dir=log_dir,
-        eval_episodes=200,
-        env_seed=seed,  # Pass seed for environment resets
+        eval_episodes=hyperparameters['eval_episodes'],
+        env_seed=seed,
     )
-    
-    # Add seed to stats
+
     stats['seed'] = seed
-    
-    # Attach hyperparameters used for this run
     stats['hyperparameters'] = hyperparameters
-    
     return stats
 
 
 def aggregate_results(all_results: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    Aggregate results across multiple seeds.
-    
-    Parameters:
-    -----------
-    all_results : List[Dict[str, Any]]
-        List of results dictionaries from each seed
-        
-    Returns:
-    --------
-    Dict[str, Any]
-        Aggregated statistics (mean, std, min, max)
-    """
     n_seeds = len(all_results)
-    
-    # Extract arrays for aggregation
     all_rewards = [r['episode_rewards'] for r in all_results]
     all_lengths = [r['episode_lengths'] for r in all_results]
     all_successes = [r['episode_successes'] for r in all_results]
-    
-    # Find maximum episode length (in case runs had different lengths)
+
     max_episodes = max(len(r) for r in all_rewards)
-    
-    # Pad arrays to same length (with NaN for missing episodes)
+
     padded_rewards = []
     padded_lengths = []
     padded_successes = []
-    
     for rewards, lengths, successes in zip(all_rewards, all_lengths, all_successes):
         padded_rewards.append(rewards + [np.nan] * (max_episodes - len(rewards)))
         padded_lengths.append(lengths + [np.nan] * (max_episodes - len(lengths)))
         padded_successes.append(successes + [np.nan] * (max_episodes - len(successes)))
-    
-    # Convert to numpy arrays
+
     rewards_array = np.array(padded_rewards)
     lengths_array = np.array(padded_lengths)
     successes_array = np.array(padded_successes)
-    
-    # Compute statistics
+
     aggregated = {
         'n_seeds': n_seeds,
         'seeds': [r['seed'] for r in all_results],
@@ -200,26 +141,22 @@ def aggregate_results(all_results: List[Dict[str, Any]]) -> Dict[str, Any]:
             'final_return_std': float(np.nanstd([np.mean(r[-100:]) for r in all_rewards])),
         },
     }
-    
+
     return aggregated
 
 
-
-
 def main():
-    """Main training function."""
-    # Configuration (matching IQL protocol)
-    SEEDS = [2025, 2026, 2027, 2028, 2029]  # Same seeds as IQL for fair comparison
+    SEEDS = [2025, 2026, 2027, 2028, 2029]
     MAX_EPISODES = 1000
-    BASE_LOG_DIR = "runs/ps_dqn_multi_seed"
-    OUTPUT_DIR = "../results"  # Results folder is in marl_meeting_task/
+    BASE_LOG_DIR = "runs/vdn_multi_seed"
+    OUTPUT_DIR = "../results"
     VERBOSE = True
-    
+
     # Initialize logger for training script
     logger = Logger(verbose=VERBOSE, log_dir=None)
 
     logger.summary(
-        title="PS-DQN Multi-Seed Training",
+        title="VDN Multi-Seed Training",
         items={
             "Seeds": SEEDS,
             "Max episodes per seed": MAX_EPISODES,
@@ -228,25 +165,16 @@ def main():
         }
     )
 
-    # Create a new run directory under results/ps_dqn/{counter}
-    run_dir = logger.create_run_dir('ps_dqn', base_dir=OUTPUT_DIR)
+    # Create a new run directory under results/vdn/{counter}
+    run_dir = logger.create_run_dir('vdn', base_dir=OUTPUT_DIR)
 
-    # Run training for each seed
     all_results = []
-
     for i, seed in enumerate(SEEDS, 1):
-        logger.info(f"\n[{i}/{len(SEEDS)}] Starting training with seed {seed}...")
-
+        logger.info(f"\n[{i}/{len(SEEDS)}] Starting VDN training with seed {seed}...")
         try:
-            stats = run_training(
-                seed=seed,
-                max_episodes=MAX_EPISODES,
-                log_dir=BASE_LOG_DIR,
-                verbose=VERBOSE,
-            )
+            stats = run_training(seed=seed, max_episodes=MAX_EPISODES, log_dir=BASE_LOG_DIR, verbose=VERBOSE)
             all_results.append(stats)
 
-            # Print summary for this seed
             final_success_rate = np.mean(stats['episode_successes'][-100:])
             final_avg_length = np.mean(stats['episode_lengths'][-100:])
             final_avg_return = np.mean(stats['episode_rewards'][-100:])
@@ -267,28 +195,20 @@ def main():
                 'episode_losses': stats['episode_losses'],
                 'final_eval_metrics': stats['final_eval_metrics'],
             }
-
-            logger.save_seed_result_in_run(
-                run_dir=run_dir,
-                seed=seed,
-                hyperparameters=stats['hyperparameters'],
-                results=results_data,
-            )
+            logger.save_seed_result_in_run(run_dir, seed=seed, hyperparameters=stats['hyperparameters'], results=results_data)
 
         except Exception as e:
-            logger.info(f"\n[ERROR] Training failed for seed {seed}: {e}")
+            logger.info(f"\n[ERROR] VDN training failed for seed {seed}: {e}")
             import traceback
             traceback.print_exc()
             continue
 
     if len(all_results) == 0:
-        logger.info("\n[ERROR] No successful training runs!")
+        logger.info("\n[ERROR] No successful VDN training runs!")
         return
 
-    # Aggregate results
     aggregated = aggregate_results(all_results)
 
-    # Save aggregated.json into the run directory (include hyperparameters and per-seed details)
     aggregated_save = {
         'hyperparameters': all_results[0]['hyperparameters'] if all_results else {},
         'aggregated': aggregated,
@@ -296,7 +216,6 @@ def main():
     }
     logger.save_aggregated_run(run_dir, aggregated_save)
 
-    # Print aggregated summary using logger
     logger.aggregated_results(
         n_seeds=aggregated['n_seeds'],
         seeds=aggregated['seeds'],

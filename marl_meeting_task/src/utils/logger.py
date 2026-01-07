@@ -1,21 +1,23 @@
 """
 Logger class for handling all logging responsibilities in the MARL project.
-Handles both console logging and TensorBoard logging.
+Handles console logging, TensorBoard logging, and saving JSON result files.
 """
 
 import os
+import json
 from typing import Optional, Dict, Any
-from torch.utils.tensorboard import SummaryWriter
 
 
 class Logger:
     """
-    Centralized logger for console and TensorBoard logging.
-    
-    This class handles all logging responsibilities:
+    Centralized logger for console and result saving.
+
+    This class handles all logging responsibilities that remain enabled:
     - Console output (info, debug, progress, evaluation results)
-    - TensorBoard metrics logging
-    - Configuration (verbose mode, log directory)
+    - Saving per-seed JSON result files with hyperparameters and metrics
+    - Configuration (verbose mode)
+
+    TensorBoard support has been removed per project preference.
     """
     
     def __init__(
@@ -31,18 +33,12 @@ class Logger:
         verbose : bool
             Whether to print to console (default: True)
         log_dir : Optional[str]
-            Directory for TensorBoard logs (default: None)
-            If None, TensorBoard logging is disabled
+            Ignored (kept for API compatibility). TensorBoard logging disabled.
         """
         self.verbose = verbose
-        self.log_dir = log_dir
-        self.writer: Optional[SummaryWriter] = None
-        
-        # Initialize TensorBoard writer if log_dir is provided
-        if self.log_dir is not None:
-            os.makedirs(self.log_dir, exist_ok=True)
-            self.writer = SummaryWriter(log_dir=self.log_dir)
-    
+        # log_dir parameter kept for backward compatibility but not used
+        self.log_dir = None
+
     def info(self, message: str) -> None:
         """Log an info message to console."""
         if self.verbose:
@@ -145,157 +141,6 @@ class Logger:
                       f"Avg Return: {avg_return:.2f}")
             self.blank_line()
     
-    def tensorboard_log_scalar(
-        self,
-        tag: str,
-        scalar_value: float,
-        global_step: int,
-    ) -> None:
-        """
-        Log a scalar value to TensorBoard.
-        
-        Parameters:
-        -----------
-        tag : str
-            Tag for the scalar (e.g., 'episode/success')
-        scalar_value : float
-            Scalar value to log
-        global_step : int
-            Global step number
-        """
-        if self.writer is not None:
-            self.writer.add_scalar(tag, scalar_value, global_step)
-    
-    def tensorboard_log_metrics(
-        self,
-        episode: int,
-        success: int,
-        length: int,
-        return_val: float,
-        loss: Optional[float] = None,
-        epsilon: Optional[float] = None,
-    ) -> None:
-        """
-        Log episode metrics to TensorBoard.
-        
-        Parameters:
-        -----------
-        episode : int
-            Episode number
-        success : int
-            Success (0 or 1)
-        length : int
-            Episode length
-        return_val : float
-            Episode return
-        loss : Optional[float]
-            Training loss (default: None)
-        epsilon : Optional[float]
-            Current epsilon (default: None)
-        """
-        if self.writer is None:
-            return
-        
-        self.tensorboard_log_scalar('episode/success', success, episode)
-        self.tensorboard_log_scalar('episode/length', length, episode)
-        self.tensorboard_log_scalar('episode/return', return_val, episode)
-        
-        if loss is not None:
-            self.tensorboard_log_scalar('loss/training', loss, episode)
-        
-        if epsilon is not None:
-            self.tensorboard_log_scalar('exploration/epsilon', epsilon, episode)
-    
-    def tensorboard_log_moving_averages(
-        self,
-        episode: int,
-        success_rate: float,
-        avg_episode_length: float,
-        avg_return: float,
-    ) -> None:
-        """
-        Log moving averages to TensorBoard.
-        
-        Parameters:
-        -----------
-        episode : int
-            Episode number
-        success_rate : float
-            Success rate over window
-        avg_episode_length : float
-            Average episode length over window
-        avg_return : float
-            Average return over window
-        """
-        if self.writer is None:
-            return
-        
-        self.tensorboard_log_scalar('metrics/success_rate', success_rate, episode)
-        self.tensorboard_log_scalar('metrics/episode_length', avg_episode_length, episode)
-        self.tensorboard_log_scalar('metrics/return', avg_return, episode)
-    
-    def tensorboard_log_evaluation(
-        self,
-        episode: int,
-        success_rate: float,
-        avg_episode_length: float,
-        avg_return: float,
-    ) -> None:
-        """
-        Log evaluation metrics to TensorBoard.
-        
-        Parameters:
-        -----------
-        episode : int
-            Episode number
-        success_rate : float
-            Evaluation success rate
-        avg_episode_length : float
-            Average episode length
-        avg_return : float
-            Average return
-        """
-        if self.writer is None:
-            return
-        
-        self.tensorboard_log_scalar('eval/success_rate', success_rate, episode)
-        self.tensorboard_log_scalar('eval/episode_length', avg_episode_length, episode)
-        self.tensorboard_log_scalar('eval/return', avg_return, episode)
-    
-    def tensorboard_log_diagnostic(
-        self,
-        step: int,
-        loss: float,
-        q_tot: float,
-        target: float,
-        agent_qs: list,
-    ) -> None:
-        """
-        Log diagnostic information to TensorBoard (e.g., for QMIX).
-        
-        Parameters:
-        -----------
-        step : int
-            Training step
-        loss : float
-            Loss value
-        q_tot : float
-            Total Q value
-        target : float
-            Target Q value
-        agent_qs : list
-            List of agent Q values
-        """
-        if self.writer is None:
-            return
-        
-        self.tensorboard_log_scalar('diagnostic/loss', loss, step)
-        self.tensorboard_log_scalar('diagnostic/q_tot', q_tot, step)
-        self.tensorboard_log_scalar('diagnostic/target', target, step)
-        
-        for i, q_val in enumerate(agent_qs):
-            self.tensorboard_log_scalar(f'diagnostic/agent_{i}_q', q_val, step)
-    
     def summary(
         self,
         title: str,
@@ -378,11 +223,11 @@ class Logger:
         self.info(f"    Success Rate: {success_rate_mean:.2%} ± {success_rate_std:.2%}")
         self.info(f"    Episode Length: {episode_length_mean:.1f} ± {episode_length_std:.1f}")
         self.info(f"    Return: {return_mean:.2f} ± {return_std:.2f}")
-    
+
     def training_complete(self, log_dir: str) -> None:
         """
-        Print training completion message with TensorBoard instructions.
-        
+        Print training completion message.
+
         Parameters:
         -----------
         log_dir : str
@@ -390,29 +235,170 @@ class Logger:
         """
         if not self.verbose:
             return
-        
+
         self.blank_line()
         self.separator()
         self.info("Training completed!")
         self.separator()
         self.blank_line()
-        self.info("To view TensorBoard logs:")
-        self.info(f"  tensorboard --logdir {log_dir}")
+
+    # ------------------------------------------------------------------
+    # JSON result saving utilities
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _get_next_counter(algorithm_dir: str, seed: int) -> int:
+        """
+        Get the next counter value for a seed folder.
+        
+        The counter is inferred from existing files named 'result_{i}.json'.
+        """
+        seed_dir = os.path.join(algorithm_dir, str(seed))
+        if not os.path.exists(seed_dir):
+            return 0
+        
+        existing_files = [
+            f for f in os.listdir(seed_dir)
+            if f.startswith("result_") and f.endswith(".json")
+        ]
+        if not existing_files:
+            return 0
+        
+        counters = []
+        for filename in existing_files:
+            try:
+                counter = int(filename.replace("result_", "").replace(".json", ""))
+                counters.append(counter)
+            except ValueError:
+                continue
+        
+        return max(counters) + 1 if counters else 0
     
+    def save_seed_result(
+        self,
+        algorithm: str,
+        seed: int,
+        hyperparameters: Dict[str, Any],
+        results: Dict[str, Any],
+        base_dir: str = "results",
+    ) -> str:
+        """
+        Save results for a single seed with hyperparameters to a JSON file.
+        
+        Directory structure:
+            {base_dir}/{algorithm}/{seed}/result_{counter}.json
+        
+        Parameters:
+        -----------
+        algorithm : str
+            Algorithm name (e.g., 'qmix', 'iql', 'ps_dqn')
+        seed : int
+            Seed number
+        hyperparameters : Dict[str, Any]
+            Dictionary of hyperparameters (taken from the actual config used)
+        results : Dict[str, Any]
+            Dictionary of results/metrics
+        base_dir : str
+            Base directory for results (default: "results")
+        
+        Returns:
+        --------
+        str
+            Path to the saved JSON file.
+        """
+        # Create directory structure: base_dir/{algorithm}/{seed}/
+        algorithm_dir = os.path.join(base_dir, algorithm)
+        seed_dir = os.path.join(algorithm_dir, str(seed))
+        os.makedirs(seed_dir, exist_ok=True)
+        
+        # Get next counter for this seed
+        counter = self._get_next_counter(algorithm_dir, seed)
+        
+        # Build file path
+        result_file = os.path.join(seed_dir, f"result_{counter}.json")
+        
+        # Prepare data
+        data = {
+            "hyperparameters": hyperparameters,
+            "results": results,
+        }
+        
+        # Save to JSON
+        with open(result_file, "w") as f:
+            json.dump(data, f, indent=2)
+        
+        # Optional console message
+        if self.verbose:
+            self.info(f"Results saved to: {result_file}")
+        
+        return result_file
+    
+    def create_run_dir(self, algorithm: str, base_dir: str = "results") -> str:
+        """
+        Create a new run directory under base_dir/algorithm/{counter} where counter is
+        an increasing integer inferred from existing run folders.
+
+        Returns the path to the created run directory.
+        """
+        algorithm_dir = os.path.join(base_dir, algorithm)
+        os.makedirs(algorithm_dir, exist_ok=True)
+
+        # Find existing numeric subfolders and pick next counter
+        existing = [d for d in os.listdir(algorithm_dir) if os.path.isdir(os.path.join(algorithm_dir, d))]
+        counters = []
+        for name in existing:
+            try:
+                counters.append(int(name))
+            except ValueError:
+                continue
+        next_counter = max(counters) + 1 if counters else 0
+
+        run_dir = os.path.join(algorithm_dir, str(next_counter))
+        os.makedirs(run_dir, exist_ok=True)
+        if self.verbose:
+            self.info(f"Created run directory: {run_dir}")
+        return run_dir
+
+    def save_seed_result_in_run(
+        self,
+        run_dir: str,
+        seed: int,
+        hyperparameters: Dict[str, Any],
+        results: Dict[str, Any],
+    ) -> str:
+        """
+        Save per-seed JSON into the provided run directory using filename seed_{seed}.json.
+        """
+        result_file = os.path.join(run_dir, f"seed_{seed}.json")
+        data = {
+            "hyperparameters": hyperparameters,
+            "results": results,
+        }
+        with open(result_file, "w") as f:
+            json.dump(data, f, indent=2)
+        if self.verbose:
+            self.info(f"Seed results saved to: {result_file}")
+        return result_file
+
+    def save_aggregated_run(self, run_dir: str, aggregated: Dict[str, Any]) -> str:
+        """
+        Save aggregated results JSON into the run directory as aggregated.json.
+        """
+        agg_file = os.path.join(run_dir, "aggregated.json")
+        with open(agg_file, "w") as f:
+            json.dump(aggregated, f, indent=2)
+        if self.verbose:
+            self.info(f"Aggregated results saved to: {agg_file}")
+        return agg_file
+
     def close(self) -> None:
-        """Close the TensorBoard writer and print log directory info."""
-        if self.writer is not None:
-            self.writer.close()
-            if self.verbose:
-                self.blank_line()
-                self.info(f"TensorBoard logs saved to: {self.log_dir}")
-                self.info(f"View with: tensorboard --logdir {self.log_dir}")
-    
+        """Close resources (no-op: tensorboard disabled)."""
+        return
+
     def __enter__(self):
         """Context manager entry."""
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit - automatically close writer."""
+        """Context manager exit - nothing to close."""
         self.close()
 

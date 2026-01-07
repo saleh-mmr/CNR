@@ -25,18 +25,18 @@ class IQL:
     
     def __init__(
         self,
-        n_agents: int = 2,
-        input_dim: int = 4,                     # observation vector: [own_x, own_y, goal_x, goal_y]
-        num_actions: int = 5,                   # actions: up, down, left, right, stay
-        hidden_dim: int = 64,
-        learning_rate: float = 7e-5,
-        memory_capacity: int = 10000,
-        gamma: float = 0.99,                    # Discount factor
-        epsilon_start: float = 1.0,             # Initial epsilon
-        epsilon_end: float = 0.05,              # Final epsilon
-        epsilon_decay_steps: int = 50000,       # Steps over which epsilon decays
-        batch_size: int = 32,                   # Batch size for training
-        target_update_freq: int = 500,          # Update target network every N steps
+        n_agents: int,
+        input_dim: int,              # observation vector: [own_x, own_y, goal_x, goal_y]
+        num_actions: int,            # actions: up, down, left, right, stay
+        hidden_dim: int,
+        learning_rate: float,
+        memory_capacity: int,
+        gamma: float,                # Discount factor
+        epsilon_start: float,        # Initial epsilon
+        epsilon_end: float,          # Final epsilon
+        epsilon_decay_steps: int,    # Steps over which epsilon decays
+        batch_size: int,             # Batch size for training
+        target_update_freq: int,     # Update target network every N steps
     ):
         """
         Initialize Independent Q-Learning with multiple agents.
@@ -475,40 +475,6 @@ class IQL:
                 length_window.pop(0)
                 return_window.pop(0)
             
-            # Log to TensorBoard and console
-            # Per-episode metrics
-            loss_value = None
-            for agent_id in range(self.n_agents):
-                if episode_losses[agent_id][-1] is not None:
-                    loss_value = episode_losses[agent_id][-1]
-                    logger.tensorboard_log_scalar(
-                        f'loss/agent_{agent_id}',
-                        loss_value,
-                        episode
-                    )
-            
-            logger.tensorboard_log_metrics(
-                episode=episode,
-                success=episode_success,
-                length=episode_length,
-                return_val=episode_reward,
-                loss=loss_value,
-                epsilon=self.get_epsilon(),
-            )
-            
-            # Moving averages (computed over window)
-            if len(success_window) >= window_size:
-                success_rate = np.mean(success_window)
-                avg_episode_length = np.mean(length_window)
-                avg_return = np.mean(return_window)
-                
-                logger.tensorboard_log_moving_averages(
-                    episode=episode,
-                    success_rate=success_rate,
-                    avg_episode_length=avg_episode_length,
-                    avg_return=avg_return,
-                )
-            
             # Print progress
             if (episode + 1) % 100 == 0:
                 avg_reward = np.mean(episode_rewards[-100:])
@@ -527,14 +493,6 @@ class IQL:
         
         # Run final evaluation after all training episodes
         final_eval_metrics = self.evaluate(env, n_episodes=eval_episodes, max_steps=max_steps)
-        
-        # Log final evaluation metrics
-        logger.tensorboard_log_evaluation(
-            episode=max_episodes - 1,
-            success_rate=final_eval_metrics['success_rate'],
-            avg_episode_length=final_eval_metrics['avg_episode_length'],
-            avg_return=final_eval_metrics['avg_return'],
-        )
         
         # Print final evaluation results
         logger.evaluation(
