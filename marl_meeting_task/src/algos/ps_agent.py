@@ -2,13 +2,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from typing import Dict, Optional
+from typing import Optional
 from marl_meeting_task.src.models.qvalue_network import QValueNetwork
 from marl_meeting_task.src.utils.replay_memory import ReplayMemory
 from marl_meeting_task.src.config import device
 
 
-class PS_DQNAgent:
+class PSAgent:
     """
     Parameter-Shared Deep Q-Network Agent Component.
     
@@ -101,7 +101,7 @@ class PS_DQNAgent:
     # Action Selection
     # ========================================================================
     
-    def select_actions(self, obs: Dict[int, np.ndarray], epsilon: float) -> Dict[int, int]:
+    def select_actions(self, obs, epsilon):
         """
         Select actions for all agents using epsilon-greedy policy with shared network.
         
@@ -158,14 +158,7 @@ class PS_DQNAgent:
     # Experience Storage
     # ========================================================================
     
-    def store_transitions(
-        self,
-        obs: Dict[int, np.ndarray],
-        actions: Dict[int, int],
-        next_obs: Dict[int, np.ndarray],
-        reward: float,
-        done: bool
-    ) -> None:
+    def store_transitions(self, obs, actions, next_obs, reward, done):
         """
         Store transitions in shared replay buffer (one joint transition per timestep).
         
@@ -215,8 +208,7 @@ class PS_DQNAgent:
             return None
         
         # Sample batch from shared replay buffer (returns dicts)
-        states_dict, actions_dict, next_states_dict, rewards, dones = \
-            self.replay_memory.sample(self.batch_size)
+        states_dict, actions_dict, next_states_dict, rewards, dones = self.replay_memory.sample(self.batch_size)
         
         # Extract and flatten individual agent transitions from dicts
         # This enables the shared network to learn from all agent experiences

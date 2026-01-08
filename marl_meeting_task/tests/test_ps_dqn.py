@@ -6,7 +6,7 @@ Verifies basic functionality without full training.
 import numpy as np
 import torch
 from marl_meeting_task.src.env.meeting_gridworld import MeetingGridworldEnv
-from marl_meeting_task.src.algos.ps_dqn import PS_DQN
+from marl_meeting_task.src.algos.ps import PS
 
 
 def test_ps_dqn():
@@ -20,7 +20,7 @@ def test_ps_dqn():
     print("\n✓ Environment created")
     
     # Initialize PS-DQN
-    ps_dqn = PS_DQN(
+    ps_dqn = PS(
         n_agents=2,
         input_dim=4,
         num_actions=5,

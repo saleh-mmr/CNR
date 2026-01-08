@@ -214,8 +214,6 @@ def aggregate_results(all_results: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def main():
-    """Main training function."""
-    # Configuration (matching IQL and PS-DQN protocol)
     SEEDS = [2025, 2026, 2027, 2028, 2029]  # Same seeds for fair comparison
     MAX_EPISODES = 1000
     BASE_LOG_DIR = "runs/qmix_multi_seed"
@@ -268,8 +266,6 @@ def main():
             results_data = {
                 'seed': stats['seed'],
                 'total_steps': stats['total_steps'],
-                # 'episode_rewards': stats['episode_rewards'],
-                # 'episode_lengths': stats['episode_lengths'],
                 'episode_successes': stats['episode_successes'],
                 'episode_losses': stats['episode_losses'],
                 'final_eval_metrics': stats['final_eval_metrics'],
