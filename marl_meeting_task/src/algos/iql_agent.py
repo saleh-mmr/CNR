@@ -21,15 +21,7 @@ class IQLAgent:
     as part of the environment, learning its own Q-function.
     """
     
-    def __init__(
-        self,
-        agent_id: int,
-        input_dim: int,
-        num_actions: int,
-        hidden_dim: int,
-        learning_rate: float,
-        memory_capacity: int,
-    ):
+    def __init__(self, agent_id, input_dim, num_actions, hidden_dim, learning_rate, memory_capacity):
         """
         Initialize an independent Q-learning agent.
         
@@ -78,7 +70,7 @@ class IQLAgent:
     # ========================================================================
     # Network Management
     # ========================================================================
-    
+
     def update_target_network(self) -> None:
         """
         Copy weights from main Q-network to target network.
@@ -91,8 +83,8 @@ class IQLAgent:
     # ========================================================================
     # Action Selection
     # ========================================================================
-    
-    def select_action(self, obs: np.ndarray, epsilon: float) -> int:
+
+    def select_action(self, obs, epsilon) -> int:
         """
         Select action using epsilon-greedy policy.
         
@@ -145,7 +137,7 @@ class IQLAgent:
     # ========================================================================
     # Learning
     # ========================================================================
-    
+
     def learn(self, batch_size: int, gamma: float = 0.99) -> Optional[float]:
         """
         Perform one gradient update step using a batch from replay buffer.

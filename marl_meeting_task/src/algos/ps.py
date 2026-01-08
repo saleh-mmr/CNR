@@ -2,12 +2,12 @@ import os
 import numpy as np
 import torch
 from typing import Dict, Optional, Any
-from marl_meeting_task.src.algos.ps_dqn_agent import PS_DQNAgent
+from marl_meeting_task.src.algos.ps_agent import PSAgent
 from marl_meeting_task.src.config import device
 from marl_meeting_task.src.utils.logger import Logger
 
 
-class PS_DQN:
+class PS:
     """
     Parameter-Shared Deep Q-Network (PS-DQN) for Multi-Agent Reinforcement Learning.
     
@@ -88,7 +88,7 @@ class PS_DQN:
         self.total_steps = 0
         
         # Initialize shared agent component
-        self.agent = PS_DQNAgent(
+        self.agent = PSAgent(
             n_agents=n_agents,
             input_dim=input_dim,
             num_actions=num_actions,
@@ -351,13 +351,7 @@ class PS_DQN:
         episode_lengths = []
         episode_successes = []  # 0 or 1 for each episode
         episode_losses = []
-        
-        # Moving averages for TensorBoard (window size: 100 episodes)
-        window_size = 100
-        success_window = []
-        length_window = []
-        return_window = []
-        
+
         for episode in range(max_episodes):
             # Use seed derived from base seed and episode for reproducibility with diversity
             episode_seed = None if env_seed is None else env_seed + episode
@@ -415,17 +409,6 @@ class PS_DQN:
                 episode_losses.append(avg_loss)
             else:
                 episode_losses.append(None)
-            
-            # Update moving average windows
-            success_window.append(episode_success)
-            length_window.append(episode_length)
-            return_window.append(episode_reward)
-            
-            # Keep window size fixed
-            if len(success_window) > window_size:
-                success_window.pop(0)
-                length_window.pop(0)
-                return_window.pop(0)
             
             # Print progress
             if (episode + 1) % 100 == 0:

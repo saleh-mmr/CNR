@@ -172,7 +172,7 @@ class IQL:
     # Action Selection
     # ========================================================================
     
-    def select_actions(self, obs: Dict[int, np.ndarray]) -> Dict[int, int]:
+    def select_actions(self, obs) -> Dict[int, int]:
         """
         Select actions for all agents using epsilon-greedy policy.
         
@@ -196,14 +196,7 @@ class IQL:
     # Experience Storage
     # ========================================================================
     
-    def store_transitions(
-        self,
-        obs: Dict[int, np.ndarray],
-        actions: Dict[int, int],
-        next_obs: Dict[int, np.ndarray],
-        reward: float,
-        done: bool
-    ) -> None:
+    def store_transitions(self, obs, actions, next_obs, reward, done):
         """
         Store transitions in each agent's replay buffer.
         
@@ -256,12 +249,7 @@ class IQL:
     # Evaluation
     # ========================================================================
     
-    def evaluate(
-        self,
-        env,
-        n_episodes: int = 20,
-        max_steps: int = 50,
-    ) -> Dict[str, float]:
+    def evaluate(self, env, n_episodes, max_steps) -> Dict[str, float]:
         """
         Evaluate the current policy with greedy actions (epsilon=0).
         
@@ -295,7 +283,7 @@ class IQL:
             obs, info = env.reset(seed=None)
             episode_reward = 0.0
             episode_terminated = False
-            
+
             for t in range(max_steps):
                 # Greedy action selection (epsilon=0) - use main networks
                 # Ensure networks remain in eval mode
@@ -334,25 +322,15 @@ class IQL:
         success_rate = np.mean(eval_successes)
         avg_episode_length = np.mean(eval_lengths)
         avg_return = np.mean(eval_returns)
-        
-        return {
+
+        res = {
             'success_rate': success_rate,
             'avg_episode_length': avg_episode_length,
             'avg_return': avg_return,
         }
+        return res
     
-    def train(
-        self,
-        env,
-        max_episodes: int,
-        max_steps: int = 50,
-        train_freq: int = 1,
-        min_buffer_size: int = 1000,
-        verbose: bool = True,
-        log_dir: Optional[str] = "runs/iql",
-        eval_episodes: int = 20,
-        env_seed: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    def train(self, env, max_episodes, max_steps, train_freq, min_buffer_size, verbose, log_dir, eval_episodes, env_seed):
         """
         Main training loop for Independent Q-Learning.
         
@@ -396,12 +374,6 @@ class IQL:
         episode_successes = []  # 0 or 1 for each episode
         episode_losses = {agent_id: [] for agent_id in range(self.n_agents)}
         
-        # Moving averages for TensorBoard (window size: 100 episodes)
-        window_size = 100
-        success_window = []
-        length_window = []
-        return_window = []
-        
         for episode in range(max_episodes):
             # Use seed derived from base seed and episode for reproducibility with diversity
             episode_seed = None if env_seed is None else env_seed + episode
@@ -429,8 +401,7 @@ class IQL:
                 # Train agents if buffer is large enough
                 if self.total_steps % train_freq == 0:
                     # Check if any agent has enough samples
-                    if all(len(self.agents[i].replay_memory) >= min_buffer_size 
-                           for i in range(self.n_agents)):
+                    if all(len(self.agents[i].replay_memory) >= min_buffer_size for i in range(self.n_agents)):
                         losses = self.train_step()
                         for agent_id, loss in losses.items():
                             if loss is not None:
@@ -463,18 +434,7 @@ class IQL:
                     episode_losses[agent_id].append(avg_loss)
                 else:
                     episode_losses[agent_id].append(None)
-            
-            # Update moving average windows
-            success_window.append(episode_success)
-            length_window.append(episode_length)
-            return_window.append(episode_reward)
-            
-            # Keep window size fixed
-            if len(success_window) > window_size:
-                success_window.pop(0)
-                length_window.pop(0)
-                return_window.pop(0)
-            
+
             # Print progress
             if (episode + 1) % 100 == 0:
                 avg_reward = np.mean(episode_rewards[-100:])

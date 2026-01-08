@@ -16,14 +16,7 @@ class QMIXAgent:
     (centralized).
     """
     
-    def __init__(
-        self,
-        agent_id: int,
-        n_agents: int,
-        input_dim: int,   # Base observation dim (will have agent_id appended)
-        num_actions: int,
-        hidden_dim: int,
-    ):
+    def __init__(self, agent_id, n_agents, input_dim, num_actions, hidden_dim):
         """
         Initialize QMIX Agent.
         
@@ -90,7 +83,7 @@ class QMIXAgent:
         obs_with_id = np.concatenate([obs, agent_id_onehot])
         return obs_with_id
     
-    def select_action(self, obs: np.ndarray, epsilon: float) -> int:
+    def select_action(self, obs: np.ndarray, epsilon):
         """
         Select action using epsilon-greedy policy.
         
@@ -139,4 +132,3 @@ class QMIXAgent:
                     ).unsqueeze(0)  # Add batch dimension
                     q_values = self.q_network(obs_tensor)
                     return q_values.argmax().item()
-

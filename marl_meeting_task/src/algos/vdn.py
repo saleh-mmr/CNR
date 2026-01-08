@@ -264,11 +264,6 @@ class VDN:
         episode_successes = []
         episode_losses = []
 
-        window_size = 100
-        success_window = []
-        length_window = []
-        return_window = []
-
         for episode in range(max_episodes):
             episode_seed = None if env_seed is None else env_seed + episode
             obs, info = env.reset(seed=episode_seed)
@@ -350,15 +345,6 @@ class VDN:
                 episode_losses.append(avg_loss)
             else:
                 episode_losses.append(None)
-
-            success_window.append(episode_success)
-            length_window.append(episode_length)
-            return_window.append(episode_reward)
-
-            if len(success_window) > window_size:
-                success_window.pop(0)
-                length_window.pop(0)
-                return_window.pop(0)
 
             if (episode + 1) % 100 == 0:
                 avg_reward = np.mean(episode_rewards[-100:])
