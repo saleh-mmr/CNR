@@ -1,61 +1,63 @@
+# src/models/actor.py
+import torch
 from torch import nn
+from torch.distributions import Categorical
 
 
 class ActorNetwork(nn.Module):
     """
-    Q-Value Network for Multi-Agent Reinforcement Learning.
-
-    A feedforward neural network that estimates Q-values for state-action pairs.
-    Used in Independent Q-Learning (IQL) and other value-based MARL algorithms.
-
-    Architecture:
-    - Input: observation vector (default: 7 dims)
-      [own_x, own_y, x_door, y_door, x_switch, y_switch, door_state]
-    - Hidden layers: Linear(64) -> ReLU -> Linear(64) -> ReLU
-    - Output: Q-values for each action (default: 5 actions)
-      [up, down, left, right, stay]
+    MAPPO Actor (policy network)
+    - Input: observation (obs_dim=7)
+    - Output: action logits (n_actions=5)
     """
 
-    def __init__(self, input_dim=6, num_actions=5, hidden_dim=64):
-        """
-        Initialize Q-Value Network.
+    def __init__(self, obs_dim: int = 7, n_actions: int = 5, hidden_dim: int = 64):
+        super().__init__()
+        self.obs_dim = obs_dim
+        self.n_actions = n_actions
 
-        Parameters:
-        -----------
-        input_dim : int
-            Dimension of input observation vector (default: 6)
-        num_actions : int
-            Number of possible actions (default: 5)
-        hidden_dim : int
-            Dimension of hidden layers (default: 64)
-        """
-        super(ActorNetwork, self).__init__()
-
-        self.input_dim = input_dim
-        self.num_actions = num_actions
-        self.hidden_dim = hidden_dim
-
-        self.network = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
+        self.net = nn.Sequential(
+            nn.Linear(obs_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(hidden_dim, num_actions)
+            nn.Linear(hidden_dim, n_actions),
         )
 
-    def forward(self, x):
+    def forward(self, obs: torch.Tensor) -> torch.Tensor:
         """
-        Forward pass through the Q-value network.
+        obs: [batch, obs_dim]
+        returns logits: [batch, n_actions]
+        """
+        return self.net(obs)
 
-        Parameters:
-        ----------
-        x : torch.Tensor
-            Input observation(s) of shape [batch_size, input_dim]
+    def get_dist(self, obs: torch.Tensor) -> Categorical:
+        # Network outputs scores (logits), e.g. [-0.8, 0.4, 1.6, -0.2, 0.1]
+        logits = self.forward(obs)
+        return Categorical(logits=logits)
 
+    @torch.no_grad()
+    def sample_action(self, obs: torch.Tensor):
+        """
+        For rollout collection.
         Returns:
-        -------
-        torch.Tensor
-            Q-values for each action of shape [batch_size, num_actions]
+          action: [batch]
+          log_prob: [batch]
+          entropy: [batch]
         """
-        return self.network(x)
+        # Get action distribution. e.g.	[action_0 = 5% , action_1 = 17%, action_2 = 57%, action_3 = 9%, action_4 = 12%]
+        dist = self.get_dist(obs)
 
+        # Pick an action. Actions with higher prob are more likely to be picked. This is exploration.
+        action = dist.sample()
+
+        # How confident is the policy about this action? PPO needs this to learn.
+        log_prob = dist.log_prob(action)
+
+        # How uncertain is the policy? Higher entropy = more exploration.
+        entropy = dist.entropy()
+
+        # action   = chosen action (e.g. 2)
+        # log_prob = confidence of that choice
+        # entropy  = randomness level
+        return action, log_prob, entropy
