@@ -210,7 +210,6 @@ def main():
     aggregated_save = {
         'hyperparameters': all_results[0]['hyperparameters'] if all_results else {},
         'aggregated': aggregated,
-        'per_seed': all_results,
     }
     logger.save_aggregated_run(run_dir, aggregated_save)
 

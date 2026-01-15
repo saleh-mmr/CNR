@@ -75,12 +75,12 @@ def run_training(seed, max_episodes, log_dir, verbose):
         'gamma': 0.99,
         'epsilon_start': 1.0,
         'epsilon_end': 0.05,
-        'epsilon_decay_steps': 75000,
+        'epsilon_decay_steps': 80000,
         'target_update_freq': 50,
         'max_steps': 50,
         'min_buffer_size': 3000,
         'train_freq': 1,
-        'eval_episodes': 200,
+        'eval_episodes': 1000,
     }
     
     # Create environment
@@ -215,7 +215,7 @@ def aggregate_results(all_results: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 def main():
     SEEDS = [2025, 2026, 2027, 2028, 2029]  # Same seeds for fair comparison
-    MAX_EPISODES = 1000
+    MAX_EPISODES = 800
     BASE_LOG_DIR = "runs/qmix_multi_seed"
     OUTPUT_DIR = "../results"  # Results folder is in marl_meeting_task/
     VERBOSE = True
@@ -291,11 +291,10 @@ def main():
     # Aggregate results
     aggregated = aggregate_results(all_results)
 
-    # Save aggregated.json into the run directory (include hyperparameters and per-seed details)
+    # Save aggregated.json into the run directory (include hyperparameters only, not per-seed full details)
     aggregated_save = {
         'hyperparameters': all_results[0]['hyperparameters'] if all_results else {},
         'aggregated': aggregated,
-        'per_seed': all_results,
     }
     logger.save_aggregated_run(run_dir, aggregated_save)
 

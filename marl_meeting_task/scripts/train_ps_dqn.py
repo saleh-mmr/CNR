@@ -279,11 +279,10 @@ def main():
     # Aggregate results
     aggregated = aggregate_results(all_results)
 
-    # Save aggregated.json into the run directory (include hyperparameters and per seed details)
+    # Save aggregated.json into the run directory (include hyperparameters only, not per-seed full details)
     aggregated_save = {
         'hyperparameters': all_results[0]['hyperparameters'] if all_results else {},
         'aggregated': aggregated,
-        'per_seed': all_results,
     }
     logger.save_aggregated_run(run_dir, aggregated_save)
 
