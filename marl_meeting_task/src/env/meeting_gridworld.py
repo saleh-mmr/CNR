@@ -1,5 +1,5 @@
 import numpy as np
-from marl_meeting_task.src import config
+from src import config
 
 
 class MeetingGridworldEnv:
