@@ -10,15 +10,16 @@ def compute_gae_returns(
     gae_lambda: float,
 ):
     """
+    This function figures out how good each step was, so PPO knows which actions to reward and which to punish.
     Compute team-level GAE advantages and returns for MAPPO.
 
     Args:
         rewards: [T] float tensor
         dones:   [T] float/bool tensor (1 if episode ended at step t else 0)
-        values:  [T] float tensor (V(s_t))
-        last_value: scalar (V(s_{T})) for bootstrap, 0 if terminal
-        gamma: discount factor
-        gae_lambda: GAE lambda
+        values:  [T] float tensor (V(s_t))_What the critic thought each state was worth.
+        last_value: scalar (V(s_{T})) for bootstrap, 0 if terminal_Value of the next state after the rollout ends
+        gamma: discount factor_“How much do I care about the future?”
+        gae_lambda: GAE lambda_“How smooth / stable should learning be?”
 
     Returns:
         advantages: [T]
