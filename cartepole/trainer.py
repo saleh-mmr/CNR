@@ -51,7 +51,7 @@ class Trainer:
     # TRAINING LOOP
     def train(self):
         total_steps = 0                                     # Count steps across all episodes (used for epsilon decay
-
+        reward_collector = []                               # Collects rewards for all episodes
         for episode in range(1, self.max_episodes + 1):
             state, _ = self.env.reset(seed=seed)            # Initial observation from environment
             done = False                                    # Episode ended because of failure
@@ -73,7 +73,7 @@ class Trainer:
             total_steps += step_counter
             # Log episode
             episode_loss = episode_loss if episode_loss is not None else 0.0
-
+            reward_collector.append(episode_reward)
             self.logger.log_episode(
                 episode=episode,
                 reward=episode_reward,
@@ -96,6 +96,7 @@ class Trainer:
                 torch.save(self.agent.q_network.state_dict(), self.load_pth)
                 print("Best solved model saved!")
         self.logger.finalize_results(self.agent.q_network)
+        print("mean reward:", sum(reward_collector)/len(reward_collector))
 
     # TEST LOOP
     def test(self, max_episodes):

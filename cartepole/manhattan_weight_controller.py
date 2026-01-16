@@ -1,19 +1,62 @@
 import numpy as np
 import torch
-import pandas as pd
-
+from logger import TrainingLogger
 class ManhattanWeightController:
     def __init__(self, model, csv_path):
         self.model = model
+        self.logger = TrainingLogger()
 
-        conductance = pd.read_csv(csv_path, header=0)
-        values = conductance.values.astype("float32").reshape(-1)
-        values *= 9e8
+        # conductance = pd.read_csv(csv_path, header=0)
+        # values = conductance.values.astype("float32").reshape(-1)
+        # values *= 9e8
 
+
+        # Test 1
         # values = np.arange(start=0, stop=100,step=0.01)
 
-        self.values = torch.from_numpy(values)
 
+        # Test 2
+        # x = np.arange(1, 1000)
+        # a = 1.566e-8
+        # b = 0.350e-8
+        # values = (a * np.log10(x) + b).astype(np.float32)
+
+        # Test 3
+        # x = np.arange(1, 1000)
+        # a = 1.566e-8
+        # b = 0.350e-8
+        # sigma = 1.7e-9
+        # y = a * np.log10(x) + b
+        # noise = np.random.normal(0, sigma, size=y.shape).astype(np.float32)
+        # values = y + noise
+
+
+        # Test 4
+        # x = np.arange(1, 1000)
+        # a = 1.566e-8
+        # b = 0.350e-8
+        # sigma = 1.7e-9
+        # base_scale = 1e9
+        # y = a * np.log10(x) + b
+        # y *= base_scale
+        # noise = np.random.normal(0, sigma, size=y.shape).astype(np.float32)
+        # values = y + noise
+
+
+        # Test 5
+        x = np.arange(1, 1000)
+        a = 1.566e-8
+        b = 0.350e-8
+        sigma = 1.7e-9
+        base_scale = 1e9
+        y = a * np.log10(x) + b
+        noise = np.random.normal(0, sigma, size=y.shape).astype(np.float32)
+        values = y + noise
+        values *= base_scale
+
+
+        self.logger.plot_initial_values(values)
+        self.values = torch.from_numpy(values)
         # Cache values tensor per device to avoid repeated .to(device)
         self._values_cache = {}
 
@@ -68,18 +111,12 @@ class ManhattanWeightController:
             # ---- grad > 0 : decrease W ----
             if pos.any():
                 can_inc_gm = pos & (gm < max_idx)  # preferred action
-                stuck_gm = pos & (gm >= max_idx)  # fallback
-
                 gm[can_inc_gm] += 1  # increase G-
-                gp[stuck_gm] -= 1  # if G- maxed, decrease G+
 
             # ---- grad < 0 : increase W ----
             if neg.any():
                 can_inc_gp = neg & (gp < max_idx)  # preferred action
-                stuck_gp = neg & (gp >= max_idx)  # fallback
-
                 gp[can_inc_gp] += 1  # increase G+
-                gm[stuck_gp] -= 1  # if G+ maxed, decrease G-
 
             # Clamp indices to valid range
             gp.clamp_(0, max_idx)

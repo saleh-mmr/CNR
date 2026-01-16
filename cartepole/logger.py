@@ -1,8 +1,8 @@
 import csv
 import os
 import matplotlib.pyplot as plt
-import pandas as pd
 import torch
+from traits.trait_numeric import Array
 
 
 class TrainingLogger:
@@ -26,6 +26,7 @@ class TrainingLogger:
         self.weights_path = os.path.join(weights_dir, weights_name)
         self.rewards_plot_path = os.path.join(results_dir, reward_plot_name)
         self.loss_plot_path = os.path.join(results_dir, "loss.png")
+        self.initial_values_path = os.path.join(results_dir, "values.png")
 
         self.weight_history = []
         self.episode_rewards = []
@@ -48,6 +49,14 @@ class TrainingLogger:
 
     def finalize_results(self, model):
         """Save trained weights + reward plot"""
+        # Print mean reward of last up to 300 episodes
+        n = min(300, len(self.episode_rewards))
+        if n > 0:
+            mean_last = sum(self.episode_rewards[-n:]) / n
+            print(f"Mean reward over last {n} episodes: {mean_last:.4f}")
+        else:
+            print("Mean reward over last 300 episodes: No episode rewards recorded.")
+
         torch.save(model.state_dict(), self.weights_path)
         print(f"Saved model weights to: {self.weights_path}")
 
@@ -78,3 +87,14 @@ class TrainingLogger:
         print(f"Saved loss plot to: {self.loss_plot_path}")
 
         print(f"Training log saved to: {self.csv_path}")
+
+    def plot_initial_values(self,x):  # plot with random noise added
+        plt.plot(x, 'o', color="blue", markersize=8, alpha=0.4, label="Data with noise")
+        plt.ylabel("Conductance (S)")
+        plt.xlabel("Pulse Number")
+        plt.grid(True)
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(self.initial_values_path)
+        plt.close()
+        print(f"Saved values plot to: {self.initial_values_path}")

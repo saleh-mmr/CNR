@@ -11,7 +11,6 @@ from manhattan_weight_controller import ManhattanWeightController
 class DQNAgent:
     """
     Vanilla DQN with:
-    - RMSProp optimizer
     - No target network
     """
 
