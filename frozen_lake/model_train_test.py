@@ -35,13 +35,14 @@ class ModelTrainTest:
                             render_mode='human' if self.render else None)
         self.env.metadata['render_fps']=self.render_fps
         self.agent = DQNAgent(env=self.env,
-                              epsilon_max=self.max_epsilon,
-                              epsilon_min=self.min_epsilon,
-                              epsilon_decay=self.epsilon_decay,
-                              clip_grad_norm=self.clip_grad_norm,
-                              learning_rate=self.learning_rate,
-                              memory_capacity=self.memory_capacity,
-                              discount=self.discount_factor)
+                               epsilon_max=self.max_epsilon,
+                               epsilon_min=self.min_epsilon,
+                               epsilon_decay=self.epsilon_decay,
+                               clip_grad_norm=self.clip_grad_norm,
+                               learning_rate=self.learning_rate,
+                               memory_capacity=self.memory_capacity,
+                               discount=self.discount_factor,
+                               base_scale=hyperparams.get('base_scale', 9e7))
 
     def state_preprocess(self, state: int, num_states: int):
         """
@@ -61,10 +62,10 @@ class ModelTrainTest:
         for episode in range(1, self.max_episodes + 1):
 
             # --- Enable rendering only for first 10 and last 10 episodes ---
-            if episode <= 10 or episode > self.max_episodes - 10:
-                render_mode = "human"
-            else:
-                render_mode = None
+            # if episode <= 2 or episode > self.max_episodes - 2:
+            #     render_mode = "human"
+            # else:
+            #     render_mode = None
 
             # Recreate env with correct render mode
             self.env = gym.make(
@@ -72,7 +73,7 @@ class ModelTrainTest:
                 map_name=f"{self.map_size}x{self.map_size}",
                 is_slippery=False,
                 max_episode_steps=self.max_steps,
-                render_mode=render_mode
+                # render_mode=render_mode
             )
             self.env.metadata['render_fps'] = self.render_fps
 

@@ -1,0 +1,189 @@
+# import numpy as np
+# import torch
+# from logger import TrainingLogger
+#
+# class ManhattanWeightController:
+#     def __init__(self, model):
+#         self.model = model
+#         self.logger = TrainingLogger()
+#
+#         # conductance = pd.read_csv(csv_path, header=0)
+#         # values = conductance.values.astype("float32").reshape(-1)
+#         # values *= 9e8
+#
+#
+#         # Test 1
+#         # values = np.arange(start=1, stop=1000,step=0.01)
+#
+#
+#         # Test 2
+#         # x = np.arange(1, 1000)
+#         # a = 1.566e-8
+#         # b = 0.350e-8
+#         # values = (a * np.log10(x) + b).astype(np.float32)
+#
+#         # Test 3
+#         # x = np.arange(1, 1000)
+#         # a = 1.566e-8
+#         # b = 0.350e-8
+#         # sigma = 1.7e-9
+#         # y = a * np.log10(x) + b
+#         # noise = np.random.normal(0, sigma, size=y.shape).astype(np.float32)
+#         # values = y + noise
+#
+#
+#         # Test 4
+#         # x = np.arange(1, 1000)
+#         # a = 1.566e-8
+#         # b = 0.350e-8
+#         # sigma = 1.7e-9
+#         # base_scale = 1e9
+#         # y = a * np.log10(x) + b
+#         # y *= base_scale
+#         # noise = np.random.normal(0, sigma, size=y.shape).astype(np.float32)
+#         # values = y + noise
+#
+#
+#         # Test 5
+#         # x = np.arange(1, 10000)
+#         # a = 1.566e-8
+#         # b = 0.350e-8
+#         # sigma = 1.7e-9
+#         # base_scale = 1e7
+#         # y = a * np.log10(x) + b
+#         # noise = np.random.normal(0, sigma, size=y.shape).astype(np.float32)
+#         # values = y + noise
+#         # values *= base_scale
+#
+#         # Test 6
+#         # x = np.arange(1, 100)
+#         # a = 1.566e-8
+#         # b = 0.350e-8
+#         # self.sigma = 1.7e-9
+#         # self.base_scale = 7e7
+#         # y = a * np.log10(x) + b
+#         # noise = np.random.normal(0, self.sigma, size=y.shape).astype(np.float32)
+#         # y = y + noise
+#         # values = y * self.base_scale
+#
+#         # Test 7
+#         # Logarithmic programming parameters
+#         self.a = 1.566e-8
+#         self.b = 0.350e-8
+#         self.sigma = 1.7e-9
+#         self.base_scale = 7e7
+#
+#         # Index bounds
+#         self.min_idx = 1
+#         self.max_idx = 2000
+#         x = np.arange(self.min_idx, self.max_idx)
+#
+#         # Logarithmic mapping
+#         g = self.a * torch.log10(torch.tensor(x)) + self.b
+#
+#         # Fresh programming noise
+#         noise = torch.normal(
+#             mean=0.0,
+#             std=self.sigma,
+#             size=g.shape,
+#         )
+#
+#         # self.logger.plot_initial_values((g + noise) * self.base_scale)
+#
+#         self.state = {}
+#
+#         for name, param in model.named_parameters():
+#             if not param.requires_grad:
+#                 continue
+#
+#             device = param.device
+#             shape = param.data.shape
+#
+#             # Programming indices (persistent state)
+#             g_plus_idx = torch.full(shape, self.min_idx, dtype=torch.long, device=device)
+#             g_minus_idx = torch.full(shape, self.min_idx, dtype=torch.long, device=device)
+#
+#             # Conductance tensors (computed fresh each update)
+#             g_plus = torch.zeros(shape, dtype=param.dtype, device=device)
+#             g_minus = torch.zeros(shape, dtype=param.dtype, device=device)
+#
+#             self.state[name] = {
+#                 "param": param,
+#                 "g_plus_idx": g_plus_idx,
+#                 "g_minus_idx": g_minus_idx,
+#                 "g_plus": g_plus,
+#                 "g_minus": g_minus,
+#             }
+#
+#         # Initialize weights once
+#         self._refresh_conductances()
+#
+#     # --------------------------------------------------
+#     # Compute conductance from index with fresh noise
+#     # --------------------------------------------------
+#     def _compute_conductance(self, idx, device, dtype):
+#         idx_f = idx.to(dtype=dtype)
+#
+#         # Logarithmic mapping
+#         # g = self.a * torch.log10(idx_f) + self.b
+#
+#
+#         # Fresh programming noise
+#         noise = torch.normal(
+#             mean=0.0,
+#             std=self.sigma,
+#             size=g.shape,
+#             device=device,
+#             dtype=dtype,
+#         )
+#         noise = noise * 0.0 # Disable noise for testing
+#
+#         return self.base_scale * (g + noise)
+#
+#     # --------------------------------------------------
+#     # Refresh all conductances (used at init + update)
+#     # --------------------------------------------------
+#     @torch.no_grad()
+#     def _refresh_conductances(self):
+#         for st in self.state.values():
+#             param = st["param"]
+#             device = param.device
+#             dtype = param.dtype
+#
+#             st["g_plus"].copy_(
+#                 self._compute_conductance(st["g_plus_idx"], device, dtype)
+#             )
+#             st["g_minus"].copy_(
+#                 self._compute_conductance(st["g_minus_idx"], device, dtype)
+#             )
+#
+#             param.data.copy_(st["g_plus"] - st["g_minus"])
+#
+#     # --------------------------------------------------
+#     # Manhattan update step (sign-based)
+#     # --------------------------------------------------
+#     @torch.no_grad()
+#     def step(self):
+#         for st in self.state.values():
+#             param = st["param"]
+#             grad = param.grad
+#             if grad is None:
+#                 continue
+#
+#             valid = torch.isfinite(grad)
+#
+#             pos = (grad > 0) & valid   # want W ↓ → increase G-
+#             neg = (grad < 0) & valid   # want W ↑ → increase G+
+#
+#             # Update indices
+#             st["g_minus_idx"][pos] += 1
+#             st["g_plus_idx"][neg] += 1
+#
+#             # Clamp indices
+#             st["g_plus_idx"].clamp_(self.min_idx, self.max_idx)
+#             st["g_minus_idx"].clamp_(self.min_idx, self.max_idx)
+#
+#         # Recompute conductances with FRESH NOISE
+#         self._refresh_conductances()
+
+
