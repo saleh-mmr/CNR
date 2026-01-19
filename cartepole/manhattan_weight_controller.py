@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+
 from logger import TrainingLogger
 class ManhattanWeightController:
     def __init__(self, model, csv_path):
@@ -12,7 +13,7 @@ class ManhattanWeightController:
 
 
         # Test 1
-        # values = np.arange(start=0, stop=100,step=0.01)
+        # values = np.arange(start=1, stop=1000,step=0.01)
 
 
         # Test 2
@@ -44,23 +45,53 @@ class ManhattanWeightController:
 
 
         # Test 5
-        x = np.arange(1, 1000)
-        a = 1.566e-8
-        b = 0.350e-8
-        sigma = 1.7e-9
-        base_scale = 1e9
-        y = a * np.log10(x) + b
-        noise = np.random.normal(0, sigma, size=y.shape).astype(np.float32)
-        values = y + noise
-        values *= base_scale
+        # x = np.arange(1, 10000)
+        # a = 1.566e-8
+        # b = 0.350e-8
+        # sigma = 1.7e-9
+        # base_scale = 1e7
+        # y = a * np.log10(x) + b
+        # noise = np.random.normal(0, sigma, size=y.shape).astype(np.float32)
+        # values = y + noise
+        # values *= base_scale
 
+        # Test 6
+        # x = np.arange(1, 100)
+        # a = 1.566e-8
+        # b = 0.350e-8
+        # self.sigma = 1.7e-9
+        # self.base_scale = 7e7
+        # y = a * np.log10(x) + b
+        # noise = np.random.normal(0, self.sigma, size=y.shape).astype(np.float32)
+        # y = y + noise
+        # values = y * self.base_scale
 
-        self.logger.plot_initial_values(values)
-        self.values = torch.from_numpy(values)
-        # Cache values tensor per device to avoid repeated .to(device)
-        self._values_cache = {}
+        # Test 7
+        # Logarithmic programming parameters
+        self.a = 1.566e-8
+        self.b = 0.350e-8
+        self.sigma = 1.7e-9
+        self.base_scale = 9e7
+
+        # Index bounds
+        self.min_idx = 1
+        self.max_idx = 2000
+        x = np.arange(self.min_idx, self.max_idx)
+
+        # Logarithmic mapping
+        g = self.a * torch.log10(torch.tensor(x)) + self.b
+
+        # Fresh programming noise
+        noise = torch.normal(
+            mean=0.0,
+            std=self.sigma,
+            size=g.shape,
+        )
+
+        self.logger.plot_initial_values((g + noise) * self.base_scale)
 
         self.state = {}
+
         for name, param in model.named_parameters():
             if not param.requires_grad:
                 continue
@@ -68,11 +99,13 @@ class ManhattanWeightController:
             device = param.device
             shape = param.data.shape
 
-            g_plus_idx = torch.ones(shape, dtype=torch.long, device=device)    # start at 1
-            g_minus_idx = torch.zeros(shape, dtype=torch.long, device=device)  # start at 0
+            # Programming indices (persistent state)
+            g_plus_idx = torch.full(shape, self.min_idx, dtype=torch.long, device=device)
+            g_minus_idx = torch.full(shape, self.min_idx, dtype=torch.long, device=device)
 
-            g_plus = torch.full(shape, self.values[1], dtype=param.dtype, device=device)
-            g_minus = torch.full(shape, self.values[0], dtype=param.dtype, device=device)
+            # Conductance tensors (computed fresh each update)
+            g_plus = torch.zeros(shape, dtype=param.dtype, device=device)
+            g_minus = torch.zeros(shape, dtype=param.dtype, device=device)
 
             self.state[name] = {
                 "param": param,
@@ -82,50 +115,71 @@ class ManhattanWeightController:
                 "g_minus": g_minus,
             }
 
-    def _values_on(self, device, dtype):
-        key = (device.type, device.index, dtype)
-        if key not in self._values_cache:
-            self._values_cache[key] = self.values.to(device=device, dtype=dtype)
-        return self._values_cache[key]
+        # Initialize weights once
+        self._refresh_conductances()
 
-    # -------------------
-    # Step 2: implement step()
-    # -------------------
+    # --------------------------------------------------
+    # Compute conductance from index with fresh noise
+    # --------------------------------------------------
+    def _compute_conductance(self, idx, device, dtype):
+        idx_f = idx.to(dtype=dtype)
+
+        # Logarithmic mapping
+        g = self.a * torch.log10(idx_f) + self.b
+
+        # Fresh programming noise
+        noise = torch.normal(
+            mean=0.0,
+            std=self.sigma,
+            size=g.shape,
+            device=device,
+            dtype=dtype,
+        )
+
+        return self.base_scale * (g + noise)
+
+    # --------------------------------------------------
+    # Refresh all conductances (used at init + update)
+    # --------------------------------------------------
+    @torch.no_grad()
+    def _refresh_conductances(self):
+        for st in self.state.values():
+            param = st["param"]
+            device = param.device
+            dtype = param.dtype
+
+            st["g_plus"].copy_(
+                self._compute_conductance(st["g_plus_idx"], device, dtype)
+            )
+            st["g_minus"].copy_(
+                self._compute_conductance(st["g_minus_idx"], device, dtype)
+            )
+
+            param.data.copy_(st["g_plus"] - st["g_minus"])
+
+    # --------------------------------------------------
+    # Manhattan update step (sign-based)
+    # --------------------------------------------------
     @torch.no_grad()
     def step(self):
-        max_idx = int(self.values.numel() - 1)
-
-        for name, st in self.state.items():
+        for st in self.state.values():
             param = st["param"]
             grad = param.grad
             if grad is None:
                 continue
 
             valid = torch.isfinite(grad)
-            pos = (grad > 0) & valid  # want W down
-            neg = (grad < 0) & valid  # want W up
 
-            gp = st["g_plus_idx"]
-            gm = st["g_minus_idx"]
+            pos = (grad > 0) & valid   # want W ↓ → increase G-
+            neg = (grad < 0) & valid   # want W ↑ → increase G+
 
-            # ---- grad > 0 : decrease W ----
-            if pos.any():
-                can_inc_gm = pos & (gm < max_idx)  # preferred action
-                gm[can_inc_gm] += 1  # increase G-
+            # Update indices
+            st["g_minus_idx"][pos] += 1
+            st["g_plus_idx"][neg] += 1
 
-            # ---- grad < 0 : increase W ----
-            if neg.any():
-                can_inc_gp = neg & (gp < max_idx)  # preferred action
-                gp[can_inc_gp] += 1  # increase G+
+            # Clamp indices
+            st["g_plus_idx"].clamp_(self.min_idx, self.max_idx)
+            st["g_minus_idx"].clamp_(self.min_idx, self.max_idx)
 
-            # Clamp indices to valid range
-            gp.clamp_(0, max_idx)
-            gm.clamp_(0, max_idx)
-
-            # Update conductances from indices
-            values_dev = self._values_on(param.device, param.dtype)
-            st["g_plus"].copy_(values_dev[gp])
-            st["g_minus"].copy_(values_dev[gm])
-
-            # Write back weight
-            param.data.copy_(st["g_plus"] - st["g_minus"])
+        # Recompute conductances with FRESH NOISE
+        self._refresh_conductances()

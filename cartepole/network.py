@@ -7,13 +7,13 @@ class DQNNetwork(nn.Module):
 
         # Fully Connected (FC) model
         self.FC = nn.Sequential(
-            nn.Linear(input_dim, 48),
-            nn.LeakyReLU(negative_slope=0.01),    # Relu activation function helps learn non-linear patterns.
+            nn.Linear(input_dim, 64),
+            nn.LeakyReLU(negative_slope=0.001),    # Relu activation function helps learn non-linear patterns.
 
-            nn.Linear(48, 48),
-            nn.LeakyReLU(negative_slope=0.01),
+            nn.Linear(64, 64),
+            nn.LeakyReLU(negative_slope=0.001),
 
-            nn.Linear(48, num_actions)        # [Q_left, Q_right]  → choose max action
+            nn.Linear(64, num_actions)        # [Q_left, Q_right]  → choose max action
         )
 
 

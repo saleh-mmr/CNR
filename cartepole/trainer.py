@@ -22,6 +22,10 @@ class Trainer:
         self.epsilon_decay = hyperparams["epsilon_decay"]               # Exploration decay speed
         self.memory_capacity = hyperparams["memory_capacity"]           # Replay buffer size
         self.render_fps = hyperparams["render_fps"]                     # Visualization frame rate
+        # Target Q-network (for stable targets)
+        # self.target_update_freq = hyperparams.get("target_update_freq", None)
+        # self.use_soft_update = hyperparams.get("use_soft_update", False)
+        # self.target_tau = hyperparams.get("target_tau", 1.0)
 
         # Create environment
         self.env = gym.make(
@@ -42,8 +46,8 @@ class Trainer:
             discount=self.discount_factor,
             memory_capacity=self.memory_capacity,
             weight_datafile_path=hyperparams["weight_datafile_path"],
+            # target_update_freq=self.target_update_freq,
         )
-
 
         # Create logger
         self.logger = TrainingLogger()
@@ -69,6 +73,15 @@ class Trainer:
                 state = next_state
                 episode_reward += reward
                 step_counter += 1
+
+                # Target Q-network (for stable targets)
+                # if self.use_soft_update:
+                #     # Soft (Polyak) update every environment step
+                #     self.agent.update_target_network(hard=False, tau=self.target_tau)
+                # else:
+                #     if self.target_update_freq is not None and self.target_update_freq > 0:
+                #         if total_steps % self.target_update_freq == 0:
+                #             self.agent.update_target_network(hard=True)
 
             total_steps += step_counter
             # Log episode
@@ -102,11 +115,7 @@ class Trainer:
     def test(self, max_episodes):
         # Load best model weights
         self.agent.q_network.load_state_dict(torch.load(self.load_pth))
-        # Set network to evaluation mode:
-        # - Disables dropout (if existed)
-        # - Disables unnecessary gradient tracking
         self.agent.q_network.eval()
-        # Disable exploration during testing
         self.agent.epsilon = 0.0
         self.env = gym.make(
             'CartPole-v1',
