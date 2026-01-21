@@ -16,8 +16,7 @@ class DQNAgent:
     Q-values of actions or epsilon-greedy policy.
     """
     def __init__(self, env, epsilon_max, epsilon_min, epsilon_decay,
-                 clip_grad_norm, learning_rate, discount, memory_capacity,
-                 base_scale: float = 9e7):
+                 clip_grad_norm, learning_rate, discount, memory_capacity, weight_datafile_path):
 
         # To save the history of network loss
         self.loss_history = []
@@ -42,8 +41,7 @@ class DQNAgent:
         self.clip_grad_norm = clip_grad_norm
         self.criterion = nn.MSELoss()
         # self.optimizer = optim.Adam(self.main_network.parameters(), lr=learning_rate)
-        # Create ManhattanWeightController with provided base_scale
-        self.weight_controller = ManhattanWeightController(self.main_network, base_scale=base_scale)
+        self.weight_controller = ManhattanWeightController(self.main_network)
 
 
     def select_action(self, state):
@@ -160,3 +158,5 @@ class DQNAgent:
         save the parameters of main network to a file with .pth extension.
         """
         torch.save(self.main_network.state_dict(), path)
+
+

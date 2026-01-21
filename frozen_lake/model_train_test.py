@@ -35,14 +35,15 @@ class ModelTrainTest:
                             render_mode='human' if self.render else None)
         self.env.metadata['render_fps']=self.render_fps
         self.agent = DQNAgent(env=self.env,
-                               epsilon_max=self.max_epsilon,
-                               epsilon_min=self.min_epsilon,
-                               epsilon_decay=self.epsilon_decay,
-                               clip_grad_norm=self.clip_grad_norm,
-                               learning_rate=self.learning_rate,
-                               memory_capacity=self.memory_capacity,
-                               discount=self.discount_factor,
-                               base_scale=hyperparams.get('base_scale', 9e7))
+                              epsilon_max=self.max_epsilon,
+                              epsilon_min=self.min_epsilon,
+                              epsilon_decay=self.epsilon_decay,
+                              clip_grad_norm=self.clip_grad_norm,
+                              learning_rate=self.learning_rate,
+                              memory_capacity=self.memory_capacity,
+                              discount=self.discount_factor,
+                              weight_datafile_path = hyperparams["weight_datafile_path"],
+        )
 
     def state_preprocess(self, state: int, num_states: int):
         """
@@ -113,7 +114,7 @@ class ModelTrainTest:
 
             # save model
             if episode % self.save_interval == 0 and episode == self.max_episodes:
-                self.agent.save(self.save_path + '_' + f'{episode}' + '.pth')
+                # self.agent.save(self.save_path + '_' + f'{episode}' + '.pth')
                 if episode != self.max_episodes:
                     self.plot_training(episode)
                 print('\n~~~~~~Interval Save: Model saved.\n')
