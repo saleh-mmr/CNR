@@ -158,5 +158,3 @@ class DQNAgent:
         save the parameters of main network to a file with .pth extension.
         """
         torch.save(self.main_network.state_dict(), path)
-
-

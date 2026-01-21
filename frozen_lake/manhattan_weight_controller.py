@@ -1,12 +1,14 @@
 import torch
 
+
 class ManhattanWeightController:
     def __init__(self, model):
-        """
-        step_size : conductance increment per index step
-        """
         self.model = model
-        self.step_size = 0.0001
+
+        # constants for idx → conductance mapping
+        self.a = 1.566e-8
+        self.b = 0.350e-8
+        self.base_scale = 9e7
 
         self.state = {}
         for name, param in model.named_parameters():
@@ -16,17 +18,13 @@ class ManhattanWeightController:
             device = param.device
             shape = param.data.shape
 
-            # index state (source of truth)
+            # index tensors
             g_plus_idx = torch.ones(shape, dtype=torch.long, device=device)
             g_minus_idx = torch.zeros(shape, dtype=torch.long, device=device)
 
-            # conductance tensors (derived)
-            g_plus = torch.empty(shape, dtype=param.dtype, device=device)
-            g_minus = torch.empty(shape, dtype=param.dtype, device=device)
-
-            # initialize conductances
-            g_plus.copy_(self._conductance(g_plus_idx, param.dtype))
-            g_minus.copy_(self._conductance(g_minus_idx, param.dtype))
+            # initial conductances
+            g_plus = self._conductance(g_plus_idx, param.dtype)
+            g_minus = self._conductance(g_minus_idx, param.dtype)
 
             self.state[name] = {
                 "param": param,
@@ -36,12 +34,12 @@ class ManhattanWeightController:
                 "g_minus": g_minus,
             }
 
-            # initialize weight
-            param.data.copy_(g_plus - g_minus)
-
     def _conductance(self, idx, dtype):
-        conductance = self.step_size * idx.to(dtype)
-        return conductance
+
+        idx_f = idx.to(dtype=torch.float32)
+        x = idx_f + 1.0  # matches original np.arange(1, ...)
+        values = (self.a * torch.log10(x) + self.b) * self.base_scale
+        return values.to(dtype=dtype)
 
     @torch.no_grad()
     def step(self):
@@ -52,22 +50,24 @@ class ManhattanWeightController:
                 continue
 
             valid = torch.isfinite(grad)
-            pos = (grad > 0) & valid   # want W down  → increase G-
-            neg = (grad < 0) & valid   # want W up    → increase G+
+            pos = (grad > 0) & valid  # want W down
+            neg = (grad < 0) & valid  # want W up
 
-            gp_idx = st["g_plus_idx"]
-            gm_idx = st["g_minus_idx"]
+            gp = st["g_plus_idx"]
+            gm = st["g_minus_idx"]
 
-            # ---- Manhattan updates (index space only) ----
+            # grad > 0 → increase G-
             if pos.any():
-                gm_idx[pos] += 1
+                gm[pos] += 1
 
+            # grad < 0 → increase G+
             if neg.any():
-                gp_idx[neg] += 1
+                gp[neg] += 1
 
-            # ---- recompute conductances ----
-            st["g_plus"].copy_(self._conductance(gp_idx, param.dtype))
-            st["g_minus"].copy_(self._conductance(gm_idx, param.dtype))
 
-            # ---- write weight ----
+            # update conductances
+            st["g_plus"].copy_(self._conductance(gp, param.dtype))
+            st["g_minus"].copy_(self._conductance(gm, param.dtype))
+
+            # write back parameter
             param.data.copy_(st["g_plus"] - st["g_minus"])

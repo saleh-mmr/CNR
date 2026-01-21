@@ -16,11 +16,11 @@ class DQNNetwork(nn.Module):
         """
         super(DQNNetwork, self).__init__()
         self.FC = nn.Sequential(
-            nn.Linear(input_dim, 48),
+            nn.Linear(input_dim, 12),
             nn.LeakyReLU(negative_slope=0.01),
-            nn.Linear(48,48),
+            nn.Linear(12, 8),
             nn.LeakyReLU(negative_slope=0.01),
-            nn.Linear(48, num_actions)
+            nn.Linear(8, num_actions)
         )
 
         # Initialize the FC layer weights using He Initialization

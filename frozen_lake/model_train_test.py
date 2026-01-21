@@ -122,7 +122,8 @@ class ModelTrainTest:
             print(
                 f"Episode: {episode}, Total Steps: {total_steps}, Ep Step: {step_size}, Reward: {episode_reward:.2f}, Epsilon: {self.agent.epsilon_max:.2f}")
 
-        self.plot_training(episode)
+        # Plot using the configured maximum episodes to avoid referencing a local variable
+        self.plot_training(self.max_episodes)
 
     def test(self, max_episodes):
         """

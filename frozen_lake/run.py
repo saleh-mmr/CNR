@@ -12,7 +12,7 @@ if __name__ == '__main__':
         "save_interval": 500,
 
         "clip_grad_norm": 3,
-        "learning_rate": 3e-4,
+        "learning_rate": 6e-4,
         "discount_factor": 0.93,
         "batch_size": 32,
         "update_frequency": 10,
@@ -24,7 +24,7 @@ if __name__ == '__main__':
         "min_epsilon": 0.01,
         "epsilon_decay": 0.999,
 
-        "memory_capacity": 10000 if train_mode else 0,
+        "memory_capacity": 4000 if train_mode else 0,
 
         "map_size": map_size,
         "num_states": map_size ** 2,
