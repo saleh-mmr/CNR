@@ -20,7 +20,7 @@ HPARAMS = {
     "memory_capacity": 10000,                       # Replay buffer size
     "render_fps": 30,                               # Visualization frame rate
     "weight_datafile_path": "conductance/datafile_V2.csv",         # path to your CSV file
-    "update_frequency": 10
+    "update_frequency": 20
 }
 
 
