@@ -59,7 +59,6 @@ class ModelTrainTest:
     def train(self):
         total_steps = 0
         self.reward_history = []
-
         for episode in range(1, self.max_episodes + 1):
 
             # --- Enable rendering only for first 10 and last 10 episodes ---
@@ -122,8 +121,13 @@ class ModelTrainTest:
             print(
                 f"Episode: {episode}, Total Steps: {total_steps}, Ep Step: {step_size}, Reward: {episode_reward:.2f}, Epsilon: {self.agent.epsilon_max:.2f}")
 
+
+        self.agent.weight_controller.save_tracked_history_csv("tracked_neuron_history.csv")
+        self.agent.weight_controller.plot_tracked_conductance()
+
         # Plot using the configured maximum episodes to avoid referencing a local variable
         self.plot_training(self.max_episodes)
+
 
     def test(self, max_episodes):
         """
@@ -174,21 +178,3 @@ class ModelTrainTest:
         # Only save as file if last episode
         if episode == self.max_episodes:
             plt.savefig('./4x4_plots/reward_plot.png', format='png', dpi=600, bbox_inches='tight')
-        plt.tight_layout()
-        plt.grid(True)
-        plt.show()
-        plt.clf()
-        plt.close()
-
-        plt.figure()
-        plt.title("Loss")
-        plt.plot(self.agent.loss_history, label='Loss', color='#CB291A', alpha=1)
-        plt.xlabel("Episode")
-        plt.ylabel("Loss")
-
-        # Only save as file if last episode
-        if episode == self.max_episodes:
-            plt.savefig('./4x4_plots/Loss_plot.png', format='png', dpi=600, bbox_inches='tight')
-        plt.tight_layout()
-        plt.grid(True)
-        plt.show()

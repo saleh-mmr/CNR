@@ -22,6 +22,8 @@ class Trainer:
         self.epsilon_decay = hyperparams["epsilon_decay"]               # Exploration decay speed
         self.memory_capacity = hyperparams["memory_capacity"]           # Replay buffer size
         self.render_fps = hyperparams["render_fps"]                     # Visualization frame rate
+        self.update_frequency = hyperparams['update_frequency']
+
 
         # Create environment
         self.env = gym.make(
@@ -65,6 +67,9 @@ class Trainer:
                 self.agent.replay_memory.store(state, action, next_state, reward, done) # This is essential for off-policy learning
                 if len(self.agent.replay_memory) > self.batch_size:         # Only learn when enough samples collected
                     episode_loss = self.agent.learn(self.batch_size, done)
+
+                    if total_steps % self.update_frequency == 0:
+                        self.agent.hard_update()
                 # Tracking step and reward progress
                 state = next_state
                 episode_reward += reward

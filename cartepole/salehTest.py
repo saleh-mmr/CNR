@@ -1,17 +1,19 @@
 import numpy as np
 import torch
-import matplotlib.pyplot as plt
 
 
 class ManhattanWeightController:
     def __init__(self, model):
         self.model = model
 
+
+        self.step_size = 0.01
+
         # constants for idx → conductance mapping
-        self.a = 1.566e-8
-        self.b = 0.350e-8
-        self.base_scale = 9e7
-        self.sigma = 1.7e-9
+        # self.a = 1.566e-8
+        # self.b = 0.350e-8
+        # self.base_scale = 9e7
+        # self.sigma = 1.7e-9
 
         self.state = {}
         for name, param in model.named_parameters():
@@ -38,14 +40,18 @@ class ManhattanWeightController:
             }
 
     def _conductance(self, idx, dtype):
-        idx_f = idx.to(dtype=torch.float32)
-        one = torch.tensor(1.0, device=idx_f.device, dtype=idx_f.dtype)
-        x = idx_f + (idx_f == 0) * one
-        value = (self.a * torch.log10(x) + self.b)
-        noise = torch.randn_like(value) * self.sigma
-        noise = noise.clamp(-0.001 * value.abs(), 0.001 * value.abs())
-        value += noise
-        value *= self.base_scale
+        idx = idx.to(dtype=torch.long)
+        value = self.step_size * idx
+
+
+        # idx_f = idx.to(dtype=torch.float32)
+        # one = torch.tensor(1.0, device=idx_f.device, dtype=idx_f.dtype)
+        # x = torch.where(idx_f == 0, idx_f + one, idx_f)
+        # value = (self.a * torch.log10(x) + self.b)
+        # noise = torch.randn_like(value) * self.sigma
+        # noise = noise.clamp(-0.001 * value.abs(), 0.001 * value.abs())
+        # value += noise
+        # value *= self.base_scale
         return value.to(dtype=dtype)
 
     @torch.no_grad()
@@ -70,6 +76,7 @@ class ManhattanWeightController:
             # grad < 0 → increase G+
             if neg.any():
                 gp[neg] += 1
+
 
             # update conductances
             st["g_plus"].copy_(self._conductance(gp, param.dtype))

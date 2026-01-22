@@ -3,14 +3,14 @@ import torch
 import pandas as pd
 
 class ManhattanWeightController:
-    def __init__(self, model, csv_path):
+    def __init__(self, model):
         self.model = model
 
-        conductance = pd.read_csv(csv_path, header=0)
-        values = conductance.values.astype("float32").reshape(-1)
-        values *= 9e8
+        # conductance = pd.read_csv(csv_path, header=0)
+        # values = conductance.values.astype("float32").reshape(-1)
+        # values *= 9e8
 
-        # values = np.arange(start=0, stop=100,step=0.01)
+        values = np.arange(start=0, stop=10000,step=0.001)
 
         self.values = torch.from_numpy(values)
 
@@ -68,18 +68,12 @@ class ManhattanWeightController:
             # ---- grad > 0 : decrease W ----
             if pos.any():
                 can_inc_gm = pos & (gm < max_idx)  # preferred action
-                stuck_gm = pos & (gm >= max_idx)  # fallback
-
                 gm[can_inc_gm] += 1  # increase G-
-                gp[stuck_gm] -= 1  # if G- maxed, decrease G+
 
             # ---- grad < 0 : increase W ----
             if neg.any():
                 can_inc_gp = neg & (gp < max_idx)  # preferred action
-                stuck_gp = neg & (gp >= max_idx)  # fallback
-
                 gp[can_inc_gp] += 1  # increase G+
-                gm[stuck_gp] -= 1  # if G+ maxed, decrease G-
 
             # Clamp indices to valid range
             gp.clamp_(0, max_idx)
