@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 
 
@@ -9,6 +10,7 @@ class ManhattanWeightController:
         self.a = 1.566e-8
         self.b = 0.350e-8
         self.base_scale = 9e7
+        self.sigma = 1.7e-9
 
         self.state = {}
         for name, param in model.named_parameters():
@@ -35,11 +37,16 @@ class ManhattanWeightController:
             }
 
     def _conductance(self, idx, dtype):
-
         idx_f = idx.to(dtype=torch.float32)
-        x = idx_f + 1.0  # matches original np.arange(1, ...)
-        values = (self.a * torch.log10(x) + self.b) * self.base_scale
-        return values.to(dtype=dtype)
+        one = torch.tensor(1.0, device=idx_f.device, dtype=idx_f.dtype)
+        x = torch.where(idx_f == 0, idx_f + one, idx_f)
+
+        value = (self.a * torch.log10(x) + self.b)
+        noise = torch.randn_like(value) * self.sigma
+        noise = noise.clamp(-0.001 * value.abs(), 0.001 * value.abs())
+        value += noise
+        value *= self.base_scale
+        return value.to(dtype=dtype)
 
     @torch.no_grad()
     def step(self):
