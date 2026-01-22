@@ -4,7 +4,7 @@ from torch import nn, optim
 
 from config import seed, device
 from dqn_network import DQNNetwork
-from manhattan_weight_controller import ManhattanWeightController
+from tracking_phase import ManhattanWeightController
 from replay_memory import ReplayMemory
 
 

@@ -5,7 +5,7 @@ from torch import nn, optim
 from config import seed, device
 from network import DQNNetwork
 from replay_memory import ReplayMemory
-from manhattan_weight_controller import ManhattanWeightController
+from salehTest import ManhattanWeightController
 
 
 class DQNAgent:
@@ -49,16 +49,15 @@ class DQNAgent:
         input_dim = self.observation_space.shape[0]                       # network input = state size (4)
         output_dim = self.action_space.n                                  # network output = number of actions (2)
         self.q_network = DQNNetwork(output_dim, input_dim).to(device)
+        self.target_network = DQNNetwork(output_dim, input_dim).to(device).eval()
+        self.target_network.load_state_dict(self.q_network.state_dict())
 
         # We still use a squared-error loss just to get gradients,
         # but NO standard optimizer – updates are handled by ManhattanWeightController.
         self.criterion = nn.MSELoss()
 
         # Manhattan-style discrete weight controller
-        self.weight_controller = ManhattanWeightController(
-            self.q_network,
-            weight_datafile_path,
-        )
+        self.weight_controller = ManhattanWeightController(self.q_network)
 
 
     # Action Selection (epsilon-greedy)
@@ -92,18 +91,28 @@ class DQNAgent:
 
         # self.q_network(states) → outputs all Q-values
         # .gather(1, actions) → picks only Q-values of the taken actions
-        predicted_q = self.q_network(states).gather(1, actions)       # This is the Q(s, a) value from Bellman equation
+        predicted_q = self.q_network(states)  # forward pass through the main network to find the Q-values of the states
+        predicted_q = predicted_q.gather(dim=1,index=actions)  # selecting the Q-values of the actions that were actually taken
+
+
+        with torch.no_grad():
+            next_target_q_value = self.target_network(next_states).max(dim=1, keepdim=True)[0]
+            # Mask terminal states
+            next_target_q_value[dones] = 0
+        # Now build the Bellman Target
+        y_js = rewards + (self.discount * next_target_q_value)
+        loss = self.criterion(predicted_q, y_js)
+
+
+
 
         # Max future reward if the episode is not terminal
-        with torch.no_grad():
-            next_q = self.q_network(next_states).max(dim=1, keepdim=True).values   # Choose max Q-value for each next state
-            next_q[dones] = 0.0
-
-        # Now build the Bellman Target
-        targets = rewards + self.discount * next_q
-
+        # with torch.no_grad():
+        #     next_q = self.q_network(next_states).max(dim=1, keepdim=True).values   # Choose max Q-value for each next state
+        #     next_q[dones] = 0.0
+        # targets = rewards + self.discount * next_q
         # compare current guess vs target (criterion is MSELoss)
-        loss = self.criterion(predicted_q, targets)
+        # loss = self.criterion(predicted_q, targets)
 
         # Accumulate loss
         self.running_loss += loss.item()
@@ -134,3 +143,11 @@ class DQNAgent:
     # Model saving
     def save(self, path):
         torch.save(self.q_network.state_dict(), path)             # Stores parameters (weights) to a file
+
+
+    def hard_update(self):
+        """
+        Navie update: update target network's parameters by directly
+        copying the parameters from the main network.
+        """
+        self.target_network.load_state_dict(self.q_network.state_dict())
