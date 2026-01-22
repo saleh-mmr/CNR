@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-import pandas as pd
 
 class ManhattanWeightController:
     def __init__(self, model):
@@ -10,7 +9,7 @@ class ManhattanWeightController:
         # values = conductance.values.astype("float32").reshape(-1)
         # values *= 9e8
 
-        values = np.arange(start=0, stop=10000,step=0.001)
+        values = np.arange(start=0, stop=10000,step=0.01)
 
         self.values = torch.from_numpy(values)
 
