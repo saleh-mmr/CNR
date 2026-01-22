@@ -41,7 +41,9 @@ class ModelTrainTest:
                               clip_grad_norm=self.clip_grad_norm,
                               learning_rate=self.learning_rate,
                               memory_capacity=self.memory_capacity,
-                              discount=self.discount_factor)
+                              discount=self.discount_factor,
+                              weight_datafile_path = hyperparams["weight_datafile_path"],
+        )
 
     def state_preprocess(self, state: int, num_states: int):
         """
@@ -61,10 +63,10 @@ class ModelTrainTest:
         for episode in range(1, self.max_episodes + 1):
 
             # --- Enable rendering only for first 10 and last 10 episodes ---
-            if episode <= 10 or episode > self.max_episodes - 10:
-                render_mode = "human"
-            else:
-                render_mode = None
+            # if episode <= 2 or episode > self.max_episodes - 2:
+            #     render_mode = "human"
+            # else:
+            #     render_mode = None
 
             # Recreate env with correct render mode
             self.env = gym.make(
@@ -72,7 +74,7 @@ class ModelTrainTest:
                 map_name=f"{self.map_size}x{self.map_size}",
                 is_slippery=False,
                 max_episode_steps=self.max_steps,
-                render_mode=render_mode
+                # render_mode=render_mode
             )
             self.env.metadata['render_fps'] = self.render_fps
 
@@ -112,7 +114,7 @@ class ModelTrainTest:
 
             # save model
             if episode % self.save_interval == 0 and episode == self.max_episodes:
-                self.agent.save(self.save_path + '_' + f'{episode}' + '.pth')
+                # self.agent.save(self.save_path + '_' + f'{episode}' + '.pth')
                 if episode != self.max_episodes:
                     self.plot_training(episode)
                 print('\n~~~~~~Interval Save: Model saved.\n')
@@ -120,7 +122,8 @@ class ModelTrainTest:
             print(
                 f"Episode: {episode}, Total Steps: {total_steps}, Ep Step: {step_size}, Reward: {episode_reward:.2f}, Epsilon: {self.agent.epsilon_max:.2f}")
 
-        self.plot_training(episode)
+        # Plot using the configured maximum episodes to avoid referencing a local variable
+        self.plot_training(self.max_episodes)
 
     def test(self, max_episodes):
         """

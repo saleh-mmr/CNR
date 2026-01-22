@@ -17,9 +17,9 @@ class DQNNetwork(nn.Module):
         super(DQNNetwork, self).__init__()
         self.FC = nn.Sequential(
             nn.Linear(input_dim, 12),
-            nn.ReLU(inplace=True),
-            nn.Linear(12,8),
-            nn.ReLU(inplace=True),
+            nn.LeakyReLU(negative_slope=0.01),
+            nn.Linear(12, 8),
+            nn.LeakyReLU(negative_slope=0.01),
             nn.Linear(8, num_actions)
         )
 

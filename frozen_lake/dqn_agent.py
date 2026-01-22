@@ -4,6 +4,7 @@ from torch import nn, optim
 
 from config import seed, device
 from dqn_network import DQNNetwork
+from manhattan_weight_controller import ManhattanWeightController
 from replay_memory import ReplayMemory
 
 
@@ -15,7 +16,7 @@ class DQNAgent:
     Q-values of actions or epsilon-greedy policy.
     """
     def __init__(self, env, epsilon_max, epsilon_min, epsilon_decay,
-                 clip_grad_norm, learning_rate, discount, memory_capacity):
+                 clip_grad_norm, learning_rate, discount, memory_capacity, weight_datafile_path):
 
         # To save the history of network loss
         self.loss_history = []
@@ -39,7 +40,8 @@ class DQNAgent:
 
         self.clip_grad_norm = clip_grad_norm
         self.criterion = nn.MSELoss()
-        self.optimizer = optim.Adam(self.main_network.parameters(), lr=learning_rate)
+        # self.optimizer = optim.Adam(self.main_network.parameters(), lr=learning_rate)
+        self.weight_controller = ManhattanWeightController(self.main_network)
 
 
     def select_action(self, state):
@@ -86,9 +88,8 @@ class DQNAgent:
         # Computing the maximum Q-value for the next states using the target network
         with torch.no_grad():
             next_target_q_value = self.target_network(next_states).max(dim=1, keepdim=True)[0]
-
-        # Mask terminal states
-        next_target_q_value[dones] = 0
+            # Mask terminal states
+            next_target_q_value[dones] = 0
 
         # DQN target: y = r + γ * max_a' Q_target(s', a')
         y_js = rewards + (self.discount * next_target_q_value)
@@ -98,20 +99,41 @@ class DQNAgent:
         self.running_loss += loss.item()
         self.learned_counts += 1
 
-        # Episode-level loss logging when an episode ends
+
+        # Backprop
+        self.main_network.zero_grad()
+        loss.backward()                     # Compute gradients
+        self.weight_controller.step()
+
+        # If episode finished → return average loss
         if done:
-            episode_loss = self.running_loss / self.learned_counts
-            self.loss_history.append(episode_loss)
+            avg_loss = (
+                self.running_loss / self.learned_counts
+                if self.learned_counts > 0 else 0.0
+            )
+            # Reset counters here
             self.running_loss = 0
             self.learned_counts = 0
+            return avg_loss
 
-        # Standard backprop
-        self.optimizer.zero_grad() # Zero gradients
-        loss.backward() # Perform backward pass and update gradients
+        return None
 
-        # Use the in-place version for gradient clipping
-        torch.nn.utils.clip_grad_norm_(self.main_network.parameters(), self.clip_grad_norm)
-        self.optimizer.step()
+
+
+        # # Episode-level loss logging when an episode ends
+        # if done:
+        #     episode_loss = self.running_loss / self.learned_counts
+        #     self.loss_history.append(episode_loss)
+        #     self.running_loss = 0
+        #     self.learned_counts = 0
+        #
+        # # Standard backprop
+        # self.optimizer.zero_grad() # Zero gradients
+        # loss.backward() # Perform backward pass and update gradients
+        #
+        # # Use the in-place version for gradient clipping
+        # torch.nn.utils.clip_grad_norm_(self.main_network.parameters(), self.clip_grad_norm)
+        # self.optimizer.step()
 
 
     def hard_update(self):
@@ -136,5 +158,3 @@ class DQNAgent:
         save the parameters of main network to a file with .pth extension.
         """
         torch.save(self.main_network.state_dict(), path)
-
-

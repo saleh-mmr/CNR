@@ -2,12 +2,12 @@ from model_train_test import ModelTrainTest
 
 if __name__ == '__main__':
     # Parameters:
-    train_mode = False
+    train_mode = True
     render = not train_mode
     map_size = 4  # 4x4 or 8x8
     RL_hyperparams = {
         "train_mode": train_mode,
-        "RL_load_path": f'./4x4_weights/final_weights_3000.pth',
+        "RL_load_path": f'./4x4_weights/final_weights_2000.pth',
         "save_path": f'./4x4_weights/final_weights',
         "save_interval": 500,
 
@@ -16,7 +16,7 @@ if __name__ == '__main__':
         "discount_factor": 0.93,
         "batch_size": 32,
         "update_frequency": 10,
-        "max_episodes": 3000 if train_mode else 5,
+        "max_episodes": 4000 if train_mode else 5,
         "max_steps": 200,
         "render": render,
 
@@ -29,6 +29,7 @@ if __name__ == '__main__':
         "map_size": map_size,
         "num_states": map_size ** 2,
         "render_fps": 6,
+        "weight_datafile_path": "conductance/datafile_V2.csv",         # path to your CSV file
     }
 
     # Run
