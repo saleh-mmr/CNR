@@ -1,0 +1,17 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE files
+.idea/
+*.iml
+*.xml
+
+# Data / outputs
+*.csv
+*.png
+
+# OS files
+.DS_Store
+Thumbs.db
