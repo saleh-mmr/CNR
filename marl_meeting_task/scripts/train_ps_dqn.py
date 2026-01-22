@@ -11,7 +11,7 @@ import torch
 from typing import Dict, List, Any
 
 from marl_meeting_task.src.env.meeting_gridworld import MeetingGridworldEnv
-from marl_meeting_task.src.algos.ps_dqn import PS_DQN
+from marl_meeting_task.src.algos.ps import PS
 from marl_meeting_task.src.utils.logger import Logger
 
 
@@ -79,7 +79,7 @@ def run_training(seed, max_episodes, log_dir, verbose):
     env = MeetingGridworldEnv(grid_size=5, n_agents=2, max_steps=50)
     
     # Initialize PS-DQN
-    ps_dqn = PS_DQN(
+    ps_dqn = PS(
         n_agents=2,
         input_dim=hyperparameters['observation_dim'],
         num_actions=hyperparameters['num_actions'],
@@ -202,8 +202,6 @@ def aggregate_results(all_results: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def main():
-    """Main training function."""
-    # Configuration (matching IQL protocol)
     SEEDS = [2025, 2026, 2027, 2028, 2029]  # Same seeds as IQL for fair comparison
     MAX_EPISODES = 1000
     BASE_LOG_DIR = "runs/ps_dqn_multi_seed"
@@ -252,7 +250,7 @@ def main():
             logger.info(f"  Final Avg Return (last 100): {final_avg_return:.2f}")
             logger.info(f"  Total Steps: {stats['total_steps']}")
 
-            # Save per-seed JSON into the run directory
+            # Save per seed JSON into the run directory
             results_data = {
                 'seed': stats['seed'],
                 'total_steps': stats['total_steps'],
@@ -281,11 +279,10 @@ def main():
     # Aggregate results
     aggregated = aggregate_results(all_results)
 
-    # Save aggregated.json into the run directory (include hyperparameters and per-seed details)
+    # Save aggregated.json into the run directory (include hyperparameters only, not per-seed full details)
     aggregated_save = {
         'hyperparameters': all_results[0]['hyperparameters'] if all_results else {},
         'aggregated': aggregated,
-        'per_seed': all_results,
     }
     logger.save_aggregated_run(run_dir, aggregated_save)
 

@@ -206,8 +206,6 @@ def aggregate_results(all_results: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def main():
-    """Main training function."""
-    # Configuration
     SEEDS = [2025, 2026, 2027, 2028, 2029]  # At least 2 seeds (using 5 for better statistics)
     MAX_EPISODES = 1000
     BASE_LOG_DIR = "runs/iql_multi_seed"
@@ -260,8 +258,6 @@ def main():
             results_data = {
                 'seed': stats['seed'],
                 'total_steps': stats['total_steps'],
-                # 'episode_rewards': stats['episode_rewards'],
-                # 'episode_lengths': stats['episode_lengths'],
                 'episode_successes': stats['episode_successes'],
                 'episode_losses': stats['episode_losses'],
                 'final_eval_metrics': stats['final_eval_metrics'],
@@ -287,11 +283,10 @@ def main():
     # Aggregate results
     aggregated = aggregate_results(all_results)
 
-    # Save aggregated.json into the run directory (include hyperparameters and per-seed details)
+    # Save aggregated.json into the run directory (include hyperparameters only, not per-seed full details)
     aggregated_save = {
         'hyperparameters': all_results[0]['hyperparameters'] if all_results else {},
         'aggregated': aggregated,
-        'per_seed': all_results,
     }
     logger.save_aggregated_run(run_dir, aggregated_save)
 

@@ -5,20 +5,18 @@ import torch.nn.functional as F
 
 class MixingNetwork(nn.Module):
     """
-    QMIX Mixing Network.
-    
-    Combines individual agent Q-values into a joint Q-value Q_tot.
-    Enforces monotonicity constraint: ∂Q_tot/∂Q_i >= 0 for all i.
-    
-    Architecture:
-    - Takes agent Q-values [Q_1, Q_2, ...] and global state s
-    - Uses hypernetworks to generate positive weights from state
-    - Mixes Q-values with state-dependent positive weights
-    - Output: Q_tot(s, a_1, a_2, ...)
-    
-    Reference:
-    Rashid, T., et al. (2018). QMIX: Monotonic Value Function Factorisation
-    for Deep Multi-Agent Reinforcement Learning. ICML.
+    QMIX Mixing Network (single-layer monotonic variant).
+
+    This simplified mixing network uses a single state-conditioned layer to
+    combine individual agent Q-values into a joint Q-value Q_tot. The mixing
+    weights are produced by a hypernetwork (`hyper_w1`) and passed through
+    `softplus` to ensure they are strictly non-negative, which preserves the
+    monotonicity constraint: increasing any agent Q_i cannot decrease Q_tot.
+
+    Architecture (this file's variant):
+    - hyper_w1: state -> [n_agents] (per-agent weights)
+    - hyper_b1: state -> [1] (global bias)
+    - Q_tot = sum_i softplus(w_i(state)) * Q_i + b(state)
     """
     
     def __init__(
@@ -28,16 +26,7 @@ class MixingNetwork(nn.Module):
         mixing_hidden_dim: int = 64,
     ):
         """
-        Initialize QMIX Mixing Network.
-        
-        Parameters:
-        -----------
-        n_agents : int
-            Number of agents (default: 2)
-        state_dim : int
-            Dimension of global state (default: 6)
-        mixing_hidden_dim : int
-            Hidden dimension for mixing network (default: 64)
+        Initialize single-layer mixing network.
         """
         super(MixingNetwork, self).__init__()
         
@@ -45,41 +34,28 @@ class MixingNetwork(nn.Module):
         self.state_dim = state_dim
         self.mixing_hidden_dim = mixing_hidden_dim
         
-        # Hypernetworks: generate mixing weights from state
-        # These ensure monotonicity by producing positive weights
-        
-        # First layer hypernetwork: state -> [n_agents, mixing_hidden_dim] weights
+        # Hypernetwork producing per-agent weights. We keep the name
+        # `hyper_w1` but change the final output size to `n_agents` so that
+        # for each state we get one weight per agent.
         self.hyper_w1 = nn.Sequential(
             nn.Linear(state_dim, mixing_hidden_dim),
             nn.ReLU(),
-            nn.Linear(mixing_hidden_dim, n_agents * mixing_hidden_dim)
+            nn.Linear(mixing_hidden_dim, n_agents),
         )
         
-        # First layer hypernetwork: state -> [mixing_hidden_dim] bias
+        # Hypernetwork producing a single scalar bias per state (global bias).
         self.hyper_b1 = nn.Sequential(
             nn.Linear(state_dim, mixing_hidden_dim),
             nn.ReLU(),
-            nn.Linear(mixing_hidden_dim, mixing_hidden_dim)
+            nn.Linear(mixing_hidden_dim, 1),
         )
         
-        # Second layer hypernetwork: state -> [mixing_hidden_dim, 1] weights
-        self.hyper_w2 = nn.Sequential(
-            nn.Linear(state_dim, mixing_hidden_dim),
-            nn.ReLU(),
-            nn.Linear(mixing_hidden_dim, mixing_hidden_dim)
-        )
-        
-        # Second layer hypernetwork: state -> [1] bias
-        self.hyper_b2 = nn.Sequential(
-            nn.Linear(state_dim, mixing_hidden_dim),
-            nn.ReLU(),
-            nn.Linear(mixing_hidden_dim, 1)
-        )
-    
+        # Note: removed hyper_w2 and hyper_b2 (two-layer mixing) as requested.
+
     def forward(self, agent_qs: torch.Tensor, states: torch.Tensor) -> torch.Tensor:
         """
-        Forward pass through mixing network.
-        
+        Forward pass through the single-layer mixing network.
+
         Parameters:
         -----------
         agent_qs : torch.Tensor
@@ -92,28 +68,17 @@ class MixingNetwork(nn.Module):
         torch.Tensor
             Joint Q-value Q_tot of shape [batch_size, 1]
         """
+        # Expect agent_qs: [batch, n_agents]
         batch_size = agent_qs.shape[0]
-        agent_qs = agent_qs.unsqueeze(1)  # [batch_size, 1, n_agents]
-        
-        # Generate positive weights using hypernetworks and softplus
-        w1 = F.softplus(self.hyper_w1(states))  # [batch_size, n_agents * mixing_hidden_dim]
-        w1 = w1.view(batch_size, self.n_agents, self.mixing_hidden_dim)
-        
-        b1 = self.hyper_b1(states)  # [batch_size, mixing_hidden_dim]
-        b1 = b1.unsqueeze(1)  # [batch_size, 1, mixing_hidden_dim]
-        
-        # First mixing layer
-        hidden = F.elu(torch.bmm(agent_qs, w1) + b1)  # [batch_size, 1, mixing_hidden_dim]
-        
-        # Second layer
-        w2 = F.softplus(self.hyper_w2(states))  # [batch_size, mixing_hidden_dim]
-        w2 = w2.view(batch_size, self.mixing_hidden_dim, 1)
-        
-        b2 = self.hyper_b2(states)  # [batch_size, 1]
-        
-        # Final mixing
-        q_tot = torch.bmm(hidden, w2) + b2.unsqueeze(1)  # [batch_size, 1, 1]
-        q_tot = q_tot.squeeze(1)  # [batch_size, 1]
-        
-        return q_tot
+        assert agent_qs.shape[1] == self.n_agents, \
+            f"Expected agent_qs second dim to be n_agents={self.n_agents}, got {agent_qs.shape[1]}"
 
+        # Produce positive weights per agent from the state
+        w = F.softplus(self.hyper_w1(states))  # [batch_size, n_agents]
+        # Produce scalar bias per state
+        b = self.hyper_b1(states).view(batch_size, 1)  # [batch_size, 1]
+
+        # Compute weighted sum: ensure broadcasting shapes line up
+        # agent_qs: [batch, n_agents], w: [batch, n_agents]
+        q_tot = (agent_qs * w).sum(dim=1, keepdim=True) + b  # [batch, 1]
+        return q_tot

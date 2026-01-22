@@ -189,8 +189,6 @@ def main():
             results_data = {
                 'seed': stats['seed'],
                 'total_steps': stats['total_steps'],
-                # 'episode_rewards': stats['episode_rewards'],
-                # 'episode_lengths': stats['episode_lengths'],
                 'episode_successes': stats['episode_successes'],
                 'episode_losses': stats['episode_losses'],
                 'final_eval_metrics': stats['final_eval_metrics'],
@@ -212,7 +210,6 @@ def main():
     aggregated_save = {
         'hyperparameters': all_results[0]['hyperparameters'] if all_results else {},
         'aggregated': aggregated,
-        'per_seed': all_results,
     }
     logger.save_aggregated_run(run_dir, aggregated_save)
 

@@ -31,15 +31,15 @@ class QMIX:
     
     def __init__(
         self,
-        n_agents: int,
-        input_dim: int,  # Local observation dimension: [own_x, own_y, goal_x, goal_y]
-        state_dim: int,  # Global state dimension: [a1_x, a1_y, a2_x, a2_y, g_x, g_y]
-        num_actions: int,
-        hidden_dim: int,
-        mixing_hidden_dim: int,  # Increased from 64 for better mixing capacity
-        learning_rate: float,
-        memory_capacity: int,
-        gamma: float,
+        n_agents,
+        input_dim,  # Local observation dimension: [own_x, own_y, goal_x, goal_y]
+        state_dim,  # Global state dimension: [a1_x, a1_y, a2_x, a2_y, g_x, g_y]
+        num_actions,
+        hidden_dim,
+        mixing_hidden_dim,  # Increased from 64 for better mixing capacity
+        learning_rate,
+        memory_capacity,
+        gamma,
         epsilon_start,
         epsilon_end,
         epsilon_decay_steps,  # Slowed down from 50000 for more gradual exploration decay
@@ -98,7 +98,7 @@ class QMIX:
         
         # Training state
         self.total_steps = 0
-        self.grid_size = 5  # Default grid size (will be updated from env if needed)
+        self.grid_size = 5
         
         # Initialize agent Q-networks (one per agent)
         # Note: input_dim is base observation dim, agent_id will be appended as one-hot
@@ -180,10 +180,7 @@ class QMIX:
     # Helper: Append Agent IDs to Observations
     # ========================================================================
     
-    def _append_agent_ids_batch(
-        self, 
-        observations: Dict[int, torch.Tensor]
-    ) -> Dict[int, torch.Tensor]:
+    def _append_agent_ids_batch(self, observations: Dict[int, torch.Tensor]) -> Dict[int, torch.Tensor]:
         """
         Append one-hot agent IDs to batch observations.
         
@@ -516,18 +513,7 @@ class QMIX:
             'avg_return': avg_return,
         }
     
-    def train(
-        self,
-        env,
-        max_episodes: int,
-        max_steps: int = 50,
-        train_freq: int = 1,
-        min_buffer_size: int = 1000,
-        verbose: bool = True,
-        log_dir: Optional[str] = "runs/qmix",
-        eval_episodes: int = 500,
-        env_seed: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    def train(self, env, max_episodes, max_steps, train_freq, min_buffer_size, verbose, log_dir, eval_episodes, env_seed):
         """
         Main training loop for QMIX.
         
@@ -569,13 +555,7 @@ class QMIX:
         episode_lengths = []
         episode_successes = []
         episode_losses = []
-        
-        # Moving averages
-        window_size = 100
-        success_window = []
-        length_window = []
-        return_window = []
-        
+
         for episode in range(max_episodes):
             episode_seed = None if env_seed is None else env_seed + episode
             obs, info = env.reset(seed=episode_seed)
@@ -644,16 +624,6 @@ class QMIX:
                 episode_losses.append(avg_loss)
             else:
                 episode_losses.append(None)
-            
-            # Update moving averages
-            success_window.append(episode_success)
-            length_window.append(episode_length)
-            return_window.append(episode_reward)
-            
-            if len(success_window) > window_size:
-                success_window.pop(0)
-                length_window.pop(0)
-                return_window.pop(0)
             
             # Print progress
             if (episode + 1) % 100 == 0:

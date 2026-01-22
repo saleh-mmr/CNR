@@ -57,7 +57,7 @@ def main():
     step_counts = []
     
     for episode in range(n_episodes):
-        obs, info = env.reset(seed=seed + episode)
+        obs, info = env.reset(seed=seed + 10)
         
         if episode == 0:
             print(f"\nEpisode {episode+1} - Initial state:")
