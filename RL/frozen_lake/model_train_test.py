@@ -11,9 +11,6 @@ from dqn_agent import DQNAgent
 class ModelTrainTest:
     def __init__(self, hyperparams):
         self.train_mode = hyperparams['train_mode']
-        self.RL_load_path = hyperparams['RL_load_path']
-        self.save_path = hyperparams['save_path']
-        self.save_interval = hyperparams['save_interval']
         self.clip_grad_norm = hyperparams['clip_grad_norm']
         self.learning_rate = hyperparams['learning_rate']
         self.discount_factor = hyperparams['discount_factor']
@@ -42,15 +39,13 @@ class ModelTrainTest:
                               learning_rate=self.learning_rate,
                               memory_capacity=self.memory_capacity,
                               discount=self.discount_factor,
-                              weight_datafile_path = hyperparams["weight_datafile_path"],
-        )
+                              sigma=hyperparams["sigma"])
 
     def state_preprocess(self, state: int, num_states: int):
         """
         Convert a state to a tensor, and basically it encodes the state into
         an onehot vector. For example, the return can be something like tensor([0,0,1,0,0])
         which could mean agent is at state 2 from total of 5 states.
-
         """
         onehot_vector = torch.zeros(num_states, dtype=torch.float32, device=device)
         onehot_vector[state] = 1
@@ -61,11 +56,13 @@ class ModelTrainTest:
         self.reward_history = []
         for episode in range(1, self.max_episodes + 1):
 
-            # --- Enable rendering only for first 10 and last 10 episodes ---
-            # if episode <= 2 or episode > self.max_episodes - 2:
+            # --- Enable rendering only for first N and last N episodes ---
+            # N = 2 # Number of episodes to render at start and end
+            # if episode <= N or episode > self.max_episodes - N:
             #     render_mode = "human"
             # else:
             #     render_mode = None
+            render_mode = None
 
             # Recreate env with correct render mode
             self.env = gym.make(
@@ -73,7 +70,7 @@ class ModelTrainTest:
                 map_name=f"{self.map_size}x{self.map_size}",
                 is_slippery=False,
                 max_episode_steps=self.max_steps,
-                # render_mode=render_mode
+                render_mode=render_mode
             )
             self.env.metadata['render_fps'] = self.render_fps
 
@@ -111,22 +108,18 @@ class ModelTrainTest:
             # decay epsilon
             self.agent.update_epsilon()
 
-            # save model
-            if episode % self.save_interval == 0 and episode == self.max_episodes:
-                # self.agent.save(self.save_path + '_' + f'{episode}' + '.pth')
-                if episode != self.max_episodes:
-                    self.plot_training(episode)
-                print('\n~~~~~~Interval Save: Model saved.\n')
-
             print(
                 f"Episode: {episode}, Total Steps: {total_steps}, Ep Step: {step_size}, Reward: {episode_reward:.2f}, Epsilon: {self.agent.epsilon_max:.2f}")
 
 
-        self.agent.weight_controller.save_tracked_history_csv("tracked_neuron_history.csv")
-        self.agent.weight_controller.plot_tracked_conductance()
+        # Tracking weights updates using tracking_weight_controller.py
+        # self.agent.weight_controller.save_tracked_history_csv("tracked_neuron_history.csv")
+        # self.agent.weight_controller.plot_tracked_conductance()
 
         # Plot using the configured maximum episodes to avoid referencing a local variable
         self.plot_training(self.max_episodes)
+
+        return self.reward_history
 
 
     def test(self, max_episodes):
