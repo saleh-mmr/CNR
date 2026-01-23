@@ -11,15 +11,13 @@ from dqn_agent import DQNAgent
 from step_wrapper import StepWrapper
 
 
-class ModelTrainTest():
+class ModelTrainTest:
     def __init__(self, hyperparams):
 
         # Define RL Hyperparameters
         self.train_mode = hyperparams["train_mode"]
         self.RL_load_path = hyperparams["RL_load_path"]
         self.save_path = hyperparams["save_path"]
-        self.save_interval = hyperparams["save_interval"]
-
         self.clip_grad_norm = hyperparams["clip_grad_norm"]
         self.learning_rate = hyperparams["learning_rate"]
         self.discount_factor = hyperparams["discount_factor"]
@@ -27,15 +25,15 @@ class ModelTrainTest():
         self.update_frequency = hyperparams["update_frequency"]
         self.max_episodes = hyperparams["max_episodes"]
         self.max_steps = hyperparams["max_steps"]
-        self.render = hyperparams["render"]
 
         self.epsilon_max = hyperparams["epsilon_max"]
         self.epsilon_min = hyperparams["epsilon_min"]
         self.epsilon_decay = hyperparams["epsilon_decay"]
 
         self.memory_capacity = hyperparams["memory_capacity"]
-
         self.render_fps = hyperparams["render_fps"]
+        self.render = hyperparams["render"]
+        self.number_render = hyperparams["number_render"]
 
         # Define Env
         self.env = gym.make('MountainCar-v0', max_episode_steps=self.max_steps,
@@ -81,7 +79,10 @@ class ModelTrainTest():
         for episode in range(1, self.max_episodes + 1):
 
             # Decide if we should render this episode
-            render_this = (episode <= 1) or (episode > self.max_episodes - 10)
+            render_this = (
+                    episode <= self.number_render
+                    or episode > self.max_episodes - self.number_render
+            )
 
             # Re-create environment based on rendering choice
             self.env = gym.make('MountainCar-v0',
@@ -121,20 +122,19 @@ class ModelTrainTest():
             # Decay epsilon at the end of each episode
             self.agent.update_epsilon()
 
-            # -- based on interval
-            if episode % self.save_interval == 0:
-                self.agent.save(self.save_path + '_' + f'{episode}' + '.pth')
-                if episode == self.max_episodes:
-                    self.plot_training(episode)
-                print('\n~~~~~~Interval Save: Model saved.\n')
-
             result = (f"Episode: {episode}, "
                       f"Total Steps: {total_steps}, "
                       f"Ep Step: {step_size}, "
                       f"Raw Reward: {episode_reward:.2f}, "
                       f"Epsilon: {self.agent.epsilon_max:.2f}")
             print(result)
-        self.plot_training(episode)
+
+        # ---- Training finished ----
+        final_model_path = self.save_path + '_final.pth'
+        self.agent.save(final_model_path)
+        print(f'\n✅ Training complete. Final model saved to {final_model_path}')
+
+        self.plot_training(self.max_episodes)
 
     def test(self, max_episodes):
         """
@@ -142,7 +142,7 @@ class ModelTrainTest():
         """
 
         # Load the weights of the test_network
-        self.agent.main_network.load_state_dict(torch.load(self.RL_load_path))
+        # self.agent.main_network.load_state_dict(torch.load(self.RL_load_path))
         self.agent.main_network.eval()
 
         # Testing loop over episodes
@@ -174,8 +174,7 @@ class ModelTrainTest():
         sma = np.convolve(self.reward_history, np.ones(50) / 50, mode='valid')
 
         # Clip max (high) values for better plot analysis
-        reward_history = np.clip(self.reward_history, a_min=None, a_max=100)
-        sma = np.clip(sma, a_min=None, a_max=100)
+        reward_history = self.reward_history
 
         plt.figure()
         plt.title("Obtained Rewards")

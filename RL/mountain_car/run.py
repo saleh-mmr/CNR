@@ -3,29 +3,29 @@ from model_train_test import ModelTrainTest
 
 if __name__ == '__main__':
     # Parameters:
-    train_mode = False
+    train_mode = True
     render = not train_mode
     RL_hyperparams = {
         "train_mode": train_mode,
-        "RL_load_path": './weights/weights_900.pth',
+        "RL_load_path": './weights/weights_final.pth',
         "save_path": './weights/weights',
-        "save_interval": 900,
-
         "clip_grad_norm": 5,
         "learning_rate": 1e-4,
         "discount_factor": 0.9,
-        "batch_size": 128,
-        "update_frequency": 20,
-        "max_episodes": 900 if train_mode else 5,
+        "batch_size": 32,
+        "update_frequency": 10,
+        "max_episodes": 5000 if train_mode else 5,
         "max_steps": 200,
-        "render": render,
 
         "epsilon_max": 1.0 if train_mode else -1,
         "epsilon_min": 0.02,
         "epsilon_decay": 0.999,
 
-        "memory_capacity": 150_000,
+        "memory_capacity": 150000,
+        "render": render,
         "render_fps": 60,
+        "number_render": 0,  # render first N and last N episodes
+
     }
 
     # Run
