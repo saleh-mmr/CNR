@@ -1,10 +1,10 @@
 import numpy as np
 import torch
-from torch import nn, optim
+from torch import nn
 
 from config import seed, device
 from dqn_network import DQNNetwork
-from tracking_phase import ManhattanWeightController
+from RL.frozen_lake.controllers.multiple_sigma_wieght_controller import ManhattanWeightController
 from replay_memory import ReplayMemory
 
 
@@ -15,8 +15,16 @@ class DQNAgent:
     such as the learning method, hard update and action selection based on the
     Q-values of actions or epsilon-greedy policy.
     """
-    def __init__(self, env, epsilon_max, epsilon_min, epsilon_decay,
-                 clip_grad_norm, learning_rate, discount, memory_capacity, weight_datafile_path):
+    def __init__(self,
+                 env,
+                 epsilon_max,
+                 epsilon_min,
+                 epsilon_decay,
+                 clip_grad_norm,
+                 learning_rate,
+                 discount,
+                 memory_capacity,
+                 sigma):
 
         # To save the history of network loss
         self.loss_history = []
@@ -38,31 +46,31 @@ class DQNAgent:
         self.target_network = DQNNetwork(num_actions=self.action_space.n, input_dim=self.observation_space.n).to(device).eval()
         self.target_network.load_state_dict(self.main_network.state_dict())
 
-        self.clip_grad_norm = clip_grad_norm
         self.criterion = nn.MSELoss()
         # self.optimizer = optim.Adam(self.main_network.parameters(), lr=learning_rate)
-        self.weight_controller = ManhattanWeightController(self.main_network)
+        # self.clip_grad_norm = clip_grad_norm
 
+        self.weight_controller = ManhattanWeightController(self.main_network, sigma=sigma)
 
-    def select_action(self, state):
+    def select_action(self, state, eval_mode=False):
         """
-        Selects an action using epsilon-greedy strategy OR based on Q-values.
-        Parameters:
-            state (torch.Tensor): Input tensor representing the state.
-
-        Returns:
-            action (int): The selected action.
+        Selects an action using epsilon-greedy (training)
+        or greedy-only (evaluation).
         """
-        # Exploration: epsilon-greedy
+
+        # Evaluation: pure greedy
+        if eval_mode:
+            with torch.no_grad():
+                Q_values = self.main_network(state)
+                return torch.argmax(Q_values).item()
+
+        # Training: epsilon-greedy
         if np.random.random() < self.epsilon_max:
             return self.action_space.sample()
 
-        # Exploitation: the action is selected based on Q-values
         with torch.no_grad():
             Q_values = self.main_network(state)
-            action = torch.argmax(Q_values).item()
-            return action
-
+            return torch.argmax(Q_values).item()
 
     def learn(self, batch_size, done):
         """
