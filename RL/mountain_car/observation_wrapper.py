@@ -12,7 +12,6 @@ class ObservationWrapper(gym.ObservationWrapper):
 
 
     def observation(self, state):
-
         state = np.clip(state, self.min_value, self.max_value)
         normalized_state = (state - self.min_value) / (self.max_value - self.min_value)
         return  normalized_state

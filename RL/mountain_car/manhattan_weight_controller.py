@@ -11,7 +11,7 @@ class ManhattanWeightController:
         self.a = 1.566e-8
         self.b = 0.350e-8
         self.base_scale = 9e7
-        self.sigma = 1.7e-9
+        self.sigma = 1.7e-13
 
         self.state = {}
         for name, param in model.named_parameters():
@@ -42,9 +42,9 @@ class ManhattanWeightController:
         one = torch.tensor(1.0, device=idx_f.device, dtype=idx_f.dtype)
         x = idx_f + (idx_f == 0) * one
         value = (self.a * torch.log10(x) + self.b)
-        noise = torch.randn_like(value) * self.sigma
-        noise = noise.clamp(-0.001 * value.abs(), 0.001 * value.abs())
-        value += noise
+        # noise = torch.randn_like(value) * self.sigma
+        # noise = noise.clamp(-0.001 * value.abs(), 0.001 * value.abs())
+        # value += noise
         value *= self.base_scale
         return value.to(dtype=dtype)
 

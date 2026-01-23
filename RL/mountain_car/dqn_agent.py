@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from torch import nn, optim
 
+from RL.mountain_car.manhattan_weight_controller import ManhattanWeightController
 from config import seed, device
 from dqn_network import DQNNetwork
 from replay_memory import ReplayMemory
@@ -41,8 +42,9 @@ class DQNAgent:
         self.target_network.load_state_dict(self.main_network.state_dict())
 
         self.clip_grad_norm = clip_grad_norm
-        self.criterion = nn.SmoothL1Loss()
-        self.optimizer = optim.Adam(self.main_network.parameters(), lr=learning_rate)
+        self.criterion = nn.MSELoss()
+        # self.optimizer = optim.Adam(self.main_network.parameters(), lr=learning_rate)
+        self.weight_controller = ManhattanWeightController(self.main_network)
 
 
     def select_action(self, state):
@@ -93,10 +95,8 @@ class DQNAgent:
         with torch.no_grad():
             # Choose actions using main network
             next_actions = self.main_network(next_states).argmax(dim=1, keepdim=True)
-
             # Evaluate chosen actions using the target network
             next_target_q_value = self.target_network(next_states).gather(1, next_actions)
-
             # Zero next state value if episode terminated
             next_target_q_value[dones] = 0.0
 
@@ -110,20 +110,39 @@ class DQNAgent:
         self.running_loss += loss.item()
         self.learned_counts += 1
 
-        # Episode-level loss logging when an episode ends
+
+
+        self.main_network.zero_grad()
+        loss.backward()                     # Compute gradients
+        self.weight_controller.step()
+        # If episode finished → return average loss
         if done:
-            episode_loss = self.running_loss / self.learned_counts
-            self.loss_history.append(episode_loss)
+            avg_loss = (
+                self.running_loss / self.learned_counts
+                if self.learned_counts > 0 else 0.0
+            )
+            # Reset counters here
             self.running_loss = 0
             self.learned_counts = 0
+            return avg_loss
 
-        # Standard backprop
-        self.optimizer.zero_grad() # Zero gradients
-        loss.backward() # Perform backward pass and update gradients
+        return None
 
-        # Use the in-place version for gradient clipping
-        torch.nn.utils.clip_grad_norm_(self.main_network.parameters(), self.clip_grad_norm)
-        self.optimizer.step()
+
+        # Episode-level loss logging when an episode ends
+        # if done:
+        #     episode_loss = self.running_loss / self.learned_counts
+        #     self.loss_history.append(episode_loss)
+        #     self.running_loss = 0
+        #     self.learned_counts = 0
+        #
+        # # Standard backprop
+        # self.optimizer.zero_grad() # Zero gradients
+        # loss.backward() # Perform backward pass and update gradients
+        #
+        # # Use the in-place version for gradient clipping
+        # torch.nn.utils.clip_grad_norm_(self.main_network.parameters(), self.clip_grad_norm)
+        # self.optimizer.step()
 
 
     def hard_update(self):
