@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import gymnasium as gym
 
-from dqn_agent import DQNAgent
+from agent import DQNAgent
 from config import device, seed
 
 

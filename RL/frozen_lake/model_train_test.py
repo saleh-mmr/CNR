@@ -5,7 +5,7 @@ import torch
 from matplotlib import pyplot as plt
 
 from config import device, seed
-from dqn_agent import DQNAgent
+from agent import DQNAgent
 
 
 class ModelTrainTest:

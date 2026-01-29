@@ -90,15 +90,25 @@ class DQNAgent:
         predicted_q = self.main_network(states) # Forward pass through the main network to find Q-values
         predicted_q = predicted_q.gather(dim=1, index=actions) # Selecting the Q-values of the actions that
 
+        # # Computing the maximum Q-value for the next states using the target network
+        # # ---------- DOUBLE DQN TARGET ----------
+        # with torch.no_grad():
+        #     # Choose actions using main network
+        #     next_actions = self.main_network(next_states).argmax(dim=1, keepdim=True)
+        #     # Evaluate chosen actions using the target network
+        #     next_target_q_value = self.target_network(next_states).gather(1, next_actions)
+        #     # Zero next state value if episode terminated
+        #     next_target_q_value[dones] = 0.0
+
+
+
         # Computing the maximum Q-value for the next states using the target network
-        # ---------- DOUBLE DQN TARGET ----------
         with torch.no_grad():
-            # Choose actions using main network
-            next_actions = self.main_network(next_states).argmax(dim=1, keepdim=True)
-            # Evaluate chosen actions using the target network
-            next_target_q_value = self.target_network(next_states).gather(1, next_actions)
-            # Zero next state value if episode terminated
-            next_target_q_value[dones] = 0.0
+            next_target_q_value = self.target_network(next_states).max(dim=1, keepdim=True)[0]
+            # Mask terminal states
+            next_target_q_value[dones] = 0
+
+
 
         # Bellman target
         y_js = rewards + self.discount * next_target_q_value

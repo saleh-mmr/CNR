@@ -3,8 +3,8 @@ import torch
 from torch import nn
 
 from config import seed, device
-from dqn_network import DQNNetwork
-from RL.frozen_lake.controllers.multiple_sigma_wieght_controller import ManhattanWeightController
+from network import DQNNetwork
+from RL.frozen_lake.controllers.manhattan_weight_controller import ManhattanWeightController
 from replay_memory import ReplayMemory
 
 

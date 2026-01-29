@@ -13,7 +13,7 @@ if __name__ == '__main__':
         "learning_rate": 1e-4,
         "discount_factor": 0.9,
         "batch_size": 32,
-        "update_frequency": 10,
+        "update_frequency": 100,
         "max_episodes": 5000 if train_mode else 5,
         "max_steps": 200,
 

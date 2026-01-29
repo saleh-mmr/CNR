@@ -29,7 +29,8 @@ if __name__ == '__main__':
         "map_size": map_size,
         "num_states": map_size ** 2,
         "render_fps": 6,
-        "weight_datafile_path": "conductance/datafile_V2.csv",         # path to your CSV file
+        "weight_datafile_path": "conductance/datafile_V2.csv",
+        "sigma": 1.7e-9
     }
 
     # Run

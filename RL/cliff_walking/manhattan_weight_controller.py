@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 
 class ManhattanWeightController:
-    def __init__(self, model,sigma):
+    def __init__(self, model, sigma):
         self.model = model
 
         # constants for idx → conductance mapping

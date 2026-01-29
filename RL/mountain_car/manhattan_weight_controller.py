@@ -8,10 +8,10 @@ class ManhattanWeightController:
         self.model = model
 
         # constants for idx → conductance mapping
-        self.a = 1.566e-8
-        self.b = 0.350e-8
-        self.base_scale = 9e7
-        self.sigma = 1.7e-13
+        # self.a = 1.566e-8
+        # self.b = 0.350e-8
+        # self.base_scale = 9e7
+        # self.sigma = 1.7e-13
 
         self.state = {}
         for name, param in model.named_parameters():
@@ -37,15 +37,25 @@ class ManhattanWeightController:
                 "g_minus": g_minus,
             }
 
+    # def _conductance(self, idx, dtype):
+    #     idx_f = idx.to(dtype=torch.float32)
+    #     one = torch.tensor(1.0, device=idx_f.device, dtype=idx_f.dtype)
+    #     x = idx_f + (idx_f == 0) * one
+    #     value = (self.a * torch.log10(x) + self.b)
+    #     noise = torch.randn_like(value) * self.sigma
+    #     value += noise
+    #     value *= self.base_scale
+    #     return value.to(dtype=dtype)
+
     def _conductance(self, idx, dtype):
-        idx_f = idx.to(dtype=torch.float32)
-        one = torch.tensor(1.0, device=idx_f.device, dtype=idx_f.dtype)
-        x = idx_f + (idx_f == 0) * one
-        value = (self.a * torch.log10(x) + self.b)
-        # noise = torch.randn_like(value) * self.sigma
-        # noise = noise.clamp(-0.001 * value.abs(), 0.001 * value.abs())
-        # value += noise
-        value *= self.base_scale
+        """
+        Linear conductance model without saturation.
+        Suitable for MountainCar where gradients are small.
+        """
+        G0 = 0.0  # base conductance
+        DELTA_G = 0.01  # linear step size
+
+        value = G0 + idx.float() * DELTA_G
         return value.to(dtype=dtype)
 
     @torch.no_grad()
