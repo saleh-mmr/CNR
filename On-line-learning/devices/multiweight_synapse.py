@@ -5,7 +5,7 @@ from typing import List, Optional
 
 import numpy as np
 
-from magnetoresistance import (
+from devices.magnetoresistance import (
     MagnetoresistanceParams,
     MagnetoresistiveCrosspoint,
     NonMagneticCrosspoint,
@@ -109,7 +109,7 @@ class MultiWeightSynapse:
 
     def pulse_indices(self):
         """
-        For logging/debugging: return current pulse indices.
+        For logging_helper/debugging: return current pulse indices.
         """
         return {
             "plus": [st.x for st in self.plus_states],
