@@ -10,65 +10,25 @@ from marl_meeting_task.src.utils.logger import Logger
 class PS_DQN:
     """
     Parameter-Shared Deep Q-Network (PS-DQN) for Multi-Agent Reinforcement Learning.
-    
-    PS-DQN uses a single shared Q-network for all agents, enabling parameter
-    sharing which can improve sample efficiency and generalization.
-    
-    Key differences from IQL:
-    - Single shared Q-network (instead of one per agent)
-    - Single shared optimizer
-    - Single shared replay buffer (stores per-agent transitions)
-    - Each timestep contributes n_agents samples to the buffer
-    
-    Reference:
-    Tan, M. (1993). Multi-agent reinforcement learning: Independent vs.
-    cooperative agents. ICML.
     """
     
     def __init__(
         self,
-        n_agents: int,
-        input_dim: int,        # observation vector: [own_x, own_y, goal_x, goal_y]
-        num_actions: int,      # actions: up, down, left, right, stay
-        hidden_dim: int,
-        learning_rate: float,
-        memory_capacity: int,
-        gamma: float,          # Discount factor
-        epsilon_start: float,  # Initial epsilon
-        epsilon_end: float,    # Final epsilon
-        epsilon_decay_steps: int,  # Steps over which epsilon decays
-        batch_size: int,       # Batch size for training
-        target_update_freq: int,  # Update target network every N steps
+        n_agents,
+        input_dim,        # observation vector: [own_x, own_y, goal_x, goal_y]
+        num_actions,      # actions: up, down, left, right, stay
+        hidden_dim,
+        learning_rate,
+        memory_capacity,
+        gamma,          # Discount factor
+        epsilon_start,  # Initial epsilon
+        epsilon_end,    # Final epsilon
+        epsilon_decay_steps,  # Steps over which epsilon decays
+        batch_size,       # Batch size for training
+        target_update_freq,  # Update target network every N steps
     ):
         """
         Initialize Parameter-Shared DQN.
-        
-        Parameters:
-        -----------
-        n_agents : int
-            Number of agents (default: 2)
-        input_dim : int
-            Dimension of observation vector (default: 4)
-        num_actions : int
-            Number of possible actions (default: 5)
-        hidden_dim : int
-            Hidden layer dimension for Q-network (default: 64)
-        learning_rate : float
-            Learning rate for optimizer (default: 1e-3)
-        memory_capacity : int
-            Capacity of shared replay buffer (default: 10000)
-        gamma : float
-            Discount factor (default: 0.99)
-        epsilon_start : float
-            Initial exploration rate (default: 1.0)
-        epsilon_end : float
-            Final exploration rate (default: 0.05)
-        epsilon_decay_steps : int
-            Steps over which epsilon decays (default: 50000)
-        batch_size : int
-            Batch size for training (default: 32)
-        target_update_freq : int
-            Update target network every N steps (default: 500)
         """
         # Store hyperparameters
         self.n_agents = n_agents
@@ -102,7 +62,7 @@ class PS_DQN:
         # Logger will be initialized in train() method
         self._logger: Optional[Logger] = None
     
-    def _print_initialization_summary(self, logger: Logger) -> None:
+    def _print_initialization_summary(self, logger):
         """Print initialization summary."""
         logger.info(f"PS-DQN initialized with {self.n_agents} agents sharing parameters")
         logger.info(f"  - Input dimension: {self.input_dim}")
@@ -120,19 +80,13 @@ class PS_DQN:
     # Exploration Schedule
     # ========================================================================
     
-    def get_epsilon(self) -> float:
+    def get_epsilon(self):
         """
         Compute current epsilon based on linear decay schedule.
-        
-        Returns:
-        --------
-        epsilon : float
-            Current exploration rate
         """
         if self.total_steps >= self.epsilon_decay_steps:
             return self.epsilon_end
         
-        # Linear decay: ε = ε_start - (ε_start - ε_end) * (steps / decay_steps)
         epsilon = self.epsilon_start - (self.epsilon_start - self.epsilon_end) * (
             self.total_steps / self.epsilon_decay_steps
         )
@@ -142,19 +96,9 @@ class PS_DQN:
     # Action Selection
     # ========================================================================
     
-    def select_actions(self, obs: Dict[int, np.ndarray]) -> Dict[int, int]:
+    def select_actions(self, obs):
         """
         Select actions for all agents using epsilon-greedy policy with shared network.
-        
-        Parameters:
-        -----------
-        obs : Dict[int, np.ndarray]
-            Observations keyed by agent_id
-            
-        Returns:
-        --------
-        Dict[int, int]
-            Actions keyed by agent_id
         """
         epsilon = self.get_epsilon()
         return self.agent.select_actions(obs, epsilon)
@@ -165,27 +109,14 @@ class PS_DQN:
     
     def store_transitions(
         self,
-        obs: Dict[int, np.ndarray],
-        actions: Dict[int, int],
-        next_obs: Dict[int, np.ndarray],
-        reward: float,
-        done: bool
-    ) -> None:
+        obs,
+        actions,
+        next_obs,
+        reward,
+        done
+    ):
         """
         Store transitions in shared replay buffer.
-        
-        Parameters:
-        -----------
-        obs : Dict[int, np.ndarray]
-            Current observations keyed by agent_id
-        actions : Dict[int, int]
-            Actions taken keyed by agent_id
-        next_obs : Dict[int, np.ndarray]
-            Next observations keyed by agent_id
-        reward : float
-            Scalar reward (shared by all agents)
-        done : bool
-            Whether episode terminated or truncated
         """
         self.agent.store_transitions(obs, actions, next_obs, reward, done)
     
@@ -193,14 +124,9 @@ class PS_DQN:
     # Training
     # ========================================================================
     
-    def train_step(self) -> Optional[float]:
+    def train_step(self):
         """
         Perform one training step using shared network.
-        
-        Returns:
-        --------
-        Optional[float]
-            Training loss if buffer has enough samples, None otherwise
         """
         return self.agent.train_step()
     
@@ -211,28 +137,11 @@ class PS_DQN:
     def evaluate(
         self,
         env,
-        n_episodes: int = 20,
-        max_steps: int = 50,
-    ) -> Dict[str, float]:
+        n_episodes = 20,
+        max_steps = 50,
+    ):
         """
         Evaluate the current policy with greedy actions (epsilon=0).
-        
-        Parameters:
-        -----------
-        env : MeetingGridworldEnv
-            The environment to evaluate on
-        n_episodes : int
-            Number of evaluation episodes (default: 20)
-        max_steps : int
-            Maximum steps per episode (default: 50)
-            
-        Returns:
-        --------
-        Dict[str, float]
-            Dictionary containing evaluation metrics:
-            - success_rate: fraction of successful episodes
-            - avg_episode_length: average episode length
-            - avg_return: average cumulative reward
         """
         # Set network to eval mode for inference
         self.agent.q_network.eval()
@@ -242,21 +151,17 @@ class PS_DQN:
         eval_returns = []
         
         for episode in range(n_episodes):
-            # Use None seed for evaluation to get diverse episodes
             obs, info = env.reset(seed=None)
             episode_reward = 0.0
             episode_terminated = False
             
             for t in range(max_steps):
-                # Ensure network remains in eval mode
                 if self.agent.q_network.training:
                     self.agent.q_network.eval()
                 
-                # Greedy action selection (epsilon=0) - use main network
                 actions = {}
                 for agent_id in range(self.n_agents):
                     with torch.no_grad():
-                        # Convert observation to float32 tensor (observations are int64 from env)
                         obs_tensor = torch.as_tensor(
                             obs[agent_id],
                             dtype=torch.float32,
@@ -265,7 +170,6 @@ class PS_DQN:
                         q_values = self.agent.q_network(obs_tensor)
                         actions[agent_id] = q_values.argmax().item()
                 
-                # Step environment
                 next_obs, reward, terminated, truncated, info = env.step(actions)
                 done = terminated or truncated
                 
@@ -278,15 +182,12 @@ class PS_DQN:
                 if done:
                     break
             
-            # Record evaluation episode statistics
             eval_successes.append(1 if episode_terminated else 0)
             eval_lengths.append(t + 1)
             eval_returns.append(episode_reward)
         
-        # Set network back to train mode
         self.agent.q_network.train()
         
-        # Compute evaluation metrics
         success_rate = np.mean(eval_successes)
         avg_episode_length = np.mean(eval_lengths)
         avg_return = np.mean(eval_returns)
@@ -300,46 +201,18 @@ class PS_DQN:
     def train(
         self,
         env,
-        max_episodes: int,
-        max_steps: int = 50,
-        train_freq: int = 1,
-        min_buffer_size: int = 1000,
-        verbose: bool = True,
-        log_dir: Optional[str] = "runs/ps_dqn",
-        eval_episodes: int = 20,
-        env_seed: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        max_episodes,
+        max_steps = 50,
+        train_freq = 1,
+        min_buffer_size = 1000,
+        verbose = True,
+        log_dir = "runs/ps_dqn",
+        eval_episodes = 20,
+        env_seed = None,
+    ):
         """
         Main training loop for Parameter-Shared DQN.
-        
-        Parameters:
-        -----------
-        env : MeetingGridworldEnv
-            The environment to train on
-        max_episodes : int
-            Maximum number of episodes to train
-        max_steps : int
-            Maximum steps per episode (default: 50)
-        train_freq : int
-            Train every N steps (default: 1)
-        min_buffer_size : int
-            Minimum buffer size before training starts (default: 1000)
-        verbose : bool
-            Whether to print training progress (default: True)
-        log_dir : Optional[str]
-            Directory for TensorBoard logs (default: "runs/ps_dqn")
-            If None, TensorBoard logging is disabled
-        eval_episodes : int
-            Number of episodes to run during evaluation (default: 20)
-        env_seed : Optional[int]
-            Seed for environment resets (default: None, uses config seed)
-            
-        Returns:
-        --------
-        training_stats : dict
-            Dictionary containing training statistics
         """
-        # Initialize logger
         logger = Logger(verbose=verbose, log_dir=log_dir)
         self._logger = logger
         
@@ -352,14 +225,12 @@ class PS_DQN:
         episode_successes = []  # 0 or 1 for each episode
         episode_losses = []
         
-        # Moving averages for TensorBoard (window size: 100 episodes)
         window_size = 100
         success_window = []
         length_window = []
         return_window = []
         
         for episode in range(max_episodes):
-            # Use seed derived from base seed and episode for reproducibility with diversity
             episode_seed = None if env_seed is None else env_seed + episode
             obs, info = env.reset(seed=episode_seed)
             episode_reward = 0.0
@@ -368,14 +239,12 @@ class PS_DQN:
             episode_loss_count = 0
             
             for t in range(max_steps):
-                # Select actions for all agents (epsilon-greedy)
                 actions = self.select_actions(obs)
                 
                 # Step environment
                 next_obs, reward, terminated, truncated, info = env.step(actions)
                 done = terminated or truncated
                 
-                # Track if episode ended with success (all agents reached goal)
                 if terminated:
                     episode_terminated = True
                 
@@ -394,7 +263,6 @@ class PS_DQN:
                 if self.total_steps > 0 and self.total_steps % self.target_update_freq == 0:
                     self.agent.update_target_network()
                 
-                # Update state
                 obs = next_obs
                 episode_reward += reward
                 self.total_steps += 1

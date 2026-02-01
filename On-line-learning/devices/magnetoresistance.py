@@ -28,7 +28,7 @@ class MagnetoresistanceParams:
     min_pulse_index_for_log: int = 1
 
 
-def gp_from_pulses(x: int, a: float, b: float, min_x: int = 1) -> float:
+def gp_from_pulses(x, a, b, min_x=1):
     """
     Compute G_P from pulse index using paper law:
       G_P = a*log10(x) + b
@@ -40,7 +40,7 @@ def gp_from_pulses(x: int, a: float, b: float, min_x: int = 1) -> float:
     return float(a * np.log10(x_eff) + b)
 
 
-def gap_from_gp(gp: float, c: float, g_threshold: float) -> float:
+def gap_from_gp(gp, c, g_threshold):
     """
     Paper threshold rule:
       if GP <= Gthreshold:
@@ -77,7 +77,7 @@ class MagnetoresistiveCrosspoint:
     """
     def __init__(
         self,
-        params: MagnetoresistanceParams,
+        params,
         rng: Optional[np.random.Generator] = None,
         a_override: Optional[float] = None,
         b_override: Optional[float] = None,
@@ -88,16 +88,16 @@ class MagnetoresistiveCrosspoint:
         self.a = float(a_override) if a_override is not None else float(params.a)
         self.b = float(b_override) if b_override is not None else float(params.b)
 
-    def redraw_noise(self, state: CrosspointState) -> None:
+    def redraw_noise(self, state):
         sigma = float(self.params.sigma_pulse_noise)
         state.r = float(self.rng.normal(0.0, sigma)) if sigma > 0 else 0.0
 
-    def increment_pulses(self, state: CrosspointState, n: int = 1) -> None:
+    def increment_pulses(self, state, n=1):
         state.x += int(n)
         # Paper: when x changes, draw a new noise value r
         self.redraw_noise(state)
 
-    def conductance_p(self, state: CrosspointState) -> float:
+    def conductance_p(self, state):
         gp = gp_from_pulses(
             x=state.x,
             a=self.a,
@@ -106,7 +106,7 @@ class MagnetoresistiveCrosspoint:
         )
         return float(gp + state.r)
 
-    def conductance_ap(self, state: CrosspointState) -> float:
+    def conductance_ap(self, state):
         gp_noisy = self.conductance_p(state)  # includes +r as paper writes
         return gap_from_gp(
             gp=gp_noisy,
@@ -123,7 +123,7 @@ class NonMagneticCrosspoint:
     """
     def __init__(
         self,
-        params: MagnetoresistanceParams,
+        params,
         rng: Optional[np.random.Generator] = None,
         a_override: Optional[float] = None,
         b_override: Optional[float] = None,
@@ -133,16 +133,16 @@ class NonMagneticCrosspoint:
         self.a = float(a_override) if a_override is not None else float(params.a)
         self.b = float(b_override) if b_override is not None else float(params.b)
 
-    def redraw_noise(self, state: CrosspointState) -> None:
+    def redraw_noise(self, state):
         sigma = float(self.params.sigma_pulse_noise)
         state.r = float(self.rng.normal(0.0, sigma)) if sigma > 0 else 0.0
 
-    def increment_pulses(self, state: CrosspointState, n: int = 1) -> None:
+    def increment_pulses(self, state, n=1):
         state.x += int(n)
         # Paper: redraw noise when x changes
         self.redraw_noise(state)
 
-    def conductance(self, state: CrosspointState) -> float:
+    def conductance(self, state):
         g = gp_from_pulses(
             x=state.x,
             a=self.a,

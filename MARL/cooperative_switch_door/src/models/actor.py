@@ -11,7 +11,7 @@ class ActorNetwork(nn.Module):
     - Output: action logits (n_actions=5)
     """
 
-    def __init__(self, obs_dim: int = 7, n_actions: int = 5, hidden_dim: int = 64):
+    def __init__(self, obs_dim=7, n_actions=5, hidden_dim=64):
         super().__init__()
         self.obs_dim = obs_dim
         self.n_actions = n_actions
@@ -24,20 +24,20 @@ class ActorNetwork(nn.Module):
             nn.Linear(hidden_dim, n_actions),
         )
 
-    def forward(self, obs: torch.Tensor) -> torch.Tensor:
+    def forward(self, obs):
         """
         obs: [batch, obs_dim]
         returns logits: [batch, n_actions]
         """
         return self.net(obs)
 
-    def get_dist(self, obs: torch.Tensor) -> Categorical:
+    def get_dist(self, obs):
         # Network outputs scores (logits), e.g. [-0.8, 0.4, 1.6, -0.2, 0.1]
         logits = self.forward(obs)
         return Categorical(logits=logits)
 
     @torch.no_grad()
-    def sample_action(self, obs: torch.Tensor):
+    def sample_action(self, obs):
         """
         For rollout collection.
         Returns:

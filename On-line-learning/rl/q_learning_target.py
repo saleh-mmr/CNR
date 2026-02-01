@@ -11,7 +11,7 @@ class QLearningSpec:
     gamma: float = 0.99
 
 
-def q_values_linear(phi_s: np.ndarray, theta: np.ndarray) -> np.ndarray:
+def q_values_linear(phi_s, theta):
     """
     Linear Q function:
         Q(s, a) = phi(s)^T theta[:, a]
@@ -25,12 +25,12 @@ def q_values_linear(phi_s: np.ndarray, theta: np.ndarray) -> np.ndarray:
 
 
 def td_target_q_learning(
-    r: float,
-    phi_s_next: np.ndarray,
-    theta: np.ndarray,
-    gamma: float,
-    terminated: bool,
-) -> float:
+    r,
+    phi_s_next,
+    theta,
+    gamma,
+    terminated,
+):
     """
     Standard Q-learning target:
         y = r + gamma * max_a' Q(s',a')   if not terminal
@@ -43,14 +43,14 @@ def td_target_q_learning(
 
 
 def td_error_and_action(
-    phi_s: np.ndarray,
-    action: int,
-    r: float,
-    phi_s_next: np.ndarray,
-    theta: np.ndarray,
-    spec: QLearningSpec,
-    terminated: bool,
-) -> Tuple[float, float]:
+    phi_s,
+    action,
+    r,
+    phi_s_next,
+    theta,
+    spec,
+    terminated,
+):
     """
     Returns:
       (delta, q_sa)
@@ -66,10 +66,10 @@ def td_error_and_action(
 
 
 def weight_update_directions(
-    phi_s: np.ndarray,
-    action: int,
-    delta: float,
-) -> np.ndarray:
+    phi_s,
+    action,
+    delta,
+):
     """
     Convert TD error into a per-parameter direction matrix for theta (S,A).
 

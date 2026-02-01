@@ -40,7 +40,7 @@ MAX_STEPS = 200
 # Helpers
 # ==============================
 
-def sigma_to_str(sigma: float) -> str:
+def sigma_to_str(sigma):
     return f"{sigma:.1e}".replace("+", "")
 
 
@@ -55,7 +55,7 @@ def make_env():
     return env
 
 
-def state_preprocess(state: int):
+def state_preprocess(state):
     onehot = torch.zeros(NUM_STATES, dtype=torch.float32, device=device)
     onehot[state] = 1.0
     return onehot
@@ -64,6 +64,7 @@ def state_preprocess(state: int):
 # ==============================
 # Evaluation logic
 # ==============================
+
 
 def evaluate_model(agent, env, episodes=200):
     rewards = []
