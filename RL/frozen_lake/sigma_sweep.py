@@ -7,7 +7,7 @@ from config import seed
 import os
 
 
-def sigma_to_str(sigma: float) -> str:
+def sigma_to_str(sigma):
     return f"{sigma:.1e}".replace("+", "")
 
 

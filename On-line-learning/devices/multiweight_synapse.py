@@ -4,9 +4,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 import numpy as np
-
-from devices.magnetoresistance import (
-    MagnetoresistanceParams,
+from magnetoresistance import (
     MagnetoresistiveCrosspoint,
     NonMagneticCrosspoint,
     CrosspointState,
@@ -30,8 +28,8 @@ class MultiWeightSynapse:
     """
     def __init__(
         self,
-        spec: MultiWeightSynapseSpec,
-        params: MagnetoresistanceParams,
+        spec,
+        params,
         rng: Optional[np.random.Generator] = None,
     ):
         self.spec = spec
@@ -60,7 +58,7 @@ class MultiWeightSynapse:
     # Weight evaluation (paper equations)
     # ------------------------------------------------------------------
 
-    def weight(self, ap_index: int) -> float:
+    def weight(self, ap_index):
         """
         Compute W_n for the magnetic configuration where plus crosspoint
         `ap_index` is in AP state and all others are in P.
@@ -84,7 +82,7 @@ class MultiWeightSynapse:
     # Pulse update primitives (paper on-line rules)
     # ------------------------------------------------------------------
 
-    def increase_plus(self, index: int, n_pulses: int = 1) -> None:
+    def increase_plus(self, index, n_pulses = 1):
         """
         Paper rule:
           If a weight must be increased, increase the corresponding x index
@@ -95,7 +93,7 @@ class MultiWeightSynapse:
             self.plus_states[index], n=n_pulses
         )
 
-    def increase_bias(self, n_pulses: int = 1) -> None:
+    def increase_bias(self, n_pulses = 1):
         """
         Paper rule:
           If a weight must be decreased, increase the bias index x_B

@@ -24,7 +24,7 @@ class TrainingLogger:
         self.loss_values = []
 
 
-    def log_episode(self, episode: int, reward: float, epsilon: float, loss: float):
+    def log_episode(self, episode, reward, epsilon, loss):
         self.episode_rewards.append(reward)
         self.epsilon_values.append(epsilon)
         self.loss_values.append(loss)

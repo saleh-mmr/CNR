@@ -1,14 +1,7 @@
 from __future__ import annotations
-
 from dataclasses import dataclass
-from typing import Tuple, Dict, Any
-
 import numpy as np
-
-try:
-    import gymnasium as gym
-except ImportError:
-    import gym  # fallback
+import gymnasium as gym
 
 
 @dataclass
@@ -26,7 +19,7 @@ class FrozenLakeEnv:
     We start here because all later memristor-weight code will plug into:
         Q(s,a) = φ(s)^T θ[:,a]
     """
-    def __init__(self, spec: FrozenLakeSpec):
+    def __init__(self, spec):
         self.spec = spec
         self.env = gym.make(
             "FrozenLake-v1",
@@ -40,24 +33,24 @@ class FrozenLakeEnv:
         # Reproducibility
         self._np_rng = np.random.default_rng(spec.seed)
 
-    def reset(self) -> Tuple[int, np.ndarray, Dict[str, Any]]:
+    def reset(self):
         obs, info = self.env.reset(seed=self.spec.seed)
         s = int(obs)
         return s, self.one_hot(s), info
 
-    def step(self, action: int) -> Tuple[int, np.ndarray, float, bool, bool, Dict[str, Any]]:
+    def step(self, action):
         obs, reward, terminated, truncated, info = self.env.step(int(action))
         s2 = int(obs)
         return s2, self.one_hot(s2), float(reward), bool(terminated), bool(truncated), info
 
-    def one_hot(self, s: int) -> np.ndarray:
+    def one_hot(self, s):
         x = np.zeros(self.n_states, dtype=np.float32)
         x[s] = 1.0
         return x
 
-    def sample_action(self) -> int:
+    def sample_action(self):
         # epsilon-greedy will live elsewhere; this is just a helper.
         return int(self.env.action_space.sample())
 
-    def close(self) -> None:
+    def close(self):
         self.env.close()

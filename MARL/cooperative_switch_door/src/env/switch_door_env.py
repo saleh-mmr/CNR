@@ -53,12 +53,12 @@ class SwitchDoorEnv:
     # -----------------------------
     # Core helpers
     # -----------------------------
-    def _clamp(self, x: int, y: int):
+    def _clamp(self, x, y):
         x = max(0, min(self.grid_size - 1, x))
         y = max(0, min(self.grid_size - 1, y))
         return x, y
 
-    def _move(self, x: int, y: int, action: int):
+    def _move(self, x, y, action):
         if action == 0:      # up
             x -= 1
         elif action == 1:    # down
@@ -122,7 +122,7 @@ class SwitchDoorEnv:
 
 
 
-    def step(self, actions: dict):
+    def step(self, actions):
         """
         actions: {0: a0, 1: a1}
 

@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from typing import Optional
 from marl_meeting_task.src.models.qvalue_network import QValueNetwork
 from marl_meeting_task.src.config import device
 
@@ -18,11 +17,11 @@ class QMIXAgent:
     
     def __init__(
         self,
-        agent_id: int,
-        n_agents: int,
-        input_dim: int,   # Base observation dim (will have agent_id appended)
-        num_actions: int,
-        hidden_dim: int,
+        agent_id,
+        n_agents,
+        input_dim,   # Base observation dim (will have agent_id appended)
+        num_actions,
+        hidden_dim,
     ):
         """
         Initialize QMIX Agent.
@@ -64,11 +63,11 @@ class QMIXAgent:
         ).to(device)
         self.update_target_network()  # Initialize with same weights
     
-    def update_target_network(self) -> None:
+    def update_target_network(self):
         """Copy weights from main Q-network to target network."""
         self.target_network.load_state_dict(self.q_network.state_dict())
     
-    def _append_agent_id(self, obs: np.ndarray) -> np.ndarray:
+    def _append_agent_id(self, obs):
         """
         Append one-hot agent ID to observation.
         
@@ -90,7 +89,7 @@ class QMIXAgent:
         obs_with_id = np.concatenate([obs, agent_id_onehot])
         return obs_with_id
     
-    def select_action(self, obs: np.ndarray, epsilon: float) -> int:
+    def select_action(self, obs, epsilon):
         """
         Select action using epsilon-greedy policy.
         
@@ -139,4 +138,3 @@ class QMIXAgent:
                     ).unsqueeze(0)  # Add batch dimension
                     q_values = self.q_network(obs_tensor)
                     return q_values.argmax().item()
-

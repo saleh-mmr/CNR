@@ -14,8 +14,6 @@ from learning.multitask_step import (
     MultiTaskUpdateSpec,
     multitask_learning_step,
 )
-
-# Import the local PulseLogger (not the stdlib `logging_helper` module)
 from logging_helper.pulse_logger import PulseLogger
 
 import pickle
@@ -42,7 +40,7 @@ class TrainSpec:
     log_every: int = 100
 
 
-def linear_epsilon(ep: int, spec: TrainSpec) -> float:
+def linear_epsilon(ep, spec):
     if ep >= spec.epsilon_decay_episodes:
         return spec.epsilon_end
     t = ep / max(1, spec.epsilon_decay_episodes)
@@ -54,11 +52,11 @@ def linear_epsilon(ep: int, spec: TrainSpec) -> float:
 # ============================================================
 
 def build_memristor_q_network(
-    n_states: int,
-    n_actions: int,
-    scaling_factor: float,
-    mr_params: MagnetoresistanceParams,
-    rng: np.random.Generator,
+    n_states,
+    n_actions,
+    scaling_factor,
+    mr_params,
+    rng,
 ) -> List[List[MultiWeightSynapse]]:
     """
     One composite synapse per Q-table parameter θ[s,a].
@@ -88,10 +86,10 @@ def build_memristor_q_network(
 
 
 def q_values_from_memristors(
-    phi_s: np.ndarray,
-    synapses: List[List[MultiWeightSynapse]],
-    ap_index: int,
-) -> np.ndarray:
+    phi_s,
+    synapses,
+    ap_index,
+) :
     """
     Q(s,a) readout from memristors.
     One-hot features => select active state row.
@@ -107,10 +105,10 @@ def q_values_from_memristors(
 
 
 def choose_action_eps_greedy(
-    q: np.ndarray,
-    epsilon: float,
-    rng: np.random.Generator,
-) -> int:
+    q,
+    epsilon,
+    rng,
+) :
     if rng.random() < epsilon:
         return int(rng.integers(0, len(q)))
     return int(np.argmax(q))

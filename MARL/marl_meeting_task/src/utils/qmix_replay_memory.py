@@ -21,7 +21,7 @@ class QMIXReplayMemory:
     dict-based observations. QMIX needs explicit global state.
     """
     
-    def __init__(self, capacity: int):
+    def __init__(self, capacity):
         """
         Initialize QMIX Replay Memory.
         
@@ -43,14 +43,14 @@ class QMIXReplayMemory:
     
     def store(
         self,
-        state: np.ndarray,
-        observations: dict,
-        actions: dict,
-        reward: float,
-        next_state: np.ndarray,
-        next_observations: dict,
-        done: bool
-    ) -> None:
+        state,
+        observations,
+        actions,
+        reward,
+        next_state,
+        next_observations,
+        done
+    ):
         """
         Store a transition.
         
@@ -82,7 +82,7 @@ class QMIXReplayMemory:
         self.next_observations.append({agent_id: obs.copy() for agent_id, obs in next_observations.items()})
         self.dones.append(done)
     
-    def sample(self, batch_size: int, n_agents: int):
+    def sample(self, batch_size, n_agents):
         """
         Sample a batch of transitions.
         
@@ -162,7 +162,6 @@ class QMIXReplayMemory:
         
         return states, observations, actions, rewards, next_states, next_observations, dones
     
-    def __len__(self) -> int:
+    def __len__(self):
         """Return current size of replay buffer."""
         return len(self.states)
-

@@ -50,7 +50,7 @@ class Model_TrainTest:
                            memory_capacity=self.memory_capacity,
                            sigma=hyperparams["sigma"])
 
-    def state_preprocess(self, state: int, num_states: int):
+    def state_preprocess(self, state, num_states):
         """
         Convert an state to a tensor and basically it encodes the state into
         an onehot vector. For example, the return can be something like tensor([0,0,1,0,0])
@@ -143,7 +143,6 @@ class Model_TrainTest:
                       f"Steps: {step_size:}, "
                       f"Reward: {episode_reward:.2f}, ")
             print(result)
-
         pygame.quit()  # close the rendering window
 
     def plot_training(self, episode):

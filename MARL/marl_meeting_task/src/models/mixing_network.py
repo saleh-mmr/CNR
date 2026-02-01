@@ -76,7 +76,7 @@ class MixingNetwork(nn.Module):
             nn.Linear(mixing_hidden_dim, 1)
         )
     
-    def forward(self, agent_qs: torch.Tensor, states: torch.Tensor) -> torch.Tensor:
+    def forward(self, agent_qs, states):
         """
         Forward pass through mixing network.
         
@@ -116,4 +116,3 @@ class MixingNetwork(nn.Module):
         q_tot = q_tot.squeeze(1)  # [batch_size, 1]
         
         return q_tot
-
