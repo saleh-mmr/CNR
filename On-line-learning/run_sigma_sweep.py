@@ -92,7 +92,7 @@ def read_q(phi_s: np.ndarray, synapses, ap_index: int) -> np.ndarray:
 # Training loop
 # ============================================================
 
-def train():
+def train(sigma_pulse_noise: float):
     spec = TrainSpec()
     rng = np.random.default_rng(spec.seed)
 
@@ -109,14 +109,14 @@ def train():
         b=0.350e-8,
         c=0.1,
         g_threshold=0.5,
-        sigma_pulse_noise=1.7e-14,
+        sigma_pulse_noise=sigma_pulse_noise,
         min_pulse_index_for_log=1,
     )
 
     synapses = build_q_network(
         env.n_states,
         env.n_actions,
-        scaling_factor=9e7,
+        scaling_factor=1.0,
         mr_params=mr_params,
         rng=rng,
     )
@@ -126,22 +126,12 @@ def train():
         online_update=OnlineUpdateSpec(pulses_per_update=1)
     )
 
-    # --------------------------------------------------------
-    # Logging
-    # --------------------------------------------------------
-
     rewards = []
-
-    # --------------------------------------------------------
-    # Episodes
-    # --------------------------------------------------------
 
     for ep in range(spec.episodes):
         epsilon = linear_epsilon(ep, spec)
         _, phi_s, _ = env.reset()
-
         total_reward = 0.0
-        episode_weights = []
 
         for _ in range(spec.max_steps):
             q = read_q(phi_s, synapses, ap_index=0)
@@ -160,52 +150,42 @@ def train():
                 spec=update_spec,
             )
 
-            # log active weight
-            s_idx = int(np.argmax(phi_s))
-            episode_weights.append(
-                synapses[s_idx][action].weight(ap_index=0)
-            )
-
             phi_s = phi_s2
             if terminated or truncated:
                 break
 
         rewards.append(total_reward)
 
-        if (ep + 1) % spec.log_every == 0:
-            print(
-                f"Episode {ep+1:5d} | "
-                f"eps={epsilon:.3f} | "
-                f"reward={total_reward:.2f}"
-            )
-
     env.close()
-    return rewards
+
+    return moving_average(rewards, window=50)
+
+
+def run_sigma_sweep():
+    sigmas = [
+        # 1.7e-14,
+        1.7e-13,
+        1.7e-12,
+        1.7e-11,
+        1.7e-10,
+        1.7e-9,
+        1.7e-8,
+        # 1.7e-7,
+        # 1.7e-6
+    ]
+    curves = {}
+
+    for sigma in sigmas:
+        print(f"Training with sigma = {sigma:.1e}")
+        curves[sigma] = train(sigma)
+
+    return curves
 
 
 # ============================================================
 # Plotting
 # ============================================================
 
-def plot_results(rewards):
-    episodes = np.arange(len(rewards))
-
-    reward_ma50 = moving_average(rewards, window=50)
-
-    plt.figure(figsize=(10, 8))
-
-    # Reward plot
-    plt.plot(episodes, rewards, alpha=0.4, label="Reward")
-    if len(reward_ma50) > 0:
-        plt.plot(
-            np.arange(49, 49 + len(reward_ma50)),
-            reward_ma50,
-            linewidth=2.5,
-            label="Mean Reward (50)"
-        )
-    plt.ylabel("Reward")
-    plt.legend()
-    plt.show()
 
 
 # ============================================================
@@ -213,5 +193,13 @@ def plot_results(rewards):
 # ============================================================
 
 if __name__ == "__main__":
-    rewards = train()
-    plot_results(rewards)
+    curves = run_sigma_sweep()
+    for sigma, values in curves.items():
+        plt.plot(values, label=f"σ = {sigma:.1e}")
+
+    plt.xlabel("Index")
+    plt.ylabel("Value")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+    # plot_sigma_comparison(curves)
