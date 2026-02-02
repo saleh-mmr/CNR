@@ -151,7 +151,7 @@ class IQLAgent:
         Perform one gradient update step using a batch from replay buffer.
         
         Implements the DQN loss with target network:
-        L = (Q(s, a) - (r + γ * max_a' Q_target(s', a') * (1 - done)))^2
+        L = (Q(s, a) - (noise_realization + γ * max_a' Q_target(s', a') * (1 - done)))^2
         
         Parameters:
         -----------
@@ -185,7 +185,7 @@ class IQLAgent:
         with torch.no_grad():
             next_q_values = self.target_network(agent_next_states)  # (batch_size, num_actions)
             next_q_value = next_q_values.max(1)[0]  # (batch_size,)
-            # Bellman target: r + γ * max_a' Q_target(s', a') * (1 - done)
+            # Bellman target: noise_realization + γ * max_a' Q_target(s', a') * (1 - done)
             target = rewards + gamma * next_q_value * (~dones)
         
         # Compute MSE loss

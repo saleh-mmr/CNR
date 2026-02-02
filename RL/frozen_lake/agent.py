@@ -99,7 +99,7 @@ class DQNAgent:
             # Mask terminal states
             next_target_q_value[dones] = 0
 
-        # DQN target: y = r + γ * max_a' Q_target(s', a')
+        # DQN target: y = noise_realization + γ * max_a' Q_target(s', a')
         y_js = rewards + (self.discount * next_target_q_value)
         loss = self.criterion(predicted_q, y_js)
 

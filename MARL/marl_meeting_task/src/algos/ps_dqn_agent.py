@@ -246,7 +246,7 @@ class PS_DQNAgent:
         with torch.no_grad():
             next_q_values = self.target_network(next_observations)  # (batch_size * n_agents, num_actions)
             next_q_value = next_q_values.max(1)[0]  # (batch_size * n_agents,)
-            # Bellman target: r + γ * max_a' Q_target(s', a') * (1 - done)
+            # Bellman target: noise_realization + γ * max_a' Q_target(s', a') * (1 - done)
             target = rewards + self.gamma * next_q_value * (~dones)
         
         # Compute MSE loss
