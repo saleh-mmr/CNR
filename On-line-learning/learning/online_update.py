@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
+from typing import List, TYPE_CHECKING
 
-from devices.multiweight_synapse import MultiWeightSynapse
+if TYPE_CHECKING:
+    from devices.multiweight_synapse import MultiWeightSynapse
 
 
 @dataclass
@@ -45,11 +46,11 @@ def apply_online_update(
     """
     if direction > 0:
         # Increase corresponding '+' crosspoint
-        synapse.increase_plus(ap_index, n_pulses=spec.pulses_per_update)
+        synapse.increase_plus(ap_index)
 
     elif direction < 0:
         # Decrease weight by increasing bias
-        synapse.increase_bias(n_pulses=spec.pulses_per_update)
+        synapse.increase_bias()
 
     # direction == 0 -> do nothing
 

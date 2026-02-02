@@ -326,7 +326,7 @@ class QMIX:
         actions : Dict[int, int]
             Actions a_i
         reward : float
-            Joint reward r
+            Joint reward noise_realization
         next_state : np.ndarray
             Next global state s_next
         next_obs : Dict[int, np.ndarray]

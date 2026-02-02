@@ -12,7 +12,7 @@ class QMIXReplayMemory:
     - Global state s
     - Individual agent observations o_i
     - Individual agent actions a_i
-    - Joint reward r
+    - Joint reward noise_realization
     - Next global state s_next
     - Next individual agent observations o_i_next
     - Done flag

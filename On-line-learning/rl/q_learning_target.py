@@ -33,8 +33,8 @@ def td_target_q_learning(
 ):
     """
     Standard Q-learning target:
-        y = r + gamma * max_a' Q(s',a')   if not terminal
-        y = r                             if terminal
+        y = noise_realization + gamma * max_a' Q(s',a')   if not terminal
+        y = noise_realization                             if terminal
     """
     if terminated:
         return float(r)
