@@ -1,11 +1,6 @@
 from __future__ import annotations
-
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Tuple
-
 import numpy as np
-
-# from devices.multiweight_synapse import MultiWeightSynapse
 from learning.online_update import apply_online_update
 
 
@@ -13,7 +8,6 @@ from learning.online_update import apply_online_update
 class TaskSpec:
     name: str
     ap_index: int  # which '+' crosspoint is AP for this task
-
 
 
 def read_q_from_memristors_for_task(phi_s, synapses, ap_index):
