@@ -2,17 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import numpy as np
-import matplotlib.pyplot as plt
-
 from envs.frozen_lake_env import FrozenLakeEnv, FrozenLakeSpec
 from devices.magnetoresistance import MagnetoresistanceParams
 from devices.multiweight_synapse import MultiWeightSynapse, MultiWeightSynapseSpec
-from learning.online_update import OnlineUpdateSpec
-from learning.multitask_step import (
-    TaskSpec,
-    MultiTaskUpdateSpec,
-    multitask_learning_step,
-)
+from learning.multitask_step import (TaskSpec, multitask_learning_step)
 
 # ============================================================
 # Training configuration
@@ -41,13 +34,6 @@ def linear_epsilon(ep: int, spec: TrainSpec) -> float:
         return spec.epsilon_end
     t = ep / max(1, spec.epsilon_decay_episodes)
     return spec.epsilon_start + t * (spec.epsilon_end - spec.epsilon_start)
-
-
-def moving_average(x, window: int):
-    if len(x) < window:
-        return np.array([])
-    return np.convolve(x, np.ones(window) / window, mode="valid")
-
 
 def choose_action_eps_greedy(q: np.ndarray, epsilon: float, rng) -> int:
     if rng.random() < epsilon:
@@ -80,10 +66,10 @@ def build_q_network(
     ]
 
 
-def read_q(phi_s: np.ndarray, synapses, ap_index: int) -> np.ndarray:
+def read_q(phi_s, synapses, ap_index):
     s_idx = int(np.argmax(phi_s))
     return np.array(
-        [synapses[s_idx][a].weight(ap_index) for a in range(len(synapses[s_idx]))],
+        [synapses[s_idx][a].weight(ap_index)[0] for a in range(len(synapses[s_idx]))],
         dtype=np.float32,
     )
 
@@ -122,15 +108,11 @@ def train():
     )
 
     tasks = [TaskSpec(name="FL", ap_index=0)]
-    update_spec = MultiTaskUpdateSpec(
-        online_update=OnlineUpdateSpec(pulses_per_update=1)
-    )
 
     # --------------------------------------------------------
     # Logging
     # --------------------------------------------------------
-
-    rewards = []
+    logging_conductance = {}
 
     # --------------------------------------------------------
     # Episodes
@@ -140,15 +122,15 @@ def train():
         epsilon = linear_epsilon(ep, spec)
         _, phi_s, _ = env.reset()
 
-        total_reward = 0.0
-        episode_weights = []
+        episode_reward = 0.0
+        conductance_in_episode = []
 
         for _ in range(spec.max_steps):
             q = read_q(phi_s, synapses, ap_index=0)
             action = choose_action_eps_greedy(q, epsilon, rng)
 
             _, phi_s2, reward, terminated, truncated, _ = env.step(action)
-            total_reward += reward
+            episode_reward += reward
 
             multitask_learning_step(
                 tasks=tasks,
@@ -157,55 +139,28 @@ def train():
                 },
                 synapses=synapses,
                 gamma=spec.gamma,
-                spec=update_spec,
             )
 
             # log active weight
             s_idx = int(np.argmax(phi_s))
-            episode_weights.append(
-                synapses[s_idx][action].weight(ap_index=0)
-            )
+            _, conductance = synapses[s_idx][action].weight(ap_index=0)
+            conductance_in_episode.append(conductance)
 
             phi_s = phi_s2
             if terminated or truncated:
                 break
 
-        rewards.append(total_reward)
+        logging_conductance.update({ep:conductance_in_episode})
 
         if (ep + 1) % spec.log_every == 0:
             print(
                 f"Episode {ep+1:5d} | "
                 f"eps={epsilon:.3f} | "
-                f"reward={total_reward:.2f}"
+                f"reward={episode_reward:.2f}"
             )
 
     env.close()
-    return rewards
-
-
-# ============================================================
-# Plotting
-# ============================================================
-
-def plot_results(rewards):
-    episodes = np.arange(len(rewards))
-
-    reward_ma50 = moving_average(rewards, window=50)
-
-    plt.figure(figsize=(10, 8))
-
-    # Reward plot
-    plt.plot(episodes, rewards, alpha=0.4, label="Reward")
-    if len(reward_ma50) > 0:
-        plt.plot(
-            np.arange(49, 49 + len(reward_ma50)),
-            reward_ma50,
-            linewidth=2.5,
-            label="Mean Reward (50)"
-        )
-    plt.ylabel("Reward")
-    plt.legend()
-    plt.show()
+    return logging_conductance
 
 
 # ============================================================
@@ -213,5 +168,8 @@ def plot_results(rewards):
 # ============================================================
 
 if __name__ == "__main__":
-    rewards = train()
-    plot_results(rewards)
+    all_conductance = train()
+    last_values = [val[1] for val in all_conductance.values() if len(val) > 0]
+    mean_of_lasts = np.mean(last_values)
+    print(f"Mean of last values: {mean_of_lasts}")
+

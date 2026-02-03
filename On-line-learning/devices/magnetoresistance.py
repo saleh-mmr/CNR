@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from dataclasses import dataclass
 import numpy as np
 
@@ -21,7 +20,7 @@ class MagnetoresistanceParams:
     b: float
     c: float
     g_threshold: float
-    sigma_pulse_noise: float = 0.0
+    sigma_pulse_noise: float
     min_pulse_index_for_log: int = 1
 
 

@@ -8,7 +8,6 @@ from .magnetoresistance import (
     MagnetoresistiveCrosspoint,
     NonMagneticCrosspoint,
     CrosspointState,
-    MagnetoresistanceParams,
 )
 
 
@@ -56,7 +55,7 @@ class MultiWeightSynapse:
     # Weight evaluation
     # ------------------------------------------------------------------
 
-    def weight(self, ap_index: int) -> float:
+    def weight(self, ap_index):
         assert 0 <= ap_index < self.spec.n_plus
 
         g_sum = 0.0
@@ -67,7 +66,7 @@ class MultiWeightSynapse:
                 g_sum += dev.conductance_p(st)
 
         g_bias = self.bias_device.conductance(self.bias_state)
-        return float(self.spec.scaling_factor * (g_sum - g_bias))
+        return float(self.spec.scaling_factor * (g_sum - g_bias)) , float(g_sum - g_bias)
 
     # ------------------------------------------------------------------
     # Update rules
