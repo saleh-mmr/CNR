@@ -10,7 +10,6 @@ import utils.config as config
 class CartPoleEnv:
     def __init__(self, seed):
         self.env = gym.make("CartPole-v1")
-
         self.n_actions = int(self.env.action_space.n)
         self.obs_dim = int(self.env.observation_space.shape[0])  # should be 4
         assert self.obs_dim == 4

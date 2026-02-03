@@ -1,13 +1,13 @@
 from __future__ import annotations
-
 from dataclasses import dataclass
 import numpy as np
+import utils.config as config
 import matplotlib.pyplot as plt
-
-from envs.frozen_lake_env import FrozenLakeEnv, FrozenLakeSpec
+from envs.cliff_walking_env import CliffWalkingEnv
 from devices.magnetoresistance import MagnetoresistanceParams
 from devices.multiweight_synapse import MultiWeightSynapse, MultiWeightSynapseSpec
-from learning.multitask_step import (TaskSpec, multitask_learning_step)
+from learning.cliffwalking_step import cliffwalking_learning_step
+
 
 # ============================================================
 # Training configuration
@@ -15,16 +15,16 @@ from learning.multitask_step import (TaskSpec, multitask_learning_step)
 
 @dataclass
 class TrainSpec:
-    episodes: int = 3000
-    max_steps: int = 100
+    episodes: int = 5000
+    max_steps: int = 200
 
     epsilon_start: float = 1.0
-    epsilon_end: float = 0.05
-    epsilon_decay_episodes: int = 1200
+    epsilon_end: float = 0.01
+    epsilon_decay_episodes: int = 3000
 
     gamma: float = 0.99
-    seed: int = 0
-    log_every: int = 100
+    seed: int = config.seed
+    log_every: int = 1000
 
 
 # ============================================================
@@ -36,12 +36,6 @@ def linear_epsilon(ep: int, spec: TrainSpec) -> float:
         return spec.epsilon_end
     t = ep / max(1, spec.epsilon_decay_episodes)
     return spec.epsilon_start + t * (spec.epsilon_end - spec.epsilon_start)
-
-
-def moving_average(x, window: int):
-    if len(x) < window:
-        return np.array([])
-    return np.convolve(x, np.ones(window) / window, mode="valid")
 
 
 def choose_action_eps_greedy(q: np.ndarray, epsilon: float, rng) -> int:
@@ -75,10 +69,13 @@ def build_q_network(
     ]
 
 
-def read_q(phi_s: np.ndarray, synapses, ap_index: int) -> np.ndarray:
+def read_q(phi_s, synapses, ap_index=0):
     s_idx = int(np.argmax(phi_s))
     return np.array(
-        [synapses[s_idx][a].weight(ap_index)[0] for a in range(len(synapses[s_idx]))],
+        [
+            synapses[s_idx][a].weight(ap_index)[0]
+            for a in range(len(synapses[s_idx]))
+        ],
         dtype=np.float32,
     )
 
@@ -91,126 +88,118 @@ def train(sigma_pulse_noise):
     spec = TrainSpec()
     rng = np.random.default_rng(spec.seed)
 
-    env = FrozenLakeEnv(
-        FrozenLakeSpec(
-            map_name="4x4",
-            is_slippery=True,
-            seed=spec.seed,
-        )
-    )
+    env = CliffWalkingEnv(seed=spec.seed)
 
+    # -------- device parameters (stable for discrete tasks) --------
     mr_params = MagnetoresistanceParams(
         a=1.566e-8,
         b=0.350e-8,
         c=0.1,
-        g_threshold=0.8,
+        g_threshold=0.5,
         sigma_pulse_noise=sigma_pulse_noise,
-        min_pulse_index_for_log=1,
-    )
+        min_pulse_index_for_log=1)
 
     synapses = build_q_network(
         env.n_states,
         env.n_actions,
-        scaling_factor=7e7,
+        scaling_factor=10e10,
         mr_params=mr_params,
-        rng=rng,
-    )
+        rng=rng)
 
-    tasks = [TaskSpec(name="FL", ap_index=0)]
-
-    rewards = []
-    logging_conductance = {}
-
-
+    # --------------------------------------------------------
+    # Episodes
+    # --------------------------------------------------------
+    all_episode_rewards = []
     for ep in range(spec.episodes):
         epsilon = linear_epsilon(ep, spec)
         _, phi_s, _ = env.reset()
-        total_reward = 0.0
-        conductance_in_episode = []
+
+        episode_step_counter = 0.0
 
         for _ in range(spec.max_steps):
             q = read_q(phi_s, synapses, ap_index=0)
             action = choose_action_eps_greedy(q, epsilon, rng)
 
             _, phi_s2, reward, terminated, truncated, _ = env.step(action)
-            total_reward += reward
 
-            multitask_learning_step(
-                tasks=tasks,
-                experiences={
-                    "FL": (phi_s, action, reward, phi_s2, terminated)
-                },
+            cliffwalking_learning_step(
+                phi_s=phi_s,
+                action=action,
+                reward=reward,
+                phi_s_next=phi_s2,
+                terminated=terminated,
                 synapses=synapses,
-                gamma=spec.gamma)
+                gamma=spec.gamma,
+                ap_index=0,
+            )
+            episode_step_counter += 1
 
-            s_idx = int(np.argmax(phi_s))
-            _, conductance = synapses[s_idx][action].weight(ap_index=0)
-            conductance_in_episode.append(conductance)
 
             phi_s = phi_s2
             if terminated or truncated:
                 break
-
-        rewards.append(total_reward)
-        logging_conductance.update({ep:conductance_in_episode})
-
+        episode_reward = spec.max_steps - episode_step_counter
+        all_episode_rewards.append(episode_reward)
     env.close()
-    return rewards, logging_conductance
-
+    return all_episode_rewards
 
 def run_sigma_sweep():
     sigmas = [
-        # 1.7e-14,
-        # 1.7e-13,
-        # 1.7e-12,
+        1.7e-12,
         1.7e-11,
-        # 5.67e-11,
         1.7e-10,
-        2.4e-10,
-        # 5.67e-10,
-        # 1.7e-8,
-        # 1.7e-7,
-        # 1.7e-6
     ]
     curves = {}
-    conductances = {}
 
     for sigma in sigmas:
         print(f"Training with sigma = {sigma:.1e}")
-        r, c = train(sigma)
-        last_values = [val[1] for val in c.values() if len(val) > 0]
-        mean_of_lasts = np.mean(last_values)
-        conductances[sigma] = mean_of_lasts
-        curves[sigma] = moving_average(r, window=50)
-    return curves, conductances
+        curves[sigma] = train(sigma)
+    return curves
 
 
 # ============================================================
-# Entry point
+# Plotting utilities
 # ============================================================
 
-if __name__ == "__main__":
-    curves, conductance = run_sigma_sweep()
-    print(conductance)
+def moving_average_last_k(values, k=50):
+    """Return an array where each element i is the mean of values[max(0, i-k+1):i+1].
+    The returned array has the same length as `values`.
+    """
+    vals = np.asarray(values, dtype=np.float32)
+    n = len(vals)
+    if n == 0:
+        return vals
+    ma = np.empty(n, dtype=np.float32)
+    cumsum = np.cumsum(vals)
+    for i in range(n):
+        start = max(0, i - k + 1)
+        total = cumsum[i] - (cumsum[start - 1] if start > 0 else 0.0)
+        ma[i] = total / (i - start + 1)
+    return ma
 
+
+def plot_curves(curves: dict, window: int = 50):
+    """Plot the moving-average (last `window` episodes) of rewards for each sigma on the same figure."""
+    plt.figure(figsize=(12, 8))
     for sigma, values in curves.items():
-        # 'linewidth' makes the actual plot lines thicker
-        percentage = (sigma / conductance[sigma]) * 100
-        if percentage < 1:
-            plt.plot(values, label=f"Programming Noise: {percentage:.1f}%", linewidth=3.5)
-        else:
-            plt.plot(values, label=f"Programming Noise: {percentage:.0f}%", linewidth=3.5)
+        ma = moving_average_last_k(values, window)
+        # Use scientific format for small sigma values
+        plt.plot(ma, label=f"Programming Noise: {sigma:.1e}", linewidth=3.5)
 
-    plt.title("Frozen Lake Online Training", fontsize=28, pad=20)
+    plt.title("Cliff Walking Online Training", fontsize=28, pad=20)
     plt.xlabel("Episode", fontsize=24)
-    plt.ylabel("Mean Reward (50-episode MA)", fontsize=24)
-
-    # 'fontsize' handles the text, 'handlelength' makes the colored lines in legend longer
+    plt.ylabel(f"Mean Reward ({window}-episode MA)", fontsize=24)
     plt.legend(fontsize=20, handlelength=1)
-
-    # Make tick marks (0.8, 1.0) larger as well
     plt.xticks(fontsize=22)
     plt.yticks(fontsize=22)
-
     plt.grid(True)
+    plt.tight_layout()
     plt.show()
+
+
+if __name__ == "__main__":
+    # run training for different sigma values
+    curves = run_sigma_sweep()
+
+    # plot a 50-episode moving average of the rewards for each sigma
+    plot_curves(curves, window=50)
