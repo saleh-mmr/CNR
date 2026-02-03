@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import numpy as np
+import matplotlib.pyplot as plt
+
 from envs.frozen_lake_env import FrozenLakeEnv, FrozenLakeSpec
 from devices.magnetoresistance import MagnetoresistanceParams
 from devices.multiweight_synapse import MultiWeightSynapse, MultiWeightSynapseSpec
+# from learning.online_update import OnlineUpdateSpec
 from learning.multitask_step import (TaskSpec, multitask_learning_step)
 
 # ============================================================
@@ -34,6 +37,13 @@ def linear_epsilon(ep: int, spec: TrainSpec) -> float:
         return spec.epsilon_end
     t = ep / max(1, spec.epsilon_decay_episodes)
     return spec.epsilon_start + t * (spec.epsilon_end - spec.epsilon_start)
+
+
+def moving_average(x, window: int):
+    if len(x) < window:
+        return np.array([])
+    return np.convolve(x, np.ones(window) / window, mode="valid")
+
 
 def choose_action_eps_greedy(q: np.ndarray, epsilon: float, rng) -> int:
     if rng.random() < epsilon:
@@ -66,7 +76,7 @@ def build_q_network(
     ]
 
 
-def read_q(phi_s, synapses, ap_index):
+def read_q(phi_s: np.ndarray, synapses, ap_index: int) -> np.ndarray:
     s_idx = int(np.argmax(phi_s))
     return np.array(
         [synapses[s_idx][a].weight(ap_index)[0] for a in range(len(synapses[s_idx]))],
@@ -78,7 +88,7 @@ def read_q(phi_s, synapses, ap_index):
 # Training loop
 # ============================================================
 
-def train():
+def train(sigma_pulse_noise: float):
     spec = TrainSpec()
     rng = np.random.default_rng(spec.seed)
 
@@ -94,35 +104,29 @@ def train():
         a=1.566e-8,
         b=0.350e-8,
         c=0.1,
-        g_threshold=0.5,
-        sigma_pulse_noise=1.7e-14,
+        g_threshold=0.8,
+        sigma_pulse_noise=sigma_pulse_noise,
         min_pulse_index_for_log=1,
     )
 
     synapses = build_q_network(
         env.n_states,
         env.n_actions,
-        scaling_factor=9e7,
+        scaling_factor=7e7,
         mr_params=mr_params,
         rng=rng,
     )
 
     tasks = [TaskSpec(name="FL", ap_index=0)]
 
-    # --------------------------------------------------------
-    # Logging
-    # --------------------------------------------------------
+    rewards = []
     logging_conductance = {}
 
-    # --------------------------------------------------------
-    # Episodes
-    # --------------------------------------------------------
 
     for ep in range(spec.episodes):
         epsilon = linear_epsilon(ep, spec)
         _, phi_s, _ = env.reset()
-
-        episode_reward = 0.0
+        total_reward = 0.0
         conductance_in_episode = []
 
         for _ in range(spec.max_steps):
@@ -130,7 +134,7 @@ def train():
             action = choose_action_eps_greedy(q, epsilon, rng)
 
             _, phi_s2, reward, terminated, truncated, _ = env.step(action)
-            episode_reward += reward
+            total_reward += reward
 
             multitask_learning_step(
                 tasks=tasks,
@@ -138,10 +142,8 @@ def train():
                     "FL": (phi_s, action, reward, phi_s2, terminated)
                 },
                 synapses=synapses,
-                gamma=spec.gamma,
-            )
+                gamma=spec.gamma)
 
-            # log active weight
             s_idx = int(np.argmax(phi_s))
             _, conductance = synapses[s_idx][action].weight(ap_index=0)
             conductance_in_episode.append(conductance)
@@ -150,17 +152,37 @@ def train():
             if terminated or truncated:
                 break
 
+        rewards.append(total_reward)
         logging_conductance.update({ep:conductance_in_episode})
 
-        if (ep + 1) % spec.log_every == 0:
-            print(
-                f"Episode {ep+1:5d} | "
-                f"eps={epsilon:.3f} | "
-                f"reward={episode_reward:.2f}"
-            )
-
     env.close()
-    return logging_conductance
+    last_values = [val[1] for val in logging_conductance.values() if len(val) > 0]
+    mean_of_lasts = np.mean(last_values)
+    return moving_average(rewards, window=50), mean_of_lasts
+
+
+def run_sigma_sweep():
+    sigmas = [
+        # 1.7e-14,
+        # 1.7e-13,
+        # 1.7e-12,
+        1.7e-11,
+        # 5.67e-11,
+        1.7e-10,
+        2.4e-10,
+        # 5.67e-10,
+        # 1.7e-8,
+        # 1.7e-7,
+        # 1.7e-6
+    ]
+    curves = {}
+    conductances = {}
+
+    for sigma in sigmas:
+        print(f"Training with sigma = {sigma:.1e}")
+        curves[sigma], conductances[sigma] = train(sigma)
+
+    return curves, conductances
 
 
 # ============================================================
@@ -168,8 +190,27 @@ def train():
 # ============================================================
 
 if __name__ == "__main__":
-    all_conductance = train()
-    last_values = [val[1] for val in all_conductance.values() if len(val) > 0]
-    mean_of_lasts = np.mean(last_values)
-    print(f"Mean of last values: {mean_of_lasts}")
+    curves, conductance = run_sigma_sweep()
+    print(conductance)
 
+    for sigma, values in curves.items():
+        # 'linewidth' makes the actual plot lines thicker
+        percentage = (sigma / conductance[sigma]) * 100
+        if percentage < 1:
+            plt.plot(values, label=f"Programming Noise: {percentage:.1f}%", linewidth=3.5)
+        else:
+            plt.plot(values, label=f"Programming Noise: {percentage:.0f}%", linewidth=3.5)
+
+    plt.title("Frozen Lake Online Training", fontsize=28, pad=20)
+    plt.xlabel("Episode", fontsize=24)
+    plt.ylabel("Mean Reward (50-episode MA)", fontsize=24)
+
+    # 'fontsize' handles the text, 'handlelength' makes the colored lines in legend longer
+    plt.legend(fontsize=20, handlelength=1)
+
+    # Make tick marks (0.8, 1.0) larger as well
+    plt.xticks(fontsize=22)
+    plt.yticks(fontsize=22)
+
+    plt.grid(True)
+    plt.show()

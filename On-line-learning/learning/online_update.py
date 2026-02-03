@@ -1,28 +1,9 @@
 from __future__ import annotations
+from typing import List
 
-from dataclasses import dataclass
-from typing import List, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from devices.multiweight_synapse import MultiWeightSynapse
-
-
-@dataclass
-class OnlineUpdateSpec:
+def apply_online_update(synapse, direction, ap_index):
     """
-    On-line learning control parameters.
-    """
-    pulses_per_update: int = 1   # usually 1, but kept explicit
-
-
-def apply_online_update(
-    synapse: MultiWeightSynapse,
-    direction: int,
-    ap_index: int,
-    spec: OnlineUpdateSpec,
-) -> None:
-    """
-    Apply ONE on-line update to ONE composite synapse, exactly per the paper.
+    Apply ONE on-line update to ONE composite synapse.
 
     Parameters
     ----------
@@ -35,7 +16,6 @@ def apply_online_update(
     ap_index : int
         Which '+' crosspoint corresponds to the current task (AP state).
         For FrozenLake-only: ap_index = 0.
-    spec : OnlineUpdateSpec
 
     Paper rules:
       - If weight needs to be increased:
@@ -52,19 +32,12 @@ def apply_online_update(
         # Decrease weight by increasing bias
         synapse.increase_bias()
 
-    # direction == 0 -> do nothing
 
-
-def batch_online_update(
-    synapses: List[MultiWeightSynapse],
-    directions: List[int],
-    ap_index: int,
-    spec: OnlineUpdateSpec,
-) -> None:
+def batch_online_update(synapses, directions, ap_index):
     """
-    Apply on-line updates to a batch of synapses (e.g., all weights for one action).
-
-    synapses[i] gets directions[i].
+    Typical use case:
+        - Updating all weights for one action
+        - Or all synapses in a layer at once
     """
     assert len(synapses) == len(directions)
 
@@ -73,5 +46,4 @@ def batch_online_update(
             synapse=syn,
             direction=int(d),
             ap_index=ap_index,
-            spec=spec,
         )

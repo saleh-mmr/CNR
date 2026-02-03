@@ -33,7 +33,8 @@ def q_values_from_memristors(phi_s, synapses, ap_index):
         for i in range(D):
             v = float(phi_s[i])
             if v != 0.0:
-                acc += v * float(synapses[i][a].weight(ap_index=ap_index))
+                weight, _ = synapses[i][a].weight(ap_index=ap_index)
+                acc += v * float(weight)
         q[a] = acc
     return q
 
