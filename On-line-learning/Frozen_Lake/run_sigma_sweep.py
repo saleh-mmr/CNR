@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from envs.frozen_lake_env import FrozenLakeEnv, FrozenLakeSpec
 from devices.magnetoresistance import MagnetoresistanceParams
 from devices.multiweight_synapse import MultiWeightSynapse, MultiWeightSynapseSpec
-# from learning.online_update import OnlineUpdateSpec
 from learning.multitask_step import (TaskSpec, multitask_learning_step)
 
 # ============================================================
