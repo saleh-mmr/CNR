@@ -6,7 +6,6 @@ import numpy as np
 import gymnasium as gym
 
 
-
 class FrozenLakeEnv:
     def __init__(self):
         self.env = gym.make("FrozenLake-v1", map_name="4x4", is_slippery=False)
@@ -14,7 +13,6 @@ class FrozenLakeEnv:
         self.n_states = int(self.env.observation_space.n)
         self.n_actions = int(self.env.action_space.n)
         self.rng = np.random.default_rng(config.seed)
-
 
     def reset(self):
         obs, info = self.env.reset(seed=config.seed)
@@ -25,6 +23,18 @@ class FrozenLakeEnv:
         x = np.zeros(self.n_states, dtype=np.float32)
         x[s] = 1.0
         return x
+
+    def step(self, action):
+        obs, reward, terminated, truncated, info = self.env.step(int(action))
+        next_state = int(obs)
+        return (
+            next_state,
+            self.one_hot(next_state),
+            float(reward),
+            bool(terminated),
+            bool(truncated),
+            info,
+        )
 
     def sample_action(self):
         # epsilon-greedy will live elsewhere; this is just a helper.
