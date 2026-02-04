@@ -1,5 +1,5 @@
-from base_crosspoint import BaseCrosspoint
-from crosspoint_state import CrosspointState
+from baseCrosspoint import BaseCrosspoint
+from crosspointState import CrosspointState
 
 class MagnetoresistiveCrosspoint(BaseCrosspoint):
     """
