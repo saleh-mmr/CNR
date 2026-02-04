@@ -9,8 +9,8 @@ from nonMagnetoresistiveCrosspoint import NonMagnetoresistiveCrosspoint
 from crosspointParams import CrossPointParams
 
 class MultiWeightSynapseSpec:
-    def __init__(self, n_plus, scaling_factor):
-        self.n_plus = n_plus
+    def __init__(self, n_problem, scaling_factor):
+        self.n_problem = n_problem
         self.scaling_factor = scaling_factor
 
 class MultiWeightSynapse:
@@ -18,7 +18,7 @@ class MultiWeightSynapse:
         self.spec = multiweight_spec
         self.params = crosspoint_params
         self.rng = np.random.default_rng(seed=config.seed)
-        self.positive_crosspoints_states = [CrosspointState() for _ in range(spec.n_plus)]
+        self.positive_crosspoints_states = [CrosspointState() for _ in range(spec.n_problem)]
         self.bias_state = CrosspointState()
         self.positive_crosspoint = [
             MagnetoresistiveCrosspoint(self.params, state, i)
@@ -28,9 +28,9 @@ class MultiWeightSynapse:
 
 
     def weight(self, ap_index):
-        assert 0 <= ap_index < self.spec.n_plus
+        assert 0 <= ap_index < self.spec.n_problem
         g_p = 0
-        for i in range(self.spec.n_plus):
+        for i in range(self.spec.n_problem):
             if i == ap_index:
                 g_p += self.positive_crosspoint[i].conductance_ap(self.positive_crosspoints_states[i])
             else:
@@ -41,7 +41,7 @@ class MultiWeightSynapse:
         return weight
 
     def increase_positive_crosspoint_index(self, index_positive_crosspoint):
-        assert 0 <= index_positive_crosspoint < self.spec.n_plus
+        assert 0 <= index_positive_crosspoint < self.spec.n_problem
         self.positive_crosspoint[index_positive_crosspoint].update_state()
 
     def increase_bias_crosspoint_index(self):
@@ -50,20 +50,20 @@ class MultiWeightSynapse:
 
 
 params = CrossPointParams(a=1.1, b=2.0, c=0.5, g_threshold=0.8, sigma_pulse_noise=0.4)
-spec = MultiWeightSynapseSpec(n_plus=3, scaling_factor=0.1)
+spec = MultiWeightSynapseSpec(n_problem=3, scaling_factor=0.1)
 synapses = MultiWeightSynapse(spec, params)
-print("index of each positive crosspoint:", [i for i in range(spec.n_plus)])
-for i in range(spec.n_plus):
+print("index of each positive crosspoint:", [i for i in range(spec.n_problem)])
+for i in range(spec.n_problem):
     print(f"state for positive crosspoint {i}: {synapses.positive_crosspoint[i].state.get_state()}")
 print(f"state for negative crosspoint: {synapses.bias_crosspoint.state.get_state()}")
 synapses.weight(2)
-print("After weight Done:")
+print("After weight Done: ap_index=2")
 print("Gradient is Positive for crosspoint 0")
 synapses.increase_positive_crosspoint_index(0)
 print("Gradient is Negative for crosspoint 1")
 synapses.increase_bias_crosspoint_index()
 print("Gradient is Positive for crosspoint 2")
 synapses.increase_positive_crosspoint_index(2)
-for i in range(spec.n_plus):
+for i in range(spec.n_problem):
     print(f"state for positive crosspoint {i}: {synapses.positive_crosspoint[i].state.get_state()}")
 print(f"state for negative crosspoint: {synapses.bias_crosspoint.state.get_state()}")

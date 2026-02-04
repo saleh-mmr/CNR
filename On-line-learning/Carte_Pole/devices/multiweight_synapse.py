@@ -39,11 +39,11 @@ class MultiWeightSynapse:
 
         self.plus_devices: List[MagnetoresistiveCrosspoint] = [
             MagnetoresistiveCrosspoint(params, self.rng)
-            for _ in range(spec.n_plus)
+            for _ in range(spec.n_problem)
         ]
         self.bias_device = NonMagneticCrosspoint(params, self.rng)
 
-        self.plus_states = [CrosspointState() for _ in range(spec.n_plus)]
+        self.plus_states = [CrosspointState() for _ in range(spec.n_problem)]
         self.bias_state = CrosspointState()
 
         # Initial noise draw
@@ -56,7 +56,7 @@ class MultiWeightSynapse:
     # ------------------------------------------------------------------
 
     def weight(self, ap_index):
-        assert 0 <= ap_index < self.spec.n_plus
+        assert 0 <= ap_index < self.spec.n_problem
 
         g_sum = 0.0
         for i, (dev, st) in enumerate(zip(self.plus_devices, self.plus_states)):
@@ -73,7 +73,7 @@ class MultiWeightSynapse:
     # ------------------------------------------------------------------
 
     def increase_plus(self, index):
-        assert 0 <= index < self.spec.n_plus
+        assert 0 <= index < self.spec.n_problem
         self.plus_devices[index].increment_pulses(self.plus_states[index])
 
     def increase_bias(self):
