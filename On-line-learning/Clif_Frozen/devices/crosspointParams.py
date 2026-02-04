@@ -1,5 +1,3 @@
-
-
 class CrossPointParams:
     """
     Parameters from experiments:
@@ -16,10 +14,6 @@ class CrossPointParams:
         self.g_threshold = g_threshold
         self.sigma_pulse_noise = sigma_pulse_noise
         self.min_pulse_index_for_log = 1
-
-
-    def get_params(self):
-        return self.a, self.b, self.c, self.g_threshold
 
     def get_sigma(self):
         return self.sigma_pulse_noise
