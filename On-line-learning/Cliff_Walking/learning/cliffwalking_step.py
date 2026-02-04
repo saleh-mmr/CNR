@@ -25,7 +25,7 @@ def cliffwalking_learning_step(
     s_idx = int(np.argmax(phi_s))
 
     # -------- Q(s,a) --------
-    q_sa, _ = synapses[s_idx][action].weight(ap_index=ap_index)
+    q_sa, c = synapses[s_idx][action].weight(ap_index=ap_index)
 
     # -------- target --------
     if terminated:
@@ -50,3 +50,5 @@ def cliffwalking_learning_step(
         direction=direction,
         ap_index=ap_index,
     )
+
+    return c

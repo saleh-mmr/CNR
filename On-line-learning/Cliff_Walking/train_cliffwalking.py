@@ -15,12 +15,12 @@ from learning.cliffwalking_step import cliffwalking_learning_step
 
 @dataclass
 class TrainSpec:
-    episodes: int = 5000
+    episodes: int = 3000
     max_steps: int = 200
 
     epsilon_start: float = 1.0
     epsilon_end: float = 0.01
-    epsilon_decay_episodes: int = 3000
+    epsilon_decay_episodes: int = 1200
 
     gamma: float = 0.99
     seed: int = config.seed
@@ -71,13 +71,14 @@ def build_q_network(
 
 def read_q(phi_s, synapses, ap_index=0):
     s_idx = int(np.argmax(phi_s))
-    return np.array(
+    a = np.array(
         [
             synapses[s_idx][a].weight(ap_index)[0]
             for a in range(len(synapses[s_idx]))
         ],
         dtype=np.float32,
     )
+    return a
 
 
 # ============================================================
@@ -95,14 +96,14 @@ def train(sigma_pulse_noise):
         a=1.566e-8,
         b=0.350e-8,
         c=0.1,
-        g_threshold=0.5,
+        g_threshold=0.8,
         sigma_pulse_noise=sigma_pulse_noise,
         min_pulse_index_for_log=1)
 
     synapses = build_q_network(
         env.n_states,
         env.n_actions,
-        scaling_factor=10e10,
+        scaling_factor=3e8,
         mr_params=mr_params,
         rng=rng)
 
@@ -110,19 +111,20 @@ def train(sigma_pulse_noise):
     # Episodes
     # --------------------------------------------------------
     all_episode_rewards = []
+    all_cond = []
     for ep in range(spec.episodes):
         epsilon = linear_epsilon(ep, spec)
         _, phi_s, _ = env.reset()
 
         episode_step_counter = 0.0
-
+        last_c = 0
         for _ in range(spec.max_steps):
             q = read_q(phi_s, synapses, ap_index=0)
             action = choose_action_eps_greedy(q, epsilon, rng)
 
             _, phi_s2, reward, terminated, truncated, _ = env.step(action)
 
-            cliffwalking_learning_step(
+            c = cliffwalking_learning_step(
                 phi_s=phi_s,
                 action=action,
                 reward=reward,
@@ -133,6 +135,7 @@ def train(sigma_pulse_noise):
                 ap_index=0,
             )
             episode_step_counter += 1
+            last_c = c
 
 
             phi_s = phi_s2
@@ -140,21 +143,27 @@ def train(sigma_pulse_noise):
                 break
         episode_reward = spec.max_steps - episode_step_counter
         all_episode_rewards.append(episode_reward)
+        all_cond.append(last_c)
+    mean = np.mean(all_cond)
     env.close()
-    return all_episode_rewards
+    return all_episode_rewards , mean
 
 def run_sigma_sweep():
     sigmas = [
-        1.7e-12,
-        1.7e-11,
+        # 1.7e-12,
+        # 1.7e-11,
         1.7e-10,
+        7.7e-10,
+        9.7e-9,
+        # 1.7e-7,
     ]
     curves = {}
+    conductance = {}
 
     for sigma in sigmas:
         print(f"Training with sigma = {sigma:.1e}")
-        curves[sigma] = train(sigma)
-    return curves
+        curves[sigma], conductance[sigma]  = train(sigma)
+    return curves, conductance
 
 
 # ============================================================
@@ -178,13 +187,13 @@ def moving_average_last_k(values, k=50):
     return ma
 
 
-def plot_curves(curves: dict, window: int = 50):
+def plot_curves(curves, conductance, window):
     """Plot the moving-average (last `window` episodes) of rewards for each sigma on the same figure."""
     plt.figure(figsize=(12, 8))
     for sigma, values in curves.items():
         ma = moving_average_last_k(values, window)
         # Use scientific format for small sigma values
-        plt.plot(ma, label=f"Programming Noise: {sigma:.1e}", linewidth=3.5)
+        plt.plot(ma, label=f"Programming Noise: {(sigma/conductance[sigma])*100:.1f}", linewidth=3.5)
 
     plt.title("Cliff Walking Online Training", fontsize=28, pad=20)
     plt.xlabel("Episode", fontsize=24)
@@ -199,7 +208,7 @@ def plot_curves(curves: dict, window: int = 50):
 
 if __name__ == "__main__":
     # run training for different sigma values
-    curves = run_sigma_sweep()
+    curves, conductance = run_sigma_sweep()
 
     # plot a 50-episode moving average of the rewards for each sigma
-    plot_curves(curves, window=50)
+    plot_curves(curves, conductance, window=50)

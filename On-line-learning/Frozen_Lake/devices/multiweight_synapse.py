@@ -66,7 +66,7 @@ class MultiWeightSynapse:
                 g_sum += dev.conductance_p(st)
 
         g_bias = self.bias_device.conductance(self.bias_state)
-        return float(self.spec.scaling_factor * (g_sum - g_bias)) , float(g_sum - g_bias)
+        return float(self.spec.scaling_factor * (g_sum - g_bias)) , float(g_sum)
 
     # ------------------------------------------------------------------
     # Update rules
