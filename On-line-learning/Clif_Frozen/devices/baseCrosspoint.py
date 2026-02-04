@@ -1,20 +1,20 @@
 from crosspointParams import CrossPointParams
-from crosspoint_state import CrosspointState
+from crosspointState import CrosspointState
 import numpy as np
-from Clif_Frozen.utils import config
+from utils import config
 
 
 class BaseCrosspoint:
-    def __init__(self, params: CrossPointParams, state: CrosspointState):
+    def __init__(self, params: CrossPointParams, state: CrosspointState, seed=None):
         self.params = params
         self.state = state
-        self.rng = np.random.default_rng(seed=config.seed)
+        internal_seed = seed + config.seed if seed is not None else config.seed
+        self.rng = np.random.default_rng(seed=internal_seed)
 
     #  Following Method Redraws Noise
     def redraw_noise(self, sigma):
         noise = float(self.rng.normal(0.0, sigma)) if sigma > 0 else 0.0
         return noise
-
 
     # Following Method Changes State (increment X and redraw noise)
     def update_state(self):
@@ -23,7 +23,7 @@ class BaseCrosspoint:
         noise = self.redraw_noise(sigma)
         self.state.update_noise(noise)
 
-    # Following Method Compute noisy G_p for current State
+    # Following Method Compute noisy G_p for Current State **DOES NOT UPDATE STATE**
     def gp(self, state):
         index, state_noise = state.get_state()
         a = float(self.params.a)
