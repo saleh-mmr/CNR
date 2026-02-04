@@ -23,7 +23,7 @@ class TrainSpec:
     epsilon_decay_episodes: int = 1200
 
     gamma: float = 0.99
-    seed: int = 0
+    seed: int = 2026
     log_every: int = 100
 
 
@@ -160,17 +160,9 @@ def train(sigma_pulse_noise):
 
 def run_sigma_sweep():
     sigmas = [
-        # 1.7e-14,
-        # 1.7e-13,
-        # 1.7e-12,
-        1.7e-11,
-        # 5.67e-11,
         1.7e-10,
-        2.4e-10,
-        # 5.67e-10,
-        # 1.7e-8,
-        # 1.7e-7,
-        # 1.7e-6
+        7.7e-10,
+        9.7e-9,
     ]
     curves = {}
     conductances = {}
