@@ -1,5 +1,5 @@
-from crosspointParams import CrossPointParams
-from crosspointState import CrosspointState
+from devices.crosspointParams import CrossPointParams
+from devices.crosspointState import CrosspointState
 import numpy as np
 from utils import config
 
@@ -8,7 +8,7 @@ class BaseCrosspoint:
     def __init__(self, params: CrossPointParams, state: CrosspointState, seed=None):
         self.params = params
         self.state = state
-        internal_seed = seed + config.seed if seed is not None else config.seed
+        internal_seed = seed + config.seed if seed is not None  else config.seed
         self.rng = np.random.default_rng(seed=internal_seed)
 
     #  Following Method Redraws Noise

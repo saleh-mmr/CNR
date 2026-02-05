@@ -1,5 +1,8 @@
-from baseCrosspoint import BaseCrosspoint
-from crosspointState import CrosspointState
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from devices.baseCrosspoint import BaseCrosspoint
+from devices.crosspointState import CrosspointState
 
 class MagnetoresistiveCrosspoint(BaseCrosspoint):
     """

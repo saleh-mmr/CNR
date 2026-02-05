@@ -1,5 +1,5 @@
-from baseCrosspoint import BaseCrosspoint
-from crosspointState import CrosspointState
+from devices.baseCrosspoint import BaseCrosspoint
+from devices.crosspointState import CrosspointState
 
 class NonMagnetoresistiveCrosspoint(BaseCrosspoint):
     """
