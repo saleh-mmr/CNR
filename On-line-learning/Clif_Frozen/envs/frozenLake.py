@@ -8,8 +8,7 @@ import gymnasium as gym
 
 class FrozenLakeEnv:
     def __init__(self):
-        self.env = gym.make("FrozenLake-v1", map_name="4x4", is_slippery=False)
-        # FrozenLake observation is discrete: 0..(S-1)
+        self.env = gym.make("FrozenLake-v1", map_name="4x12", is_slippery=False)
         self.n_states = int(self.env.observation_space.n)
         self.n_actions = int(self.env.action_space.n)
         self.rng = np.random.default_rng(config.seed)
