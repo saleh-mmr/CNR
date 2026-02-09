@@ -2,16 +2,26 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import utils.config as config
+from mapGenerator import generate_random_map_rect
+
+
 import numpy as np
 import gymnasium as gym
 
 
 class FrozenLakeEnv:
     def __init__(self):
-        self.env = gym.make("FrozenLake-v1", map_name="4x12", is_slippery=False)
+        custom_map = generate_random_map_rect(
+            height=4,
+            width=12,
+            p=0.8,
+        )
+        self.env = gym.make("FrozenLake-v1", desc=custom_map, is_slippery=False)
         self.n_states = int(self.env.observation_space.n)
         self.n_actions = int(self.env.action_space.n)
+        print(self.n_states, self.n_actions)
         self.rng = np.random.default_rng(config.seed)
+
 
     def reset(self):
         obs, info = self.env.reset(seed=config.seed)

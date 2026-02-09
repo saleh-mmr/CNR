@@ -3,7 +3,6 @@
 # ___________________________imports___________________________
 import os
 import sys
-import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from devices.multiWeightSynapse import MultiWeightSynapseSpec
 from devices.crosspointParams import CrossPointParams
