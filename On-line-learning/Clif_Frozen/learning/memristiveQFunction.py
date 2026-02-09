@@ -4,7 +4,6 @@ import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from typing import List
 from devices.multiWeightSynapse import MultiWeightSynapse
-from learning.oneStepUpdate import apply_online_update
 from devices.crosspointState import CrosspointState
 from devices.multiWeightSynapse import MultiWeightSynapseSpec
 from devices.crosspointParams import CrossPointParams
@@ -39,38 +38,10 @@ class MemristiveQFunction:
 
     def update_q_value(self, state, action, sign_gradient: List[int]):
         current_synapse = self.get_synapse(state, action)
-        apply_online_update(current_synapse, sign_gradient)
+        for i, sign in enumerate(sign_gradient):
+            if sign > 0:
+                current_synapse.increase_bias_crosspoint_index()
+            elif sign < 0:
+                current_synapse.increase_positive_crosspoint_index(i)
 
 
-
-# Example usage:
-params = CrossPointParams(a=20, b=2.0, c=20, g_threshold=0.8, sigma_pulse_noise=20)
-spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=1)
-q_function = MemristiveQFunction(state_size=2, action_size=2, spec=spec, params=params)
-print("Memristive Q-Function initialized.")
-for s in range(2):
-    for a in range(2):
-        synapse = q_function.q_table[s][a]
-        print(f"Synapse at state {s}, action {a} initialized with weights: {[synapse.weight(i) for i in range(2)]}")# Example usage:
-state = [0, 1]  # One-hot encoded state
-action = 1
-ap_index = 1
-current_q_value = q_function.read_q_value(state, action, ap_index)
-print(f"Current Q-value: {current_q_value}")
-sign_gradient = [-1,1]  # Example sign gradient for the update
-q_function.update_q_value(state, action, sign_gradient)
-sign_gradient = [-1,1]  # Example sign gradient for the update
-q_function.update_q_value(state, action, sign_gradient)
-sign_gradient = [-1,1]  # Example sign gradient for the update
-ap_index = 1
-q_function.update_q_value(state, action, sign_gradient)
-sign_gradient = [-1,1]  # Example sign gradient for the update
-q_function.update_q_value(state, action, sign_gradient)
-sign_gradient = [-1,1]  # Example sign gradient for the update
-q_function.update_q_value(state, action, sign_gradient)
-updated_q_value = q_function.read_q_value(state, action, ap_index)
-print(f"Updated Q-value: {updated_q_value}")
-for s in range(2):
-    for a in range(2):
-        synapse = q_function.q_table[s][a]
-        print(f"Synapse at state {s}, action {a} initialized with weights: {[synapse.weight(i) for i in range(2)]}")# Example usage:
