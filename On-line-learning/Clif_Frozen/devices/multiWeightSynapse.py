@@ -35,7 +35,6 @@ class MultiWeightSynapse:
                 g_p += self.positive_crosspoint[i].conductance_ap(self.positive_crosspoints_states[i])
             else:
                 g_p += self.positive_crosspoint[i].conductance_p(self.positive_crosspoints_states[i])
-
         g_bias = self.bias_crosspoint.conductance_p(self.bias_state)
         weight = self.spec.scaling_factor * (g_p - g_bias)
         return weight
@@ -46,6 +45,25 @@ class MultiWeightSynapse:
 
     def increase_bias_crosspoint_index(self):
         self.bias_crosspoint.update_state()
+
+    def get_positive_crosspoint_state(self, index_positive_crosspoint):
+        assert 0 <= index_positive_crosspoint < self.spec.n_problem
+        return self.positive_crosspoint[index_positive_crosspoint].state.get_state()
+
+    def get_bias_crosspoint_state(self):
+        return self.bias_crosspoint.state.get_state()
+
+    def get_positive_crosspoint_conductance_p(self, index_positive_crosspoint):
+        assert 0 <= index_positive_crosspoint < self.spec.n_problem
+        return self.positive_crosspoint[index_positive_crosspoint].conductance_p(self.positive_crosspoints_states[index_positive_crosspoint])
+
+    def get_positive_crosspoint_conductance_ap(self, index_positive_crosspoint):
+        assert 0 <= index_positive_crosspoint < self.spec.n_problem
+        return self.positive_crosspoint[index_positive_crosspoint].conductance_ap(self.positive_crosspoints_states[index_positive_crosspoint])
+
+    def get_bias_crosspoint_conductance(self):
+        return self.bias_crosspoint.conductance_p(self.bias_state)
+
 
 
 

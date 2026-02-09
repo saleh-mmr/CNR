@@ -4,7 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 class CrosspointState:
     def __init__(self):
-        self.x = 0
+        self.x = 1
         self.noise_realization = 0.0
 
     def update_noise(self, noise):
