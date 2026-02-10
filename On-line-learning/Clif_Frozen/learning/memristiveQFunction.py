@@ -38,9 +38,11 @@ class MemristiveQFunction:
 
     def update_q_value(self, state, action, sign_gradient: List[int]):
         current_synapse = self.get_synapse(state, action)
+        flag = True
         for i, sign in enumerate(sign_gradient):
-            if sign > 0:
+            if sign > 0 and flag:
                 current_synapse.increase_bias_crosspoint_index()
+                flag = False
             elif sign < 0:
                 current_synapse.increase_positive_crosspoint_index(i)
 
