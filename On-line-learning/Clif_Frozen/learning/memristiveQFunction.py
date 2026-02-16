@@ -9,8 +9,8 @@ from devices.multiWeightSynapse import MultiWeightSynapseSpec
 from devices.crosspointParams import CrossPointParams
 
 
-def one_hot_to_index(state):
-    return int(np.argmax(state))
+def one_hot_to_index(phi_s):
+    return int(np.argmax(phi_s))
 
 
 class MemristiveQFunction:
@@ -27,17 +27,17 @@ class MemristiveQFunction:
                 row.append(synapse)
             self.q_table.append(row)
 
-    def get_synapse(self, state, action) -> MultiWeightSynapse:
-        state_idx = one_hot_to_index(state)
+    def get_synapse(self, phi_s, action) -> MultiWeightSynapse:
+        state_idx = one_hot_to_index(phi_s)
         return self.q_table[state_idx][action]
 
-    def read_q_value(self, state, action, ap_index):
-        current_synapse = self.get_synapse(state, action)
+    def read_q_value(self, phi_s, action, ap_index):
+        current_synapse = self.get_synapse(phi_s, action)
         current_q = current_synapse.weight(ap_index)
         return current_q
 
-    def update_q_value(self, state, action, sign_gradient: List[int]):
-        current_synapse = self.get_synapse(state, action)
+    def update_q_value(self, phi_s, action, sign_gradient: List[int]):
+        current_synapse = self.get_synapse(phi_s, action)
         flag = True
         for i, sign in enumerate(sign_gradient):
             if sign > 0 and flag:

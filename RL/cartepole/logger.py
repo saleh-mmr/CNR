@@ -29,23 +29,21 @@ class TrainingLogger:
         self.weight_history = []
         self.episode_rewards = []
         self.epsilon_values = []
-        self.loss_values = []
 
         # Create CSV header
         with open(self.csv_path, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["episode", "reward", "epsilon", "loss"])
 
-    def log_episode(self, episode, reward, epsilon, loss):
+    def log_episode(self, episode, reward, epsilon):
         self.episode_rewards.append(reward)
         self.epsilon_values.append(epsilon)
-        self.loss_values.append(loss)
 
         with open(self.csv_path, "a", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([episode, reward, epsilon, loss])
+            writer.writerow([episode, reward, epsilon])
 
-    def finalize_results(self, model):
+    def finalize_results(self, model, loss_history):
         """Save trained weights + reward plot"""
         torch.save(model.state_dict(), self.weights_path)
         print(f"Saved model weights to: {self.weights_path}")
@@ -65,7 +63,7 @@ class TrainingLogger:
 
         # Save Loss Plot
         plt.figure(figsize=(10, 5))
-        plt.plot(self.loss_values, label="Loss")
+        plt.plot(loss_history, label="Loss")
         plt.xlabel("Episode")
         plt.ylabel("Loss")
         plt.title("Training Loss")

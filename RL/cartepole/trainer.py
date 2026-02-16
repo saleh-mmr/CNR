@@ -57,29 +57,25 @@ class Trainer:
             done = False                                    # Episode ended because of failure
             episode_reward = 0                              # Episode ended because of failure
             step_counter = 0                                # Step counter inside episode
-            episode_loss = None
             while not done:                                 # The agent keeps taking steps until episode ends
                 action = self.agent.select_action(state)    # Using epsilon-greedy strategy—exploration or exploitation
                 next_state, reward, terminated, truncated, _ = self.env.step(action) # Environment responds
                 done = terminated or truncated
                 self.agent.replay_memory.store(state, action, next_state, reward, done) # This is essential for off-policy learning
                 if len(self.agent.replay_memory) > self.batch_size:         # Only learn when enough samples collected
-                    episode_loss = self.agent.learn(self.batch_size, done)
+                    self.agent.learn(self.batch_size, done)
                 # Tracking step and reward progress
                 state = next_state
                 episode_reward += reward
                 step_counter += 1
 
             total_steps += step_counter
-            # Log episode
-            episode_loss = episode_loss if episode_loss is not None else 0.0
-
+            # Log episode results (reward, epsilon) for later analysis and visualization
             self.logger.log_episode(
                 episode=episode,
                 reward=episode_reward,
                 epsilon=self.agent.epsilon,
-                loss=episode_loss
-            )
+             )
             # Update epsilon (step-based)
             self.agent.update_epsilon(total_steps)
 
@@ -95,7 +91,10 @@ class Trainer:
             if episode_reward >= 500:
                 torch.save(self.agent.q_network.state_dict(), self.load_pth)
                 print("Best solved model saved!")
-        self.logger.finalize_results(self.agent.q_network)
+
+        loss_history = self.agent.loss_history
+
+        self.logger.finalize_results(self.agent.q_network, loss_history)
 
     # TEST LOOP
     def test(self, max_episodes):
