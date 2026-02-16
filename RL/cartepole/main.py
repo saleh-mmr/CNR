@@ -3,7 +3,7 @@ from trainer import Trainer
 
 train_mode = True                                  # True = Train RL model, False = Load and Test
 render = False                                     # Enable/disable environment visualization
-max_episodes = 1000 if train_mode else 10
+max_episodes = 5000 if train_mode else 10
 
 # ---------------- Hyperparameters ----------------
 HPARAMS = {
@@ -16,10 +16,10 @@ HPARAMS = {
     "render": render,                               # Set True to visually inspect
     "epsilon_max": 1.0,                             # Initial exploration rate
     "epsilon_min": 0.05,                            # Minimum allowed epsilon
-    "epsilon_decay": 0.003,                         # Exploration decay speed
+    "epsilon_decay": 0.00000003,                         # Exploration decay speed
     "memory_capacity": 10000,                       # Replay buffer size
     "render_fps": 30,                               # Visualization frame rate
-    "weight_datafile_path": "conductance/datafile_V2.csv",         # path to your CSV file
+    "weight_datafile_path": "conductance/datafile.csv",         # path to your CSV file
 }
 
 

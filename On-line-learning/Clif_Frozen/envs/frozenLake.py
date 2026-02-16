@@ -2,7 +2,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import utils.config as config
-from mapGenerator import generate_random_map_rect
+from .mapGenerator import MapGenerator
 
 
 import numpy as np
@@ -11,15 +11,15 @@ import gymnasium as gym
 
 class FrozenLakeEnv:
     def __init__(self):
-        custom_map = generate_random_map_rect(
+        map_generator = MapGenerator(
             height=4,
             width=12,
             p=0.8,
         )
+        custom_map = map_generator.generate_random_map_rect()
         self.env = gym.make("FrozenLake-v1", desc=custom_map, is_slippery=False)
         self.n_states = int(self.env.observation_space.n)
         self.n_actions = int(self.env.action_space.n)
-        print(self.n_states, self.n_actions)
         self.rng = np.random.default_rng(config.seed)
 
 

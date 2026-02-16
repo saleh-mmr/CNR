@@ -64,24 +64,5 @@ class MultiWeightSynapse:
     def get_bias_crosspoint_conductance(self):
         return self.bias_crosspoint.conductance_p(self.bias_state)
 
-
-
-
-# params = CrossPointParams(a=1.1, b=2.0, c=0.5, g_threshold=0.8, sigma_pulse_noise=0.4)
-# spec = MultiWeightSynapseSpec(n_problem=3, scaling_factor=0.1)
-# synapses = MultiWeightSynapse(spec, params)
-# print("index of each positive crosspoint:", [i for i in range(spec.n_problem)])
-# for i in range(spec.n_problem):
-#     print(f"state for positive crosspoint {i}: {synapses.positive_crosspoint[i].state.get_state()}")
-# print(f"state for negative crosspoint: {synapses.bias_crosspoint.state.get_state()}")
-# synapses.weight(2)
-# print("After weight Done: ap_index=2")
-# print("Gradient is Positive for crosspoint 0")
-# synapses.increase_positive_crosspoint_index(0)
-# print("Gradient is Negative for crosspoint 1")
-# synapses.increase_bias_crosspoint_index()
-# print("Gradient is Positive for crosspoint 2")
-# synapses.increase_positive_crosspoint_index(2)
-# for i in range(spec.n_problem):
-#     print(f"state for positive crosspoint {i}: {synapses.positive_crosspoint[i].state.get_state()}")
-# print(f"state for negative crosspoint: {synapses.bias_crosspoint.state.get_state()}")
+    def __str__(self):
+        return f"MultiWeightSynapse(positive_crosspoints={self.positive_crosspoint}, bias_crosspoint={self.bias_crosspoint})"
