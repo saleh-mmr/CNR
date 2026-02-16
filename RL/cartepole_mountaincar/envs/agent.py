@@ -64,7 +64,7 @@ class DQNAgent:
             return torch.argmax(q_values).item()                # Pick action with the highest expected reward
 
     # Learning step
-    def learn(self, batch_size, episode_done):
+    def learn(self, batch_size):
         if len(self.replay_memory) < batch_size:                # Not enough samples in replay => Skip learning
             return None
 
@@ -78,7 +78,7 @@ class DQNAgent:
 
         # self.q_network(states) → outputs all Q-values
         # .gather(1, actions) → picks only Q-values of the taken actions
-        predicted_q = self.q_network(states).gather(1, actions)       # This is the Q(s, a) value from Bellman equation
+        predicted_q = self.q_network(states).gather(1, actions)       # This is the Q(s,a) value from Bellman equation
 
         # Max future reward if the episode is not terminal
         with torch.no_grad():
@@ -98,7 +98,6 @@ class DQNAgent:
         self.q_network.zero_grad()
         loss.backward()                     # Compute gradients
         self.weight_controller.step()
-
         return None
 
     # Epsilon update using ε(t) = ε_min + (ε_max − ε_min) * exp(−λ * t)
