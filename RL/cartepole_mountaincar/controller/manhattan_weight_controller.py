@@ -1,8 +1,5 @@
 import os
 import sys
-
-from PIL.ImageOps import scale
-
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from devices.multiWeightSynapse import MultiWeightSynapse, MultiWeightSynapseSpec
 from devices.crosspointParams import CrossPointParams
@@ -27,11 +24,16 @@ class ManhattanWeightController:
         self.synapses = {}
         self.params = CrossPointParams(a, b, c, g_threshold, sigma_pulse_noise)
         self.spec = MultiWeightSynapseSpec(n_problem, scaling_factor)
+
+        # iterates through all parameters in the model, giving a tuple of (name, parameter tensor)
         for name, param in model.named_parameters():
             if not param.requires_grad:
                 continue
             syn_list = []
-            for idx in range(param.numel()):
+            # For each element in the parameter tensor, we create a MultiWeightSynapse and add it to the syn_list
+            # param.numel() gives the total number of elements in the parameter tensor
+            # (e.g., for a parameter tensor of shape (4, 8), param.numel() would be 32)
+            for _ in range(param.numel()):
                 syn = MultiWeightSynapse(self.spec, self.params)
                 syn_list.append(syn)
 
@@ -44,6 +46,7 @@ class ManhattanWeightController:
                                 ...
                             }
             '''
+
 
 
 
