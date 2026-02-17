@@ -97,7 +97,7 @@ class DQNAgent:
         # Backprop
         self.q_network.zero_grad()
         loss.backward()                     # Compute gradients
-        self.weight_controller.step()
+        self.weight_controller.step(ap_index=0)
         return None
 
     # Epsilon update using ε(t) = ε_min + (ε_max − ε_min) * exp(−λ * t)

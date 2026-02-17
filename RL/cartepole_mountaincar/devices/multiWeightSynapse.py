@@ -65,4 +65,4 @@ class MultiWeightSynapse:
         return self.bias_crosspoint.conductance_p(self.bias_state)
 
     def __str__(self):
-        return f"MultiWeightSynapse(positive_crosspoints={self.positive_crosspoint}, bias_crosspoint={self.bias_crosspoint})"
+        return f"MultiWeightSynapse"
