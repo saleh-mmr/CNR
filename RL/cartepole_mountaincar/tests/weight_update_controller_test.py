@@ -15,6 +15,7 @@ network = torch.nn.Sequential(
     torch.nn.Linear(4, 1)
 )
 
+
 criterion = nn.MSELoss()
 controller = ManhattanWeightController(network)
 
@@ -28,7 +29,7 @@ x_tensor = torch.as_tensor(x, dtype=torch.float32)
 y_tensor = torch.as_tensor(y_true, dtype=torch.float32)
 
 # Training loop
-max_epochs = 4622
+max_epochs = 4000
 
 def track_parameter(network, criterion, controller, x_tensor, y_tensor, max_epochs=500, tracked_param_index=(0, 0)):
     x_index = []
@@ -36,6 +37,7 @@ def track_parameter(network, criterion, controller, x_tensor, y_tensor, max_epoc
     g_ap = []
     g_bias = []
     weights = []
+    losses = []
 
     for epoch in range(max_epochs):
         # Forward
@@ -66,17 +68,16 @@ def track_parameter(network, criterion, controller, x_tensor, y_tensor, max_epoc
         g_ap.append(ap)
         g_bias.append(bias)
         weights.append(weight)
-
-
+        losses.append(loss.item())
 
         current_loss = loss.item()
         print(f"Epoch {epoch:3d} | Loss: {current_loss:.6f}")
 
-    return x_index, bias_index, g_ap, g_bias, weights
+    return x_index, bias_index, g_ap, g_bias, weights, losses
 
 
 
-x_index, bias_index, g_ap, g_bias, weight = track_parameter(network, criterion, controller, x_tensor, y_tensor, max_epochs=max_epochs, tracked_param_index=(0, 0))
+x_index, bias_index, g_ap, g_bias, weight, loss = track_parameter(network, criterion, controller, x_tensor, y_tensor, max_epochs=max_epochs, tracked_param_index=(0, 0))
 
 
 epochs = range(len(x_index))
@@ -95,9 +96,18 @@ plt.show()
 plt.figure()
 plt.plot(epochs, g_ap, label='g_ap')
 plt.plot(epochs, g_bias, label='g_bias')
-plt.plot(epochs, weight, label='weight')  # fixed label
+plt.plot(epochs, weight, label='weight')
 plt.xlabel('Epoch')
 plt.ylabel('Value')
 plt.title('Tracked Gradients and Weight')
+plt.legend()
+plt.show()
+
+# Second Plot: g_ap, g_bias, and weight
+plt.figure()
+plt.plot(epochs, loss, label='loss')  # fixed label
+plt.xlabel('Epoch')
+plt.ylabel('Loss Value')
+plt.title('Loss over Epochs')
 plt.legend()
 plt.show()
