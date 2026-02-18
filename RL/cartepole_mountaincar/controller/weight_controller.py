@@ -11,12 +11,12 @@ from devices.crosspointParams import CrossPointParams
 class ManhattanWeightController:
     def __init__(self, model):
         # Parameters for crosspoints and synapse spec
-        a = 1
-        b = 1
-        c = 1
-        g_threshold = 0.8
+        a = 1.566e-8
+        b = 0.350e-8
+        c = 5e4
+        g_threshold = 0.350e-8
         sigma_pulse_noise = 0.0
-        scaling_factor = 1
+        scaling_factor = 5e7
         n_problem = 2
 
         # model is the neural network whose weights we want to control
@@ -28,16 +28,20 @@ class ManhattanWeightController:
         self.spec = MultiWeightSynapseSpec(n_problem, scaling_factor)
 
         # iterates through all parameters in the model, giving a tuple of (name, parameter tensor)
-        for param in self.model.parameters():
+        for name, param in self.model.named_parameters():
             if not param.requires_grad:
                 continue
             syn_array = np.empty(param.shape, dtype=object)
-            # For each element in the parameter tensor, we create a MultiWeightSynapse and add it to the syn_list
-            # param.numel() gives the total number of elements in the parameter tensor
-            # (e.g., for a parameter tensor of shape (4, 8), param.numel() would be 32)
+            # self.track_values[name] = {}
+            # For each trainable parameter tensor, create a synapse object per element.
+            # np.ndindex(param.shape) iterates over all index tuples of the tensor.
+            # (e.g., a tensor of shape (4, 8) has 32 elements).
             for index in np.ndindex(param.shape):
-                syn_array[index] = MultiWeightSynapse(self.spec, self.params)
+                current_synapse = MultiWeightSynapse(self.spec, self.params)
+                syn_array[index] = current_synapse
 
+
+            # this is not recommend for lage networks,
             self.synapses.append((param, syn_array))
 
     @torch.no_grad()

@@ -30,7 +30,7 @@ class CartPoleEnv:
         return self.env.observation_space
 
     def reset(self):
-        state, _ = self.env.reset()
+        state, _ = self.env.reset(seed=config.seed)
         return state
 
     def step(self, action):
