@@ -84,8 +84,6 @@ class DQNAgent:
         with torch.no_grad():
             next_q = self.q_network(next_states).max(dim=1, keepdim=True).values   # Choose max Q-value for each next state
             next_q[dones] = 0.0
-
-        # Now build the Bellman Target
         targets = rewards + self.discount * next_q
 
         # compare current guess vs target (criterion is MSELoss)
