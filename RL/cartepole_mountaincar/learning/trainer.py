@@ -30,7 +30,8 @@ class Trainer:
 
 
     def train(self):
-        total_steps = 0                                     # Count steps across all episodes (used for epsilon decay
+        total_steps = 0
+        total_reward = []
 
         for episode in range(1, self.max_episodes + 1):
             state = self.env.reset()        # Initial observation from environment
@@ -49,6 +50,7 @@ class Trainer:
                 step_counter += 1
 
             total_steps += step_counter
+            total_reward.append(step_counter)
             # Update epsilon (step-based)
             self.agent.update_epsilon(total_steps)
 
@@ -59,3 +61,4 @@ class Trainer:
                 f"Reward: {episode_reward:.2f}, "
                 f"Epsilon: {self.agent.epsilon:.2f}"
             )
+        return total_reward
