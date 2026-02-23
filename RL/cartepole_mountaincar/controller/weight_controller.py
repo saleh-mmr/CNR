@@ -14,13 +14,14 @@ class ManhattanWeightController:
         a = 1.566e-8
         b = 0.350e-8
         c = 5e4
-        g_threshold = 0.5
+        g_threshold = 0.350e-8
         sigma_pulse_noise = 0.0
         scaling_factor = 7e7
         n_problem = 2
 
         # model is the neural network whose weights we want to control
         self.model = model
+
 
         # initialize synapses for each trainable parameter in the model
         self.synapses = []

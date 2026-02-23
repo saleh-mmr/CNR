@@ -7,12 +7,14 @@ import torch
 from utils import config
 from memory.replay_memory import ReplayMemory
 from network.network import DQNNetwork
-from controller.weight_controller import ManhattanWeightController
+from controller.weight_controller_tracking import ManhattanWeightController
 
 class DQNAgent:
     def __init__(
         self,
-        env,                                                      # Gym environment
+        # env,                                                      # Gym environment
+        n_action_space,
+        n_observation_space,
         epsilon_max,                                              # Start with more exploration
         epsilon_min,                                              # Minimum exploration threshold
         epsilon_decay,                                            # How fast exploration decreases
@@ -31,15 +33,17 @@ class DQNAgent:
         self.discount = discount
 
         # Environment
-        self.action_space = env.action_space                              # Saves how many actions the agent can take
-        self.observation_space = env.observation_space                    # Saves the full observation space object
+        self.action_space = n_action_space                              # Saves how many actions the agent can take
+        self.observation_space = n_observation_space                    # Saves the full observation space object
 
         # Replay buffer
-        self.replay_memory = ReplayMemory(capacity=memory_capacity)
+        self.cart_pole_memory = ReplayMemory(capacity=memory_capacity)
+        self.mountain_car_memory = ReplayMemory(capacity=memory_capacity)
+        self.replay_memory = [self.cart_pole_memory, self.mountain_car_memory]  # List of replay buffers for each environment
 
         # Q-Network
-        input_dim = self.observation_space.shape[0]                       # network input = state size (4)
-        output_dim = self.action_space.n                                  # network output = number of actions (2)
+        input_dim = self.observation_space                       # network input = state size (4)
+        output_dim = self.action_space                                  # network output = number of actions (2)
         self.q_network = DQNNetwork(output_dim, input_dim).to(config.device)
 
         # use a squared-error loss just to get gradients,
@@ -53,8 +57,7 @@ class DQNAgent:
     def select_action(self, state):
         # exploration
         if np.random.rand() < self.epsilon:
-            return self.action_space.sample()                    # randomly picks left or right in CartPole
-
+            return np.random.randint(0, self.action_space)
         # exploitation
         if not torch.is_tensor(state):
             state = torch.as_tensor(state, dtype=torch.float32, device=config.device)  # Convert state to tensor
@@ -64,12 +67,12 @@ class DQNAgent:
             return torch.argmax(q_values).item()                # Pick action with the highest expected reward
 
     # Learning step
-    def learn(self, batch_size):
-        if len(self.replay_memory) < batch_size:                # Not enough samples in replay => Skip learning
+    def learn(self, batch_size, ap_index):
+        if len(self.replay_memory[ap_index]) < batch_size:                # Not enough samples in replay => Skip learning
             return None
 
         # Pulls a random batch from replay memory for training
-        states, actions, next_states, rewards, dones = self.replay_memory.sample(batch_size)
+        states, actions, next_states, rewards, dones = self.replay_memory[ap_index].sample(batch_size)
 
         # Shape Fixing: Convert from shape (B,) [0, 1, 1, 0] → (B,1) [[0], [1], [1], [0]]
         actions = actions.unsqueeze(1)
@@ -95,7 +98,7 @@ class DQNAgent:
         # Backprop
         self.q_network.zero_grad()
         loss.backward()                     # Compute gradients
-        self.weight_controller.step(ap_index=0)
+        self.weight_controller.step(ap_index=ap_index)
         return None
 
     # Epsilon update using ε(t) = ε_min + (ε_max − ε_min) * exp(−λ * t)
