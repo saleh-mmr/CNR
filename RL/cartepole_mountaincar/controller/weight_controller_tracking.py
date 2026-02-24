@@ -13,10 +13,10 @@ class ManhattanWeightController:
         # Parameters for crosspoints and synapse spec
         a = 1.566e-8
         b = 0.350e-8
-        c = 1e7
-        g_threshold = 0.350e-15
+        c = 1e8
+        g_threshold = 0
         sigma_pulse_noise = 0.0
-        scaling_factor = 7e6
+        scaling_factor = 1e4
         n_problem = 2
 
         # model is the neural network whose weights we want to control

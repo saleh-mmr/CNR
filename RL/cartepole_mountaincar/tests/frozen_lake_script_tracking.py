@@ -3,7 +3,7 @@ import sys
 import pickle
 import matplotlib.pyplot as plt
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from learning.trainer import Trainer
+from learning.frozen_lake_trainer import Trainer
 
 def plot_metric_compare(values, param_name, syn_index, metric_name, ap_indices=(0,1)):
     """Plot multiple AP indices of the same metric on a single axes with legend."""
