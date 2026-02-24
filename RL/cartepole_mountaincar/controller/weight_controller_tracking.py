@@ -13,29 +13,15 @@ class ManhattanWeightController:
         # Parameters for crosspoints and synapse spec
         a = 1.566e-8
         b = 0.350e-8
-        c = 5e4
-        g_threshold = 0.350e-8
+        c = 1e8
+        g_threshold = 0
         sigma_pulse_noise = 0.0
-        scaling_factor = 5e7
+        scaling_factor = 1e4
         n_problem = 2
 
         # model is the neural network whose weights we want to control
         self.model = model
-        '''
-        track_values = {    "1.weight": { 
-                                            0: { "x_index": [0, 1, 2, ...],
-                                                 "bias_index": [0, 0, 0, ...],
-                                                 "g_ap": [0.35e-8, 0.35e-8, 0.35e-8, ...],
-                                                 "g_bias": [0.35e-8, 0.35e-8, 0.35e-8, ...],
-                                                 "weight": [0.0, 0.0, 0.0, ...],
-                                                 "loss": [0.1, 0.08, 0.05, ...]
-                                                },
-                                            ....},  
-                            "1.bias": {
-                                            0: { "x_index": [0, 0, 0, ...],
-                                                 "bias_index": [0, 1, 2, ...],
 
-        '''
         self.track_values = {}
 
         # initialize synapses for each trainable parameter in the model
@@ -47,6 +33,9 @@ class ManhattanWeightController:
         for name, param in self.model.named_parameters():
             if not param.requires_grad:
                 continue
+            # Ensure we have a dict to hold per-index tracking for this parameter
+            self.track_values[name] = {}
+
             syn_array = np.empty(param.shape, dtype=object)
             # self.track_values[name] = {}
             # For each trainable parameter tensor, create a synapse object per element.
@@ -55,36 +44,52 @@ class ManhattanWeightController:
             for index in np.ndindex(param.shape):
                 # initialize tracking for synapses corresponding to the current parameter index
                 self.track_values[name][index] = {
-                    "x_index": [],
+                    "x_index": {0:[], 1:[]},
                     "bias_index": [],
-                    "g_ap": [],
+                    "g_ap": {0:[], 1:[]},
                     "g_bias": [],
-                    "weight": [],
-                    "loss": [],
+                    "weight": {0:[], 1:[]},
+                    "loss": {},
                 }
                 current_synapse = MultiWeightSynapse(self.spec, self.params)
                 syn_array[index] = current_synapse
-                idx = current_synapse.get_positive_crosspoint_state(0)[0]
+                idx0 = current_synapse.get_positive_crosspoint_state(0)[0]
+                idx1 = current_synapse.get_positive_crosspoint_state(1)[0]
                 idb = current_synapse.get_bias_crosspoint_state()[0]
-                ap = current_synapse.get_positive_crosspoint_conductance_ap(0)
+                ap0 = current_synapse.get_positive_crosspoint_conductance_ap(0)
+                ap1 = current_synapse.get_positive_crosspoint_conductance_ap(1)
                 bias = current_synapse.get_bias_crosspoint_conductance()
-                weight = current_synapse.weight(0)
-                self.track_values[name][index]["x_index"].append(idx)
+                weight0 = current_synapse.weight(0)
+                weight1 = current_synapse.weight(1)
+                self.track_values[name][index]["x_index"][0].append(idx0)
+                self.track_values[name][index]["x_index"][1].append(idx1)
                 self.track_values[name][index]["bias_index"].append(idb)
-                self.track_values[name][index]["g_ap"].append(ap)
+                self.track_values[name][index]["g_ap"][0].append(ap0)
+                self.track_values[name][index]["g_ap"][1].append(ap1)
                 self.track_values[name][index]["g_bias"].append(bias)
-                self.track_values[name][index]["weight"].append(weight)
+                self.track_values[name][index]["weight"][0].append(weight0)
+                self.track_values[name][index]["weight"][1].append(weight1)
 
             # this is not recommend for lage networks,
             self.synapses.append(((name, param), syn_array))
 
     @torch.no_grad()
-    def step(self, ap_index=0):
+    def step(self, ap_index):
+        # normalize ap_index: accept int or single-element list/tuple/ndarray
+        if isinstance(ap_index, (list, tuple, np.ndarray)):
+            if len(ap_index) == 1:
+                ap_index = int(ap_index[0])
+            else:
+                raise ValueError("ap_index must be an int or a single-element list/tuple/ndarray")
+        else:
+            ap_index = int(ap_index)
+
         for (name, param), syn_array in self.synapses:
             if param.grad is None:
                 continue
 
             grad = param.grad
+
 
             for index in np.ndindex(param.shape):
                 g_value = grad[index].item()
@@ -101,8 +106,9 @@ class ManhattanWeightController:
                 param[index].copy_(
                     torch.tensor(weight, dtype=param.dtype, device=param.device)
                 )
-                self.track_values[name][index]["weight"].append(weight)
-                self.track_values[name][index]["g_ap"].append(syn.get_positive_crosspoint_conductance_ap(0))
-                self.track_values[name][index]["g_bias"].append(syn.get_bias_crosspoint_conductance())
-                self.track_values[name][index]["x_index"].append(syn.get_positive_crosspoint_state(0)[0])
+                self.track_values[name][index]["weight"][ap_index].append(weight)
+                self.track_values[name][index]["g_ap"][ap_index].append(syn.get_positive_crosspoint_conductance_ap(ap_index))
+                if ap_index == 0:
+                    self.track_values[name][index]["g_bias"].append(syn.get_bias_crosspoint_conductance())
+                self.track_values[name][index]["x_index"][ap_index].append(syn.get_positive_crosspoint_state(ap_index)[0])
                 self.track_values[name][index]["bias_index"].append(syn.get_bias_crosspoint_state()[0])

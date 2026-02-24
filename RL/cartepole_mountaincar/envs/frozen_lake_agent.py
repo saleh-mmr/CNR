@@ -7,7 +7,7 @@ import torch
 from utils import config
 from memory.replay_memory import ReplayMemory
 from network.network import DQNNetwork
-from controller.weight_controller_tracking import ManhattanWeightController
+from controller.frozen_lake_controller import ManhattanWeightController
 
 class DQNAgent:
     def __init__(
@@ -37,9 +37,7 @@ class DQNAgent:
         self.observation_space = n_observation_space                    # Saves the full observation space object
 
         # Replay buffer
-        self.cart_pole_memory = ReplayMemory(capacity=memory_capacity)
-        self.mountain_car_memory = ReplayMemory(capacity=memory_capacity)
-        self.replay_memory = [self.cart_pole_memory, self.mountain_car_memory]  # List of replay buffers for each environment
+        self.frozen_lake_memory = ReplayMemory(capacity=memory_capacity)
 
         # Q-Network
         input_dim = self.observation_space                       # network input = state size (4)
@@ -68,11 +66,11 @@ class DQNAgent:
 
     # Learning step
     def learn(self, batch_size, ap_index):
-        if len(self.replay_memory[ap_index]) < batch_size:                # Not enough samples in replay => Skip learning
+        if len(self.frozen_lake_memory) < batch_size:                # Not enough samples in replay => Skip learning
             return None
 
         # Pulls a random batch from replay memory for training
-        states, actions, next_states, rewards, dones = self.replay_memory[ap_index].sample(batch_size)
+        states, actions, next_states, rewards, dones = self.frozen_lake_memory.sample(batch_size)
 
         # Shape Fixing: Convert from shape (B,) [0, 1, 1, 0] → (B,1) [[0], [1], [1], [0]]
         actions = actions.unsqueeze(1)
