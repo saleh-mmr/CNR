@@ -78,7 +78,7 @@ node_modules/
 *.dll
 *.so
 *.dylib
-
+*.pkl
 # Ignore wheel and egg build artifacts
 *.egg
 *.whl
