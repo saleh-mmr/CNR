@@ -14,7 +14,7 @@ from marl_meeting_task.src.utils.logger import Logger
 
 class QMIX:
     """
-    QMIX: Monotonic Value Function Factorisation for Deep Multi-Agent RL.
+    QMIX: Monotonic Value Function Factorisation for Deep Multi-Agent DQN.
     
     QMIX uses:
     - Individual agent Q-networks (decentralized execution)
