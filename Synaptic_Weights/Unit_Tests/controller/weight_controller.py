@@ -11,12 +11,12 @@ from devices.crosspointParams import CrossPointParams
 class ManhattanWeightController:
     def __init__(self, model):
         # Parameters for crosspoints and synapse spec
-        a=1.566e-8
-        b=0.350e-8
-        c=1e6
-        g_threshold=0.350e-8
+        a = 1.566e-8
+        b = 0.350e-8
+        c = 5e4
+        g_threshold = 0.350e-8
         sigma_pulse_noise = 0.0
-        scaling_factor=5e7
+        scaling_factor = 7e7
         n_problem = 2
 
         # model is the neural network whose weights we want to control

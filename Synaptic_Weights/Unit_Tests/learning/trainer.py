@@ -50,28 +50,29 @@ class Trainer:
             state_mc = self.mountain_car_env.reset()
             # Flags to track episode completion for each environment
             done_cp = False
-            done_mc = False
+            # done_mc = False
             # Total reward accumulated in this episode each environment (for logging)
             episode_reward_cp = 0
-            episode_reward_mc = 0
+            # episode_reward_mc = 0
             step_counter = 0 # Step counter inside episode
-            while not (done_cp and done_mc):
+            # while not (done_cp and done_mc):
+            while not done_cp:
                 # For each environment, if it's not done, select action, step, store experience, and accumulate reward
-                if not done_cp:
-                    action_cp = self.agent.select_action(state_cp)
-                    # Step in the environment and get next state, reward, and done flag
-                    next_state_cp, reward_cp, done_cp = self.cart_pole_env.step(action_cp)
-                    # Store experience in the corresponding replay memory
-                    self.agent.cart_pole_memory.store(state_cp, action_cp, next_state_cp, reward_cp, done_cp)
-                    state_cp = next_state_cp
-                    episode_reward_cp += reward_cp
+                # if not done_cp:
+                action_cp = self.agent.select_action(state_cp)
+                # Step in the environment and get next state, reward, and done flag
+                next_state_cp, reward_cp, done_cp = self.cart_pole_env.step(action_cp)
+                # Store experience in the corresponding replay memory
+                self.agent.cart_pole_memory.store(state_cp, action_cp, next_state_cp, reward_cp, done_cp)
+                state_cp = next_state_cp
+                episode_reward_cp += reward_cp
 
-                if not done_mc:
-                    action_mc = self.agent.select_action(state_mc)
-                    next_state_mc, reward_mc, done_mc = self.mountain_car_env.step(action_mc)
-                    self.agent.mountain_car_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
-                    state_mc = next_state_mc
-                    episode_reward_mc += reward_mc
+                # if not done_mc:
+                #     action_mc = self.agent.select_action(state_mc)
+                #     next_state_mc, reward_mc, done_mc = self.mountain_car_env.step(action_mc)
+                #     self.agent.mountain_car_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
+                #     state_mc = next_state_mc
+                #     episode_reward_mc += reward_mc
 
                 for ap_index in [0]:
                     current_total_step = total_steps + step_counter
@@ -82,7 +83,7 @@ class Trainer:
 
             total_steps += step_counter
             total_reward_cp.append(episode_reward_cp)
-            total_reward_mc.append(episode_reward_mc)
+            # total_reward_mc.append(episode_reward_mc)
             # Update epsilon (step-based)
             self.agent.update_epsilon(total_steps)
 
@@ -91,7 +92,9 @@ class Trainer:
                 f"Episode: {episode}, "
                 f"Steps: {step_counter}, "
                 f"Reward CP: {episode_reward_cp:.2f}, "
-                f"Reward MC: {episode_reward_mc:.2f}, "
+                # f"Reward MC: {episode_reward_mc:.2f}, "
                 f"Epsilon: {self.agent.epsilon:.2f}"
             )
+            # loss_cp = self.agent.loss_history[0]
+            # loss_mc = self.agent.loss_history[1]
         return total_reward_cp , total_reward_mc

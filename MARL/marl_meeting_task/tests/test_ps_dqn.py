@@ -90,7 +90,7 @@ def test_ps_dqn():
     assert 'avg_return' in eval_metrics
     
     print("\n" + "="*60)
-    print("All tests passed! ✓")
+    print("All scripts passed! ✓")
     print("="*60)
 
 

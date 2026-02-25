@@ -89,12 +89,12 @@ def test_timeout():
 
 
 if __name__ == "__main__":
-    print("Running environment tests...\n")
+    print("Running environment scripts...\n")
     
     test_reset_uniqueness()
     test_boundary_movement()
     test_success_reward()
     test_timeout()
     
-    print("\nAll tests passed!")
+    print("\nAll scripts passed!")
 
