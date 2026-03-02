@@ -96,7 +96,16 @@ class DQNAgent:
         self.loss_history[ap_index].append(loss.item())
 
         # Backprop
-        self.q_network.zero_grad()
+        # self.q_network.zero_grad()
+
+        # Clear old gradients (modification)
+        for param in self.q_network.parameters():
+            if param.grad is not None:
+                param.grad.zero_()
+
+
+
+
         loss.backward()                     # Compute gradients
         self.weight_controller.step(ap_index=ap_index, step_counter=total_steps)
         return None
