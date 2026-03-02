@@ -46,7 +46,7 @@ hyperparams = {
     "epsilon_min": 0.01,
     "epsilon_decay": 0.000005,
     "memory_capacity": 1000000,
-    "train": False
+    "train": True
 }
 
 
