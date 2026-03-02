@@ -51,7 +51,7 @@ class ReplayMemory:
 
     def __len__(self):
         """
-        To check how many samples are stored in the memory. self.dones deque
+        To check how many future are stored in the memory. self.dones deque
         represents the length of the entire memory.
         """
 

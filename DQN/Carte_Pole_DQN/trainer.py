@@ -62,7 +62,7 @@ class Trainer:
                 next_state, reward, terminated, truncated, _ = self.env.step(action) # Environment responds
                 done = terminated or truncated
                 self.agent.replay_memory.store(state, action, next_state, reward, done) # This is essential for off-policy learning
-                if len(self.agent.replay_memory) > self.batch_size:         # Only learn when enough samples collected
+                if len(self.agent.replay_memory) > self.batch_size:         # Only learn when enough future collected
                     self.agent.learn(self.batch_size, done)
                 # Tracking step and reward progress
                 state = next_state

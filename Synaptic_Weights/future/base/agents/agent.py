@@ -22,9 +22,6 @@ class DQNAgent:
         memory_capacity,                                          # Replay buffer size
     ):
 
-        # Logging fields
-        self.loss_history = {0:[],1:[]}
-
         # Hyperparameters
         self.epsilon = epsilon_max
         self.epsilon_max = epsilon_max
@@ -47,7 +44,7 @@ class DQNAgent:
         self.q_network = DQNNetwork(output_dim, input_dim).to(config.device)
 
         # use a squared-error loss just to get gradients,
-        self.criterion = nn.MSELoss()
+        self.criterion = nn.SmoothL1Loss()
 
         # Manhattan-style discrete weight controller
         self.weight_controller = ManhattanWeightController(self.q_network)
@@ -59,8 +56,6 @@ class DQNAgent:
         if np.random.rand() < self.epsilon:
             return np.random.randint(0, self.action_space)
         # exploitation
-        if not torch.is_tensor(state):
-            state = torch.as_tensor(state, dtype=torch.float32, device=config.device)  # Convert state to tensor
         state = state.unsqueeze(0)
         with torch.no_grad():                                   # Disable gradient tracking (faster + no memory waste)
             q_values = self.q_network(state)                    # Compute Q-values: [Q_left, Q_right]
@@ -68,7 +63,7 @@ class DQNAgent:
 
     # Learning step
     def learn(self, batch_size, ap_index, total_steps):
-        if len(self.replay_memory[ap_index]) < batch_size:                # Not enough samples in replay => Skip learning
+        if len(self.replay_memory[ap_index]) < batch_size:                # Not enough future in replay => Skip learning
             return None
 
         # Pulls a random batch from replay memory for training
@@ -93,7 +88,6 @@ class DQNAgent:
         loss = self.criterion(predicted_q, targets)
 
         # store loss for future logging and visualization
-        self.loss_history[ap_index].append(loss.item())
 
         # Backprop
         self.q_network.zero_grad()

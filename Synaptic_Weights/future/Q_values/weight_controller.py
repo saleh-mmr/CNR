@@ -1,11 +1,7 @@
-import os
-import sys
 import numpy as np
 import torch
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from devices.multiWeightSynapse import MultiWeightSynapse, MultiWeightSynapseSpec
-from devices.crosspointParams import CrossPointParams
+from multiWeightSynapse import MultiWeightSynapse, MultiWeightSynapseSpec
+from crosspointParams import CrossPointParams
 
 
 class ManhattanWeightController:
@@ -17,7 +13,7 @@ class ManhattanWeightController:
         g_threshold = 0.350e-8
         sigma_pulse_noise = 0.0
         scaling_factor = 7e7
-        n_problem = 2
+        n_problem = 1
 
         # model is the neural network whose weights we want to control
         self.model = model
@@ -46,7 +42,7 @@ class ManhattanWeightController:
             self.synapses.append((param, syn_array))
 
     @torch.no_grad()
-    def step(self, ap_index):
+    def step(self):
         for param, syn_array in self.synapses:
             if param.grad is None:
                 continue
@@ -60,9 +56,9 @@ class ManhattanWeightController:
                 if sign>0:
                     syn.increase_bias_crosspoint_index()
                 elif sign<0:
-                    syn.increase_positive_crosspoint_index(ap_index)
+                    syn.increase_positive_crosspoint_index(0)
 
-                weight = syn.weight(ap_index)
+                weight = syn.weight(0)
                 param[index].copy_(
                     torch.tensor(weight, dtype=param.dtype, device=param.device)
                 )

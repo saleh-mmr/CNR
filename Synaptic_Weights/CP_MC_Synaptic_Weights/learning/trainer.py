@@ -2,7 +2,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils import config
-from envs.agent import DQNAgent
+from agents.agent import DQNAgent
 from envs.cartepole import CartPoleEnv
 from envs.mountaincar import MountainCarEnv
 
