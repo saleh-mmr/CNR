@@ -163,9 +163,9 @@ class IQLAgent:
         Returns:
         --------
         Optional[float]
-            Training loss if buffer has enough samples, None otherwise
+            Training loss if buffer has enough future, None otherwise
         """
-        # Check if buffer has enough samples
+        # Check if buffer has enough future
         if len(self.replay_memory) < batch_size:
             return None
         

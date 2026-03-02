@@ -66,7 +66,7 @@ class DQNAgent:
 
     # Learning step
     def learn(self, batch_size, ap_index, step_counter):
-        if len(self.frozen_lake_memory) < batch_size:                # Not enough samples in replay => Skip learning
+        if len(self.frozen_lake_memory) < batch_size:                # Not enough future in replay => Skip learning
             return None
 
         # Pulls a random batch from replay memory for training

@@ -357,7 +357,7 @@ class QMIX:
         Returns:
         --------
         Optional[float]
-            Training loss if buffer has enough samples, None otherwise
+            Training loss if buffer has enough future, None otherwise
         """
         if len(self.replay_memory) < self.batch_size:
             return None
@@ -610,7 +610,7 @@ class QMIX:
                 )
                 
                 # Train if buffer is large enough (warm-up period enforced by min_buffer_size)
-                # Increased min_buffer_size reduces learning noise by ensuring diverse samples before training
+                # Increased min_buffer_size reduces learning noise by ensuring diverse future before training
                 if self.total_steps % train_freq == 0:
                     if len(self.replay_memory) >= min_buffer_size:
                         loss = self.train_step()

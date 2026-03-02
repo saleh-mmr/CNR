@@ -14,7 +14,7 @@ class ReplayMemory:
     def __init__(self, capacity):
         """
         capacity : int
-            Maximum buffer size. Old samples are removed automatically once capacity is exceeded.
+            Maximum buffer size. Old future are removed automatically once capacity is exceeded.
         """
         self.capacity = capacity
 

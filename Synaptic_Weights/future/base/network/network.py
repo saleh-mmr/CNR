@@ -16,13 +16,13 @@ class DQNNetwork(nn.Module):
 
         # Fully Connected (FC) model
         self.FC = nn.Sequential(
-            nn.Linear(input_dim, 64),
+            nn.Linear(input_dim, 10),
             nn.LeakyReLU(negative_slope=0.01),          # LeakyReLU activation function helps learn non-linear patterns.
 
-            nn.Linear(128, 128),
+            nn.Linear(10, 10),
             nn.LeakyReLU(negative_slope=0.01),
 
-            nn.Linear(128, num_actions)        # [Q_left, Q_right]  → choose max action
+            nn.Linear(10, num_actions)        # [Q_left, Q_right]  → choose max action
         )
 
         # Apply custom initialization

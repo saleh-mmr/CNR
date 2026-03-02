@@ -428,7 +428,7 @@ class IQL:
                 
                 # Train agents if buffer is large enough
                 if self.total_steps % train_freq == 0:
-                    # Check if any agent has enough samples
+                    # Check if any agent has enough future
                     if all(len(self.agents[i].replay_memory) >= min_buffer_size 
                            for i in range(self.n_agents)):
                         losses = self.train_step()
