@@ -13,7 +13,7 @@ torch.cuda.empty_cache()
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
 # Seed everything for reproducible results
-seed = 2026
+seed = 42
 np.random.seed(seed)
 os.environ['PYTHONHASHSEED'] = str(seed)
 torch.manual_seed(seed)

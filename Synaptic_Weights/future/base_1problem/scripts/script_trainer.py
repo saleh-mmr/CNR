@@ -1,5 +1,4 @@
 import os
-import pickle
 import sys
 from matplotlib import pyplot as plt
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -13,7 +12,7 @@ hyperparams = {
     "max_steps": 200,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
-    "epsilon_decay": 0.000004,
+    "epsilon_decay": 0.000003,
     "memory_capacity": 100000,
 }
 
