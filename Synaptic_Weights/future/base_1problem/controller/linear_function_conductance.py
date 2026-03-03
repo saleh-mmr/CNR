@@ -57,7 +57,8 @@ class ManhattanWeightController:
             st["g_plus"].copy_(self._conductance(st["g_plus_idx"], param.dtype))
             st["g_minus"].copy_(self._conductance(st["g_minus_idx"], param.dtype))
 
-            param.copy_(st["g_plus"] - st["g_minus"])
+            weight = st["g_plus"] - st["g_minus"]
+            param.copy_(weight)
 
 
             if name == "FC.0.weight":

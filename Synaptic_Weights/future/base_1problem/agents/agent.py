@@ -52,6 +52,25 @@ class DQNAgent:
         self.weight_controller = ManhattanWeightController(self.q_network, controller_hyperparams)
 
 
+
+
+
+
+        # NEW
+        # self.target_network = DQNNetwork(output_dim, input_dim).to(config.device)
+        # self.target_network.load_state_dict(self.q_network.state_dict())
+        # self.target_network.eval()
+        # for p in self.target_network.parameters():
+        #     p.requires_grad = False
+        # self.learn_steps = 0
+        # self.target_update_freq = 500
+
+
+
+
+
+
+
     # Action Selection (epsilon-greedy)
     def select_action(self, state):
         # exploration
@@ -87,12 +106,29 @@ class DQNAgent:
         if len(self.loss_history) % 200 == 0:
             print("Sample Q-values:", q_all[0].detach().cpu().numpy())
 
-
         # Max future reward if the episode is not terminal
         with torch.no_grad():
             next_q = self.q_network(next_states).max(dim=1, keepdim=True).values   # Choose max Q-value for each next state
             next_q[dones] = 0.0
         targets = rewards + self.discount * next_q
+
+
+
+
+
+
+        # NEW
+        # with torch.no_grad():
+        #     next_q = self.target_network(next_states).max(dim=1, keepdim=True).values
+        #     next_q[dones] = 0.0
+        # targets = rewards + self.discount * next_q
+
+
+
+
+
+
+
 
         # compare current guess vs target (criterion is MSELoss)
         loss = self.criterion(predicted_q, targets)
@@ -108,6 +144,21 @@ class DQNAgent:
         loss.backward()
         self.weight_controller.step()
 
+
+
+
+
+
+        # NEW
+        # self.learn_steps += 1
+        # if self.learn_steps % self.target_update_freq == 0:
+        #     self.update_target_network()
+
+
+
+
+
+
         return loss.item()
 
     # Epsilon update using ε(t) = ε_min + (ε_max − ε_min) * exp(−λ * t)
@@ -117,3 +168,13 @@ class DQNAgent:
     # Model saving
     def save(self, path):
         torch.save(self.q_network.state_dict(), path)             # Stores parameters (weights) to a file
+
+
+
+
+
+
+
+    # New
+    # def update_target_network(self):
+    #     self.target_network.load_state_dict(self.q_network.state_dict())
