@@ -1,6 +1,4 @@
-import numpy as np
 import torch
-import matplotlib.pyplot as plt
 
 
 class ManhattanWeightController:
@@ -36,9 +34,7 @@ class ManhattanWeightController:
 
     @torch.no_grad()
     def step(self):
-
         for name, param in self.model.named_parameters():
-
             if not param.requires_grad:
                 continue
 
@@ -64,12 +60,14 @@ class ManhattanWeightController:
             param.copy_(st["g_plus"] - st["g_minus"])
 
 
-            # if name == "FC.0.weight":
-            #     grad_value = param.grad[0, 0].item()
-            #     print(f"grad: {grad_value:.3f}")
-            #     print(
-            #         f"weight: {param[0, 0].item():.5f} | "
-            #         f"g+: {st['g_plus'][0, 0].item():.5f} | "
-            #         f"g-: {st['g_minus'][0, 0].item():.5f}"
-            #     )
-            #     print("\n")
+            if name == "FC.0.weight":
+                grad_value = param.grad[0, 0].item()
+                print(f"grad: {grad_value:.3f}")
+                print(
+                    f"weight: {param[0, 0].item():.5f} | "
+                    f"g_plus_idx: {st['g_plus_idx'][0, 0].item()} => "
+                    f"g+: {st['g_plus'][0, 0].item():.5f} ||||||| "
+                    f"g_minus_idx: {st['g_minus_idx'][0, 0].item()} => "
+                    f"g-: {st['g_minus'][0, 0].item():.5f}"
+                )
+                print("\n")
