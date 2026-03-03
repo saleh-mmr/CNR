@@ -23,7 +23,7 @@ class VDN:
     def __init__(
         self,
         n_agents: int,
-        input_dim: int,  # base local observation dim
+        input_dim: int,  # base_1problem local observation dim
         state_dim: int,
         num_actions: int,
         hidden_dim: int,

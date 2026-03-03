@@ -33,7 +33,7 @@ class QMIXAgent:
         n_agents : int
             Total number of agents (for one-hot encoding)
         input_dim : int
-            Dimension of base observation vector (default: 4)
+            Dimension of base_1problem observation vector (default: 4)
             Note: agent_id will be appended as one-hot, so final input_dim = input_dim + n_agents
         num_actions : int
             Number of possible actions (default: 5)
@@ -43,11 +43,11 @@ class QMIXAgent:
         self.agent_id = agent_id
         self.n_agents = n_agents
         self.base_input_dim = input_dim  # Base observation dimension
-        self.input_dim = input_dim + n_agents  # Final input dim (base + one-hot agent_id)
+        self.input_dim = input_dim + n_agents  # Final input dim (base_1problem + one-hot agent_id)
         self.num_actions = num_actions
         
         # Agent Q-network (main)
-        # Note: input_dim includes base observation + one-hot agent_id
+        # Note: input_dim includes base_1problem observation + one-hot agent_id
         self.q_network = QValueNetwork(
             input_dim=self.input_dim,
             num_actions=num_actions,
@@ -55,7 +55,7 @@ class QMIXAgent:
         ).to(device)
         
         # Agent Q-network (target)
-        # Note: input_dim includes base observation + one-hot agent_id
+        # Note: input_dim includes base_1problem observation + one-hot agent_id
         self.target_network = QValueNetwork(
             input_dim=self.input_dim,
             num_actions=num_actions,
@@ -85,7 +85,7 @@ class QMIXAgent:
         agent_id_onehot = np.zeros(self.n_agents, dtype=np.float32)
         agent_id_onehot[self.agent_id] = 1.0
         
-        # Concatenate base observation with one-hot agent_id
+        # Concatenate base_1problem observation with one-hot agent_id
         obs_with_id = np.concatenate([obs, agent_id_onehot])
         return obs_with_id
     
