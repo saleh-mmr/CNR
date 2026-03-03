@@ -24,7 +24,7 @@ class VDNAgent:
         self.agent_id = agent_id
         self.n_agents = n_agents
         self.base_input_dim = input_dim
-        # Final input dim is base + one-hot agent id
+        # Final input dim is base_1problem + one-hot agent id
         self.input_dim = input_dim + n_agents
         self.num_actions = num_actions
 
