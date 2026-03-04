@@ -1,8 +1,8 @@
 import torch
 
 
-class ManhattanWeightController:
-    def __init__(self, model, hyperparams):
+class Controller:
+    def __init__(self, model):
         self.model = model
 
         self.state = {}

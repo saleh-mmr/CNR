@@ -403,7 +403,7 @@ class IQL:
         return_window = []
         
         for episode in range(max_episodes):
-            # Use seed derived from base_1problem seed and episode for reproducibility with diversity
+            # Use seed derived from cartepole seed and episode for reproducibility with diversity
             episode_seed = None if env_seed is None else env_seed + episode
             obs, info = env.reset(seed=episode_seed)
             episode_reward = 0.0

@@ -7,7 +7,7 @@ import torch
 from utils import config
 from memory.replay_memory import ReplayMemory
 from network.network import DQNNetwork
-from controller.manhattan_weight_controller import ManhattanWeightController
+from controller.sgd_optimizer import Controller
 
 class DQNAgent:
     def __init__(
@@ -49,27 +49,7 @@ class DQNAgent:
         self.criterion = nn.MSELoss()
 
         # Manhattan-style discrete weight controller
-        self.weight_controller = ManhattanWeightController(self.q_network, controller_hyperparams)
-
-
-
-
-
-
-        # NEW
-        # self.target_network = DQNNetwork(output_dim, input_dim).to(config.device)
-        # self.target_network.load_state_dict(self.q_network.state_dict())
-        # self.target_network.eval()
-        # for p in self.target_network.parameters():
-        #     p.requires_grad = False
-        # self.learn_steps = 0
-        # self.target_update_freq = 500
-
-
-
-
-
-
+        self.weight_controller = Controller(self.q_network)
 
     # Action Selection (epsilon-greedy)
     def select_action(self, state):
@@ -112,24 +92,6 @@ class DQNAgent:
             next_q[dones] = 0.0
         targets = rewards + self.discount * next_q
 
-
-
-
-
-
-        # NEW
-        # with torch.no_grad():
-        #     next_q = self.target_network(next_states).max(dim=1, keepdim=True).values
-        #     next_q[dones] = 0.0
-        # targets = rewards + self.discount * next_q
-
-
-
-
-
-
-
-
         # compare current guess vs target (criterion is MSELoss)
         loss = self.criterion(predicted_q, targets)
 
@@ -142,22 +104,8 @@ class DQNAgent:
                 param.grad.zero_()
 
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.q_network.parameters(), 1.0)
         self.weight_controller.step()
-
-
-
-
-
-
-        # NEW
-        # self.learn_steps += 1
-        # if self.learn_steps % self.target_update_freq == 0:
-        #     self.update_target_network()
-
-
-
-
-
 
         return loss.item()
 
@@ -168,13 +116,3 @@ class DQNAgent:
     # Model saving
     def save(self, path):
         torch.save(self.q_network.state_dict(), path)             # Stores parameters (weights) to a file
-
-
-
-
-
-
-
-    # New
-    # def update_target_network(self):
-    #     self.target_network.load_state_dict(self.q_network.state_dict())
