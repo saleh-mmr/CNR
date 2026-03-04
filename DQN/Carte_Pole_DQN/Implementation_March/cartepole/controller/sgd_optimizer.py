@@ -19,3 +19,10 @@ class Controller:
             weight += -0.0001 * grad
 
             param.copy_(weight)
+
+            # if name == "FC.0.weight":
+            #     if abs(param[0, 0].item()) > 10:
+            #         print(f"grad: {grad[0, 0].item():.3f}")
+            #         print(f"weight: {param[0, 0].item():.5f}")
+            #         print("state:", self.model.last_input)
+            #         print("\n")

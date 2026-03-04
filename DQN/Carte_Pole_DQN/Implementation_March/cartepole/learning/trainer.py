@@ -35,6 +35,7 @@ class Trainer:
     def train(self):
         total_steps = 0
         total_reward = []
+        loss_track = []
 
         for episode in range(1, self.max_episodes + 1):
             # Initial observation from environment
@@ -60,7 +61,8 @@ class Trainer:
                 episode_reward += reward
 
                 if len(self.agent.replay_memory) > self.batch_size:
-                    self.agent.learn(self.batch_size)
+                    loss = self.agent.learn(self.batch_size)
+                    loss_track.append(loss)
 
             total_steps += step_counter
             total_reward.append(episode_reward)
@@ -74,6 +76,4 @@ class Trainer:
                 f"Reward CP: {episode_reward:.2f}, "
                 f"Epsilon: {self.agent.epsilon:.2f}"
             )
-            # loss_cp = self.agent.loss_history[0]
-            # loss_mc = self.agent.loss_history[1]
-        return total_reward
+        return total_reward, loss_track

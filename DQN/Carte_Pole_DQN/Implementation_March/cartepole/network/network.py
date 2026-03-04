@@ -24,6 +24,8 @@ class DQNNetwork(nn.Module):
 
             nn.Linear(64, num_actions)        # [Q_left, Q_right]  → choose max action
         )
+        self.last_input = None
+
 
         # Apply custom initialization
         # self.FC.apply(init_weights)
@@ -41,5 +43,6 @@ class DQNNetwork(nn.Module):
         -------
         Q-values for each possible action [batch_size, num_actions]
         """
+        self.last_input = x.detach().cpu()  # store CartPole state
         Q = self.FC(x)
         return Q                                    # Q = [Q(action=left), Q(action=right)]
