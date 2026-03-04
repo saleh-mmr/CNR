@@ -26,8 +26,7 @@ controller_hyperparams = {
     "n_problem": 1,
 }
 trainer = Trainer(hyperparams, controller_hyperparams)
-rewards = trainer.train()
-loss = trainer.agent.loss_history
+rewards, loss = trainer.train()
 
 
 # Plot 1: CP rewards
@@ -43,7 +42,7 @@ plt.show()
 # Plot 2: Loss
 plt.figure()
 plt.plot(loss)
-plt.xlabel("Episode")
+plt.xlabel("steps")
 plt.ylabel("Losses")
 plt.title(f"CP Loss per Episode")
 plt.grid(True)
