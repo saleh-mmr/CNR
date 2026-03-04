@@ -7,7 +7,7 @@ import torch
 from utils import config
 from memory.replay_memory import ReplayMemory
 from network.network import DQNNetwork
-from controller.manhattan_weight_controller import ManhattanWeightController
+from controller.sgd_optimizer import Controller
 
 class DQNAgent:
     def __init__(
@@ -49,8 +49,7 @@ class DQNAgent:
         self.criterion = nn.MSELoss()
 
         # Manhattan-style discrete weight controller
-        self.weight_controller = ManhattanWeightController(self.q_network, controller_hyperparams)
-
+        self.weight_controller = Controller(self.q_network)
 
     # Action Selection (epsilon-greedy)
     def select_action(self, state):
@@ -87,7 +86,6 @@ class DQNAgent:
         if len(self.loss_history) % 200 == 0:
             print("Sample Q-values:", q_all[0].detach().cpu().numpy())
 
-
         # Max future reward if the episode is not terminal
         with torch.no_grad():
             next_q = self.q_network(next_states).max(dim=1, keepdim=True).values   # Choose max Q-value for each next state
@@ -106,6 +104,7 @@ class DQNAgent:
                 param.grad.zero_()
 
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.q_network.parameters(), 1.0)
         self.weight_controller.step()
 
         return loss.item()

@@ -62,7 +62,7 @@ def run_training(seed, max_episodes, log_dir, verbose):
     hyperparameters: Dict[str, Any] = {
         'max_episodes': max_episodes,
         'learning_rate': 3e-4,
-        'observation_dim': 4,          # local observation base_1problem dim
+        'observation_dim': 4,          # local observation cartepole dim
         'agent_input_dim': 6,          # local obs + one-hot agent id
         'state_dim': 6,                # global state dim
         'network_size': 64,            # hidden_dim for agent networks
@@ -93,7 +93,7 @@ def run_training(seed, max_episodes, log_dir, verbose):
     # Initialize QMIX
     qmix = QMIX(
         n_agents=2,
-        input_dim=hyperparameters['observation_dim'],   # local observation base_1problem dim
+        input_dim=hyperparameters['observation_dim'],   # local observation cartepole dim
         state_dim=hyperparameters['state_dim'],         # global state dim
         num_actions=hyperparameters['num_actions'],
         hidden_dim=hyperparameters['network_size'],

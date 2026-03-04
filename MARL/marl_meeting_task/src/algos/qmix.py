@@ -101,7 +101,7 @@ class QMIX:
         self.grid_size = 5  # Default grid size (will be updated from env if needed)
         
         # Initialize agent Q-networks (one per agent)
-        # Note: input_dim is base_1problem observation dim, agent_id will be appended as one-hot
+        # Note: input_dim is cartepole observation dim, agent_id will be appended as one-hot
         self.agents: Dict[int, QMIXAgent] = {}
         for agent_id in range(n_agents):
             self.agents[agent_id] = QMIXAgent(
@@ -199,7 +199,7 @@ class QMIX:
         """
         observations_with_id = {}
         for agent_id in range(self.n_agents):
-            # Get base_1problem observation: [batch_size, base_input_dim]
+            # Get cartepole observation: [batch_size, base_input_dim]
             base_obs = observations[agent_id]
             
             # Create one-hot agent_id: [batch_size, n_agents]
