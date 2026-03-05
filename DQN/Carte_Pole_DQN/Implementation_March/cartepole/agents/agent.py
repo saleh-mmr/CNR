@@ -8,7 +8,8 @@ import torch
 from utils import config
 from memory.replay_memory import ReplayMemory
 from network.network import DQNNetwork
-from controller.sgd_optimizer import Controller
+from controller.sgd_optimizer import GDOptimizer
+from controller.linear_function_conductance import ManhattanController
 
 class DQNAgent:
     def __init__(
@@ -48,9 +49,14 @@ class DQNAgent:
         # use a squared-error loss just to get gradients,
         self.criterion = nn.MSELoss()
 
-        # Manhattan-style discrete weight controller
-        self.weight_controller = Controller(self.q_network)
-        self.optimizer = RMSprop(self.q_network.parameters(), lr=0.0001)
+        # Gradient Descent optimizer
+        # self.weight_controller = GDOptimizer(self.q_network)
+
+        # Manhattan-style discrete weight update controller
+        # self.weight_controller = ManhattanController(self.q_network)
+
+        # RMSprop optimizer
+        self.weight_controller = RMSprop(self.q_network.parameters(), lr=0.0001)
 
         # Target Network
         # self.learn_steps = 0
@@ -71,21 +77,12 @@ class DQNAgent:
         if np.random.rand() < epsilon:
             return np.random.randint(0, self.action_space)
 
+        # exploration
         state = torch.as_tensor(state, dtype=torch.float32, device=config.device).unsqueeze(0)
-
         with torch.no_grad():
             q_values = self.q_network(state)
 
         return torch.argmax(q_values, dim=1).item()        # exploration
-        if np.random.rand() < self.epsilon:
-            return np.random.randint(0, self.action_space)
-        # exploitation
-        if not torch.is_tensor(state):
-            state = torch.as_tensor(state, dtype=torch.float32, device=config.device)  # Convert state to tensor
-        state = state.unsqueeze(0)
-        with torch.no_grad():                                   # Disable gradient tracking (faster + no memory waste)
-            q_values = self.q_network(state)                    # Compute Q-values: [Q_left, Q_right]
-            return torch.argmax(q_values).item()                # Pick action with the highest expected reward
 
     # Learning step
     def learn(self, batch_size):
@@ -105,9 +102,9 @@ class DQNAgent:
         q_all = self.q_network(states)
         predicted_q = q_all.gather(1, actions)
 
-        # DEBUG: print first sample Q-values occasionally
-        if len(self.loss_history) % 200 == 0:
-            print("Sample Q-values:", q_all[0].detach().cpu().numpy())
+        # DEBUG: print Q-values
+        # if len(self.loss_history) % 200 == 0:
+        #     print("Sample Q-values:", q_all[0].detach().cpu().numpy())
 
         # Max future reward if the episode is not terminal
         with torch.no_grad():
@@ -131,12 +128,9 @@ class DQNAgent:
         for param in self.q_network.parameters():
             if param.grad is not None:
                 param.grad.zero_()
-
-
         loss.backward()
+        self.weight_controller.step()
 
-        self.optimizer.step()
-        # self.weight_controller.step()
 
         # Target Network
         # self.learn_steps += 1
