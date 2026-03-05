@@ -2,24 +2,17 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import gymnasium as gym
-from utils import config
 
 
 class CartPoleEnv:
-    """
-    Wrapper around Gymnasium CartPole-v1 environment.
-    Handles:
-    - Seeding
-    - Reset API
-    - Step API
-    """
-
-    def __init__(self, render_mode=None):
+    def __init__(self, render_mode=None, seed=None):
         self.env = gym.make("CartPole-v1", render_mode=render_mode)
+        self.seed = seed
 
         # Set seeds for reproducibility
-        self.env.reset(seed=config.seed)
-        self.env.action_space.seed(config.seed)
+        if seed is not None:
+            self.env.reset(seed=seed)
+            self.env.action_space.seed(seed)
 
     @property
     def action_space(self):
@@ -30,7 +23,7 @@ class CartPoleEnv:
         return self.env.observation_space
 
     def reset(self):
-        state, _ = self.env.reset(seed=config.seed)
+        state, _ = self.env.reset()
         return state
 
     def step(self, action):

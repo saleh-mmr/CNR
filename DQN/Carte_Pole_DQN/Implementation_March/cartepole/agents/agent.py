@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import sys
+from torch.optim import RMSprop
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from torch import nn
 import torch
@@ -20,7 +21,6 @@ class DQNAgent:
         epsilon_decay,                                            # How fast exploration decreases
         discount,                                                 # future reward discount factor
         memory_capacity,                                          # Replay buffer size
-        controller_hyperparams,
     ):
 
         # Logging fields
@@ -50,6 +50,7 @@ class DQNAgent:
 
         # Manhattan-style discrete weight controller
         self.weight_controller = Controller(self.q_network)
+        self.optimizer = RMSprop(self.q_network.parameters(), lr=0.0001)
 
         # Target Network
         # self.learn_steps = 0
@@ -62,8 +63,20 @@ class DQNAgent:
         #     p.requires_grad = False
 
     # Action Selection (epsilon-greedy)
-    def select_action(self, state):
+    def select_action(self, state, epsilon=None):
+        if epsilon is None:
+            epsilon = self.epsilon
+
         # exploration
+        if np.random.rand() < epsilon:
+            return np.random.randint(0, self.action_space)
+
+        state = torch.as_tensor(state, dtype=torch.float32, device=config.device).unsqueeze(0)
+
+        with torch.no_grad():
+            q_values = self.q_network(state)
+
+        return torch.argmax(q_values, dim=1).item()        # exploration
         if np.random.rand() < self.epsilon:
             return np.random.randint(0, self.action_space)
         # exploitation
@@ -119,24 +132,11 @@ class DQNAgent:
             if param.grad is not None:
                 param.grad.zero_()
 
-        # Log TD error for debugging
-        # td_error = targets - predicted_q
-        # print("max |TD error|:", td_error.abs().max().item())
-        # max_err = td_error.abs().max()
-        # if max_err > 1e5:  # threshold to detect bad batch
-        #     idx = td_error.abs().argmax()
-        #     print("\n=== BAD SAMPLE ===")
-        #     print("state:", states[idx])
-        #     print("next_state:", next_states[idx])
-        #     print("reward:", rewards[idx])
-        #     print("done:", dones[idx])
-        #     print("predicted Q:", predicted_q[idx])
-        #     print("target:", targets[idx])
-        #     print("TD error:", td_error[idx])
-        #     print("==================\n")
 
         loss.backward()
-        self.weight_controller.step()
+
+        self.optimizer.step()
+        # self.weight_controller.step()
 
         # Target Network
         # self.learn_steps += 1
