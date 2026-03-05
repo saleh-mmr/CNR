@@ -1,7 +1,7 @@
 import torch
 
 
-class Controller:
+class GDOptimizer:
     def __init__(self, model):
         self.model = model
 
