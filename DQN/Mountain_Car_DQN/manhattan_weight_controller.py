@@ -52,7 +52,7 @@ class ManhattanWeightController:
         Linear conductance model without saturation.
         Suitable for MountainCar where gradients are small.
         """
-        G0 = 0.0  # cartepole conductance
+        G0 = 0.0  # cartpole conductance
         DELTA_G = 0.01  # linear step size
 
         value = G0 + idx.float() * DELTA_G
