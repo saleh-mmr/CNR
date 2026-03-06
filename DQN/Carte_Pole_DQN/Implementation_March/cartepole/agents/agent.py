@@ -53,10 +53,10 @@ class DQNAgent:
         # self.weight_controller = GDOptimizer(self.q_network)
 
         # Manhattan-style discrete weight update controller
-        # self.weight_controller = ManhattanController(self.q_network)
+        self.weight_controller = ManhattanController(self.q_network)
 
         # RMSprop optimizer
-        self.weight_controller = RMSprop(self.q_network.parameters(), lr=0.001)
+        # self.weight_controller = RMSprop(self.q_network.parameters(), lr=0.001)
 
         # Target Network
         # self.learn_steps = 0
