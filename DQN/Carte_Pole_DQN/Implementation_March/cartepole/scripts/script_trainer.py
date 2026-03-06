@@ -10,12 +10,12 @@ from learning.trainer import Trainer
 
 hyperparams = {
     "discount_factor": 0.99,
-    "batch_size": 64,
-    "max_episodes": 20000,
+    "batch_size": 68,
+    "max_episodes": 1000,
     "max_steps": 200,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
-    "epsilon_decay": 0.000004,
+    "epsilon_decay": 0.001,
     "memory_capacity": 100000,
 }
 
@@ -25,7 +25,7 @@ train_mode = True
 if __name__ == "__main__":
 
     if train_mode:
-        seeds = [42, 123, 999, 2026]
+        seeds = [42, 2026]
         rewards_list = {}
         loss_list = {}
         for seed in seeds:
@@ -55,4 +55,4 @@ if __name__ == "__main__":
 
     else:
         trainer = Trainer(hyperparams, seed=None)
-        trainer.test("best_model_seed_999.pth")
+        trainer.test("best_model_seed_42.pth")

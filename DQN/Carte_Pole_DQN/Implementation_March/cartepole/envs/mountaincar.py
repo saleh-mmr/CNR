@@ -4,7 +4,6 @@ import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import gymnasium as gym
 from gymnasium import spaces
-from utils import config
 
 
 class MountainCarEnv:
@@ -14,7 +13,7 @@ class MountainCarEnv:
     - 2 discrete actions: 0=left, 1=right
     """
 
-    def __init__(self, render_mode=None):
+    def __init__(self, render_mode=None, seed=None):
         self.env = gym.make("MountainCar-v0", render_mode=render_mode)
 
         # New 2-action space
@@ -25,8 +24,8 @@ class MountainCarEnv:
         high = np.array([0.6, 0.07, 1.0, 1.0], dtype=np.float32)
         self._observation_space = spaces.Box(low, high, dtype=np.float32)
 
-        self.env.reset(seed=config.seed)
-        self._action_space.seed(config.seed)
+        self.env.reset(seed=seed)
+        self._action_space.seed(seed)
 
     @property
     def action_space(self):

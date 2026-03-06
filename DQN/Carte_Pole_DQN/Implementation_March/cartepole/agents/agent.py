@@ -56,7 +56,7 @@ class DQNAgent:
         # self.weight_controller = ManhattanController(self.q_network)
 
         # RMSprop optimizer
-        self.weight_controller = RMSprop(self.q_network.parameters(), lr=0.0001)
+        self.weight_controller = RMSprop(self.q_network.parameters(), lr=0.001)
 
         # Target Network
         # self.learn_steps = 0
