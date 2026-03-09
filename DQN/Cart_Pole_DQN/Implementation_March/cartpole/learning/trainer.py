@@ -89,14 +89,14 @@ class Trainer:
                 print(f"New best model saved (seed {self.seed}) with reward {episode_reward}")
         return total_reward, loss_track
 
-    def test(self, model_path, num_tests=5):
+    def test(self, model_path, num_tests=50):
 
         # load trained weights
         self.agent.q_network.load_state_dict(torch.load(model_path))
         self.agent.q_network.eval()
         rewards = []
         for i in range(num_tests):
-            seed = random.randint(0, 100000)
+            seed = random.randint(0, 1000)
             env = CartPoleEnv(render_mode=None, seed=seed)
             state = env.reset()
             done = False
