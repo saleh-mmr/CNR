@@ -29,7 +29,7 @@ class ManhattanController:
 
     def _conductance(self, idx, dtype):
         idx_f = idx.to(dtype=torch.float32)
-        value = idx_f * 0.00001
+        value = idx_f * 0.0002
         return value.to(dtype=dtype)
 
     @torch.no_grad()
