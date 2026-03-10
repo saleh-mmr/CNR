@@ -10,6 +10,7 @@ from memory.replay_memory import ReplayMemory
 from network.network import DQNNetwork
 from controller.sgd_optimizer import GDOptimizer
 from controller.linear_function_conductance import ManhattanController
+from controller.logarithmic_function_conductance import LogarithmicManhattanController
 
 class DQNAgent:
     def __init__(
@@ -52,11 +53,15 @@ class DQNAgent:
         # Gradient Descent optimizer
         # self.weight_controller = GDOptimizer(self.q_network)
 
-        # Manhattan-style discrete weight update controller
-        self.weight_controller = ManhattanController(self.q_network)
+        # Manhattan-style discrete weight update controller - Linear function
+        # self.weight_controller = ManhattanController(self.q_network)
 
         # RMSprop optimizer
         # self.weight_controller = RMSprop(self.q_network.parameters(), lr=0.001)
+
+        # Manhattan-style discrete weight update controller - Logarithmic function
+        self.weight_controller = LogarithmicManhattanController(self.q_network)
+
 
         # Target Network
         # self.learn_steps = 0

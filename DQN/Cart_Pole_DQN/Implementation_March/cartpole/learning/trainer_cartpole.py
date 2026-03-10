@@ -11,7 +11,7 @@ from envs.cartpole import CartPoleEnv
 from envs.mountaincar import MountainCarEnv
 
 
-class Trainer:
+class TrainerCartPloe:
     def __init__(self, hyperparams, seed):
         # Load parameters
         self.discount_factor = hyperparams["discount_factor"]           # Bellman γ (future reward weight)

@@ -5,17 +5,18 @@ import random
 import numpy as np
 import torch
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from learning.trainer import Trainer
+from learning.trainer_cartpole import TrainerCartPloe
+from learning.trainer_mountaincar import TrainerMountainCar
 
 
 hyperparams = {
     "discount_factor": 0.99,
     "batch_size": 80,
-    "max_episodes": 4000,
+    "max_episodes": 5000,
     "max_steps": 200,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
-    "epsilon_decay": 0.00007,
+    "epsilon_decay": 0.00009,
     "memory_capacity": 100000,
 }
 
@@ -25,7 +26,7 @@ train_mode = False
 if __name__ == "__main__":
 
     if train_mode:
-        seeds = [502,800,912]
+        seeds = [200]
         rewards_list = {}
         loss_list = {}
         for seed in seeds:
@@ -33,7 +34,8 @@ if __name__ == "__main__":
             random.seed(seed)
             np.random.seed(seed)
             torch.manual_seed(seed)
-            trainer = Trainer(hyperparams, seed)
+            # selector
+            trainer = TrainerCartPloe(hyperparams, seed)
             rewards, loss = trainer.train()
             rewards_list[seed] = rewards
             loss_list[seed] = loss
@@ -54,5 +56,6 @@ if __name__ == "__main__":
         plt.show()
 
     else:
-        trainer = Trainer(hyperparams, seed=None)
-        trainer.test("best_model_seed_502.pth")
+        # selector
+        trainer = TrainerCartPloe(hyperparams, seed=None)
+        trainer.test("best_model_seed_200.pth")
