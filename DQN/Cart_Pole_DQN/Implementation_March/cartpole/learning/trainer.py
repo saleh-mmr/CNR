@@ -11,7 +11,7 @@ from envs.cartpole import CartPoleEnv
 from envs.mountaincar import MountainCarEnv
 
 
-class TrainerCartPloe:
+class Trainer:
     def __init__(self, hyperparams, seed):
         # Load parameters
         self.discount_factor = hyperparams["discount_factor"]           # Bellman γ (future reward weight)
@@ -23,27 +23,34 @@ class TrainerCartPloe:
         self.epsilon_decay = hyperparams["epsilon_decay"]               # Exploration decay speed
         self.memory_capacity = hyperparams["memory_capacity"]           # Replay buffer size
         self.seed = seed
-        self.cart_pole_env = CartPoleEnv(render_mode=None, seed=seed)
+        if hyperparams["problem"] == 1:
+            self.env = CartPoleEnv(render_mode=None, seed=seed)
+            self.problem = 1
+        elif hyperparams["problem"] == 2:
+            self.env = MountainCarEnv(render_mode=None, seed=seed)
+            self.problem = 2
         self.agent = DQNAgent(
-            n_action_space=self.cart_pole_env.action_space.n,
-            n_observation_space=self.cart_pole_env.observation_space.shape[0],
+            env=self.env,
             epsilon_max=self.epsilon_max,
             epsilon_min=self.epsilon_min,
             epsilon_decay=self.epsilon_decay,
             discount=self.discount_factor,
             memory_capacity=self.memory_capacity,
+            optimizer_selector=hyperparams["controller"]
         )
 
 
     def train(self):
-        self.warmup_replay_memory()
+        self.warmup_replay_memory(20000)
         total_steps = 0
         total_reward = []
         loss_track = []
+        best_so_far = -float("inf")
+
 
         for episode in range(1, self.max_episodes + 1):
             # Initial observation from environment
-            state = self.cart_pole_env.reset()
+            state = self.env.reset()
             # Flags to track episode completion for each environment
             done = False
             # Total reward accumulated in this episode each environment (for logging)
@@ -53,7 +60,7 @@ class TrainerCartPloe:
                 # For each environment, if it's not done, select action, step, store experience, and accumulate reward
                 action_cp = self.agent.select_action(state)
                 # Step in the environment and get next state, reward, and done flag
-                next_state, reward, done = self.cart_pole_env.step(action_cp)
+                next_state, reward, done = self.env.step(action_cp)
                 step_counter += 1
 
                 if step_counter >= self.max_steps:
@@ -77,16 +84,26 @@ class TrainerCartPloe:
             print(
                 f"Episode: {episode}, "
                 f"Steps: {step_counter}, "
-                f"Reward CP: {episode_reward:.2f}, "
+                f"Reward: {episode_reward:.2f}, "
                 f"Epsilon: {self.agent.epsilon:.2f}"
             )
             # SAVE BEST MODEL
-            if episode_reward == self.max_steps:
-                torch.save(
-                    self.agent.q_network.state_dict(),
-                    f"best_model_seed_{self.seed}.pth"
-                )
-                print(f"New best model saved (seed {self.seed}) with reward {episode_reward}")
+            if self.problem == 1:
+                if episode_reward == self.max_steps:
+                    torch.save(
+                        self.agent.q_network.state_dict(),
+                        f"best_model_seed_{self.seed}.pth"
+                    )
+                    print(f"New best model saved (seed {self.seed}) with reward {episode_reward}")
+            elif self.problem == 2:
+                if episode_reward > best_so_far:
+                    best_so_far = episode_reward
+                    torch.save(
+                        self.agent.q_network.state_dict(),
+                        f"best_model_seed_{self.seed}.pth"
+                    )
+                    print(f"New best model saved (seed {self.seed})")
+
         return total_reward, loss_track
 
     def test(self, model_path, num_tests=50):
@@ -122,11 +139,11 @@ class TrainerCartPloe:
 
         return rewards
 
-    def warmup_replay_memory(self, num_steps=20000):
-        state = self.cart_pole_env.reset()
+    def warmup_replay_memory(self, num_steps):
+        state = self.env.reset()
         for _ in range(num_steps):
             # random action for exploration
-            action = self.cart_pole_env.action_space.sample()
-            next_state, reward, done = self.cart_pole_env.step(action)
+            action = self.env.action_space.sample()
+            next_state, reward, done = self.env.step(action)
             self.agent.replay_memory.store(state, action, next_state, reward, done)
-            state = self.cart_pole_env.reset() if done else next_state
+            state = self.env.reset() if done else next_state
