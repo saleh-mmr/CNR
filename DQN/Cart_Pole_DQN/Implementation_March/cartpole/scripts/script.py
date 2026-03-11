@@ -33,7 +33,7 @@ hyperparams = {
     "problem": 2,
 }
 
-train_mode = True
+train_mode = False
 
 
 if __name__ == "__main__":
@@ -69,4 +69,4 @@ if __name__ == "__main__":
 
     else:
         trainer = Trainer(hyperparams, seed=None)
-        trainer.test("best_model_seed_200.pth")
+        trainer.test("best_model_seed_55.pth")

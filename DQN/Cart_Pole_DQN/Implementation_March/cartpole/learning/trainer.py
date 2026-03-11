@@ -26,9 +26,10 @@ class Trainer:
         if hyperparams["problem"] == 1:
             self.env = CartPoleEnv(render_mode=None, seed=seed)
             self.problem = 1
-        elif hyperparams["problem"] == 2:
+        else:
             self.env = MountainCarEnv(render_mode=None, seed=seed)
             self.problem = 2
+
         self.agent = DQNAgent(
             env=self.env,
             epsilon_max=self.epsilon_max,
@@ -58,16 +59,13 @@ class Trainer:
             step_counter = 0 # Step counter inside episode
             while not done and step_counter < self.max_steps:
                 # For each environment, if it's not done, select action, step, store experience, and accumulate reward
-                action_cp = self.agent.select_action(state)
+                action = self.agent.select_action(state)
                 # Step in the environment and get next state, reward, and done flag
-                next_state, reward, done = self.env.step(action_cp)
+                next_state, reward, done = self.env.step(action)
                 step_counter += 1
 
-                if step_counter >= self.max_steps:
-                    done = True
-
                 # Store experience in the corresponding replay memory
-                self.agent.replay_memory.store(state, action_cp, next_state, reward, done)
+                self.agent.replay_memory.store(state, action, next_state, reward, done)
                 state = next_state
                 episode_reward += reward
 
@@ -112,9 +110,12 @@ class Trainer:
         self.agent.q_network.load_state_dict(torch.load(model_path))
         self.agent.q_network.eval()
         rewards = []
-        for i in range(num_tests):
+        for test_num in range(num_tests):
             seed = random.randint(0, 1000)
-            env = CartPoleEnv(render_mode=None, seed=seed)
+            if self.problem == 1:
+                env = CartPoleEnv(render_mode=None, seed=seed)
+            else:
+                env = MountainCarEnv(render_mode=None, seed=seed)
             state = env.reset()
             done = False
             total_reward = 0
@@ -132,7 +133,7 @@ class Trainer:
 
             rewards.append(total_reward)
 
-            print(f"Test {i + 1} | Seed {seed} | Reward {total_reward}")
+            print(f"Test {test_num + 1} | Seed {seed} | Reward {total_reward}")
 
         print("\nMean Test Reward:", np.mean(rewards))
         print("Std Reward:", np.std(rewards))
