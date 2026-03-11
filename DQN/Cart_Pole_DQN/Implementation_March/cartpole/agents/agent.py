@@ -15,14 +15,13 @@ from controller.logarithmic_function_conductance import LogarithmicManhattanCont
 class DQNAgent:
     def __init__(
         self,
-        # env,                                                      # Gym environment
-        n_action_space,
-        n_observation_space,
+        env,                                                      # Gym environment
         epsilon_max,                                              # Start with more exploration
         epsilon_min,                                              # Minimum exploration threshold
         epsilon_decay,                                            # How fast exploration decreases
         discount,                                                 # future reward discount factor
         memory_capacity,                                          # Replay buffer size
+        optimizer_selector,
     ):
 
         # Logging fields
@@ -36,31 +35,27 @@ class DQNAgent:
         self.discount = discount
 
         # Environment
-        self.action_space = n_action_space                              # Saves how many actions the agent can take
-        self.observation_space = n_observation_space                    # Saves the full observation space object
+        self.env = env
 
         # Replay buffer
         self.replay_memory = ReplayMemory(capacity=memory_capacity)
 
         # Q-Network
-        input_dim = self.observation_space                       # network input = state size (4)
-        output_dim = self.action_space                                  # network output = number of actions (2)
+        input_dim = self.env.observation_space.shape[0]                       # network input = state size (4)
+        output_dim = self.env.action_space.n                                  # network output = number of actions (2)
         self.q_network = DQNNetwork(output_dim, input_dim).to(config.device)
 
         # use a squared-error loss just to get gradients,
         self.criterion = nn.MSELoss()
 
-        # Gradient Descent optimizer
-        # self.weight_controller = GDOptimizer(self.q_network)
-
-        # Manhattan-style discrete weight update controller - Linear function
-        # self.weight_controller = ManhattanController(self.q_network)
-
-        # RMSprop optimizer
-        # self.weight_controller = RMSprop(self.q_network.parameters(), lr=0.001)
-
-        # Manhattan-style discrete weight update controller - Logarithmic function
-        self.weight_controller = LogarithmicManhattanController(self.q_network)
+        if optimizer_selector == 1:
+            self.weight_controller = ManhattanController(self.q_network)
+        elif optimizer_selector == 2:
+            self.weight_controller = LogarithmicManhattanController(self.q_network)
+        elif optimizer_selector == 3:
+            self.weight_controller = GDOptimizer(self.q_network)
+        elif optimizer_selector == 4:
+            self.weight_controller = RMSprop(self.q_network.parameters(), lr=0.001)
 
 
         # Target Network
@@ -80,7 +75,7 @@ class DQNAgent:
 
         # exploration
         if np.random.rand() < epsilon:
-            return np.random.randint(0, self.action_space)
+            return np.random.randint(0, self.env.action_space.n)
 
         # exploration
         state = torch.as_tensor(state, dtype=torch.float32, device=config.device).unsqueeze(0)
@@ -135,7 +130,6 @@ class DQNAgent:
                 param.grad.zero_()
         loss.backward()
         self.weight_controller.step()
-
 
         # Target Network
         # self.learn_steps += 1
