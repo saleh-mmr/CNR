@@ -30,7 +30,7 @@ class LogarithmicManhattanController:
 
     def _conductance(self, idx, dtype):
         idx_f = idx.to(dtype=torch.float32)
-        scale = 3e8
+        scale = 9e9
         value = (1.566e-8 * np.log10(idx_f) + 0.350e-8) * scale
         return value.to(dtype=dtype)
 

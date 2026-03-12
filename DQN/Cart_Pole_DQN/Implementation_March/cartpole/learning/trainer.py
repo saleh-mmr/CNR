@@ -47,7 +47,8 @@ class Trainer:
         total_reward = []
         loss_track = []
         best_so_far = -float("inf")
-
+        window_size = 5
+        recent_avg = -float("inf")
 
         for episode in range(1, self.max_episodes + 1):
             # Initial observation from environment
@@ -86,32 +87,29 @@ class Trainer:
                 f"Epsilon: {self.agent.epsilon:.2f}"
             )
             # SAVE BEST MODEL
-            if self.problem == 1:
-                if episode_reward == self.max_steps:
+            if len(total_reward) >= window_size:
+                recent_avg = np.mean(total_reward[-window_size:])
+                if recent_avg > best_so_far:
+                    best_so_far = recent_avg
+                    model_path = f"best_model_seed_{self.seed}.pth"
                     torch.save(
                         self.agent.q_network.state_dict(),
-                        f"best_model_seed_{self.seed}.pth"
+                        model_path
                     )
-                    print(f"New best model saved (seed {self.seed}) with reward {episode_reward}")
-            elif self.problem == 2:
-                if episode_reward > best_so_far:
-                    best_so_far = episode_reward
-                    torch.save(
-                        self.agent.q_network.state_dict(),
-                        f"best_model_seed_{self.seed}.pth"
-                    )
-                    print(f"New best model saved (seed {self.seed})")
+                    print(f"New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
+
+
 
         return total_reward, loss_track
 
-    def test(self, model_path, num_tests=50):
+    def test(self, model_path, num_tests=100):
 
         # load trained weights
         self.agent.q_network.load_state_dict(torch.load(model_path))
         self.agent.q_network.eval()
         rewards = []
         for test_num in range(num_tests):
-            seed = random.randint(0, 1000)
+            seed = random.randint(0, 3000)
             if self.problem == 1:
                 env = CartPoleEnv(render_mode=None, seed=seed)
             else:
@@ -148,3 +146,4 @@ class Trainer:
             next_state, reward, done = self.env.step(action)
             self.agent.replay_memory.store(state, action, next_state, reward, done)
             state = self.env.reset() if done else next_state
+

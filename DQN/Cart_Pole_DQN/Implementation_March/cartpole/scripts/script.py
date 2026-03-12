@@ -22,24 +22,24 @@ problem = {
 
 hyperparams = {
     "discount_factor": 0.99,
-    "batch_size": 80,
-    "max_episodes": 1000,
+    "batch_size": 100,
+    "max_episodes": 4000,
     "max_steps": 200,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
-    "epsilon_decay": 0.00007,
+    "epsilon_decay": 0.00005,
     "memory_capacity": 100000,
-    "controller": 1,
     "problem": 2,
+    "controller": 2,
 }
 
-train_mode = False
+train_mode = True
 
 
 if __name__ == "__main__":
 
     if train_mode:
-        seeds = [55]
+        seeds = [49]
         rewards_list = {}
         loss_list = {}
         for seed in seeds:
@@ -69,4 +69,4 @@ if __name__ == "__main__":
 
     else:
         trainer = Trainer(hyperparams, seed=None)
-        trainer.test("best_model_seed_55.pth")
+        trainer.test("best_model_seed_49.pth")
