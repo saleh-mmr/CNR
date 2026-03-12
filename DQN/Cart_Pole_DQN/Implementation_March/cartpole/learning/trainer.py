@@ -124,6 +124,7 @@ class Trainer:
                 action = self.agent.select_action(state, epsilon=0)
 
                 next_state, reward, done = env.step(action)
+                # env.render()
 
                 state = next_state
                 total_reward += reward

@@ -33,7 +33,7 @@ hyperparams = {
     "controller": 2,
 }
 
-train_mode = True
+train_mode = False
 
 
 if __name__ == "__main__":
