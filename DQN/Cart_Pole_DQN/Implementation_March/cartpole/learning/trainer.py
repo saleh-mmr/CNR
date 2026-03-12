@@ -89,7 +89,7 @@ class Trainer:
             # SAVE BEST MODEL
             if len(total_reward) >= window_size:
                 recent_avg = np.mean(total_reward[-window_size:])
-                if recent_avg > best_so_far:
+                if recent_avg >= best_so_far:
                     best_so_far = recent_avg
                     model_path = f"best_model_seed_{self.seed}.pth"
                     torch.save(
