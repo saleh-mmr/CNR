@@ -17,22 +17,21 @@ class LogarithmicManhattanController:
             g_plus_idx = torch.ones(shape, dtype=torch.long, device=device)
             g_minus_idx = torch.ones(shape, dtype=torch.long, device=device)
 
-            g_plus = self._conductance(g_plus_idx, param.dtype)
-            g_minus = self._conductance(g_minus_idx, param.dtype)
+            g_plus = self._conductance(g_plus_idx).to(dtype=param.dtype)
+            g_minus = self._conductance(g_minus_idx).to(dtype=param.dtype)
 
             self.state[name] = {
-                "param": param,
                 "g_plus_idx": g_plus_idx,
                 "g_minus_idx": g_minus_idx,
                 "g_plus": g_plus,
                 "g_minus": g_minus,
             }
 
-    def _conductance(self, idx, dtype):
+    def _conductance(self, idx):
         idx_f = idx.to(dtype=torch.float32)
         scale = 9e9
         value = (1.566e-8 * np.log10(idx_f) + 0.350e-8) * scale
-        return value.to(dtype=dtype)
+        return value
 
     @torch.no_grad()
     def step(self):
@@ -56,8 +55,8 @@ class LogarithmicManhattanController:
             if neg.any():
                 st["g_plus_idx"][neg] += 1
 
-            st["g_plus"].copy_(self._conductance(st["g_plus_idx"], param.dtype))
-            st["g_minus"].copy_(self._conductance(st["g_minus_idx"], param.dtype))
+            st["g_plus"].copy_(self._conductance(st["g_plus_idx"]).to(dtype=param.dtype))
+            st["g_minus"].copy_(self._conductance(st["g_minus_idx"]).to(dtype=param.dtype))
 
             weight = st["g_plus"] - st["g_minus"]
             param.copy_(weight)

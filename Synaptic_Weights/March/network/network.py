@@ -1,7 +1,4 @@
 from torch import nn
-import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 class DQNNetwork(nn.Module):
     def __init__(self, num_actions, input_dim):
@@ -17,6 +14,7 @@ class DQNNetwork(nn.Module):
 
             nn.Linear(80, num_actions)        # [Q_left, Q_right]  → choose max action
         )
+
 
     def forward(self, x):
         """

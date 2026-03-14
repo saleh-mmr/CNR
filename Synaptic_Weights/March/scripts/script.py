@@ -1,36 +1,18 @@
-import os
-import sys
 from matplotlib import pyplot as plt
 import random
 import numpy as np
 import torch
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from learning.trainer import Trainer
-
-
-controller = {
-    1: "manhattan_linear",
-    2: "manhattan_logarithmic",
-    3: "sgd",
-    4: "rmsprop"
-}
-
-problem = {
-    1: "CartPole",
-    2: "MountainCar",
-}
 
 hyperparams = {
     "discount_factor": 0.99,
     "batch_size": 100,
-    "max_episodes": 1000,
+    "max_episodes": 500,
     "max_steps": 200,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
     "epsilon_decay": 0.00005,
     "memory_capacity": 100000,
-    "problem": 1,
-    "controller": 2,
 }
 
 train_mode = True
@@ -62,7 +44,7 @@ if __name__ == "__main__":
         plt.plot(mean_rewards, label="Mean Reward", linewidth=3)
         plt.xlabel("Episode")
         plt.ylabel("Reward")
-        plt.title(f"DQN Training on {problem[hyperparams["problem"]]} with {controller[hyperparams["controller"]]} Controller")
+        plt.title(f"DQN Training on CP with Synaptic Weight Controller")
         plt.legend()
         plt.grid(True)
         plt.show()
