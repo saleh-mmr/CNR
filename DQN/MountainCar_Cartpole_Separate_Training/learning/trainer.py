@@ -59,7 +59,7 @@ class Trainer:
             episode_reward = 0
             step_counter = 0 # Step counter inside episode
             while not done and step_counter < self.max_steps:
-                # For each environment, if it's not done, select action, step, store experience, and accumulate reward
+                # For the environment, if it's not done, select action, step, store experience, and accumulate reward
                 action = self.agent.select_action(state)
                 # Step in the environment and get next state, reward, and done flag
                 next_state, reward, done = self.env.step(action)

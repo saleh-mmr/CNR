@@ -14,16 +14,20 @@ from controller.synaptic_weight_controller import SynapticWeightController
 class DQNAgent:
     def __init__(
         self,
-        env,                                                      # Gym environment
+        cartpole_env,                                             # CartPole environment
+        mountaincar_env,                                           # MountainCar environment
         epsilon_max,                                              # Start with more exploration
         epsilon_min,                                              # Minimum exploration threshold
         epsilon_decay,                                            # How fast exploration decreases
         discount,                                                 # future reward discount factor
         memory_capacity,                                          # Replay buffer size
     ):
+        # Ensure environments have same dimensions
+        assert cartpole_env.observation_space.shape[0] == mountaincar_env.observation_space.shape[0], \
+            "Observation spaces must match"
 
-        # Logging fields
-        self.loss_history = []
+        assert cartpole_env.action_space.n == mountaincar_env.action_space.n, \
+            "Action spaces must match"
 
         # Hyperparameters
         self.epsilon = epsilon_max
@@ -33,14 +37,19 @@ class DQNAgent:
         self.discount = discount
 
         # Environment
-        self.env = env
+        self.cartpole_env = cartpole_env
+        self.mountaincar_env = mountaincar_env
+        self.action_space_dim = 2                 # Saves how many actions the agent can take
+        self.observation_space_dim = 4         # Saves the observation space
 
         # Replay buffer
-        self.replay_memory = ReplayMemory(capacity=memory_capacity)
+        self.cartpole_memory = ReplayMemory(capacity=memory_capacity)
+        self.mountaincar_memory = ReplayMemory(capacity=memory_capacity)
+        self.replay_memory = [self.cartpole_memory, self.mountaincar_memory]  # List of replay buffers for each environment
 
         # Q-Network
-        input_dim = self.env.observation_space.shape[0]                       # network input = state size (4)
-        output_dim = self.env.action_space.n                                  # network output = number of actions (2)
+        input_dim = self.observation_space_dim                       # network input = state size (4)
+        output_dim = self.action_space_dim                           # network output = number of actions (2)
         self.q_network = DQNNetwork(output_dim, input_dim).to(config.device)
 
         # use a squared-error loss just to get gradients,
@@ -66,7 +75,7 @@ class DQNAgent:
 
         # exploration
         if np.random.rand() < epsilon:
-            return np.random.randint(0, self.env.action_space.n)
+            return np.random.randint(0, self.action_space_dim)
 
         # exploration
         state = torch.as_tensor(state, dtype=torch.float32, device=config.device).unsqueeze(0)
@@ -76,12 +85,9 @@ class DQNAgent:
         return torch.argmax(q_values, dim=1).item()        # exploration
 
     # Learning step
-    def learn(self, batch_size):
-        if len(self.replay_memory) < batch_size:                # Not enough future in replay => Skip learning
-            return None
-
+    def learn(self, batch_size, ap_index):
         # Pulls a random batch from replay memory for training
-        states, actions, next_states, rewards, dones = self.replay_memory.sample(batch_size)
+        states, actions, next_states, rewards, dones = self.replay_memory[ap_index].sample(batch_size)
 
         # Shape Fixing: Convert from shape (B,) [0, 1, 1, 0] → (B,1) [[0], [1], [1], [0]]
         actions = actions.unsqueeze(1)
@@ -112,15 +118,12 @@ class DQNAgent:
         # compare current guess vs target (criterion is MSELoss)
         loss = self.criterion(predicted_q, targets)
 
-        # store loss for future logging and visualization
-        self.loss_history.append(loss.item())
-
         # Clear old gradients
         for param in self.q_network.parameters():
             if param.grad is not None:
                 param.grad.zero_()
         loss.backward()
-        self.weight_controller.step()
+        self.weight_controller.step(ap_index)
 
         # Target Network
         # self.learn_steps += 1
