@@ -1,10 +1,10 @@
 import os
 import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from matplotlib import pyplot as plt
 import random
 import numpy as np
 import torch
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from learning.trainer import Trainer
 
 
