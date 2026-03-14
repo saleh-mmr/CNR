@@ -6,8 +6,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 def init_weights(layer):
         if isinstance(layer, nn.Linear):
-            nn.init.constant_(layer.weight, 0.5)  # set weights
-            nn.init.constant_(layer.bias, 0.0)  # set bias
+            nn.init.constant_(layer.weight, 0.76)  # set weights
+            nn.init.constant_(layer.bias, 0.56)  # set bias
 
 
 class DQNNetwork(nn.Module):

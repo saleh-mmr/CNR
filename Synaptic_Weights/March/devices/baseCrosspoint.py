@@ -1,5 +1,5 @@
-from crosspointParams import CrossPointParams
-from crosspointState import CrosspointState
+from .crosspointParams import CrossPointParams
+from .crosspointState import CrosspointState
 import numpy as np
 
 
@@ -22,8 +22,8 @@ class BaseCrosspoint:
 
     # Following Method Compute noisy G_p for Current State **DOES NOT UPDATE STATE**
     def calculate_conductance_p(self, state):
-        index, state_noise = state.get_state()
+        index = state.get_state()
         a = float(self.params.a)
         b = float(self.params.b)
         conductance_without_noise = float(a * np.log10(index) + b)
-        return float(conductance_without_noise + state_noise)
+        return float(conductance_without_noise)

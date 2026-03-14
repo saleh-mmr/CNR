@@ -8,9 +8,8 @@ import torch
 from utils import config
 from memory.replay_memory import ReplayMemory
 from network.network import DQNNetwork
-from controller.sgd_optimizer import GDOptimizer
-from controller.linear_function_conductance import ManhattanController
-from controller.logarithmic_function_conductance import LogarithmicManhattanController
+from controller.synaptic_weight_controller import SynapticWeightController
+
 
 class DQNAgent:
     def __init__(
@@ -21,7 +20,6 @@ class DQNAgent:
         epsilon_decay,                                            # How fast exploration decreases
         discount,                                                 # future reward discount factor
         memory_capacity,                                          # Replay buffer size
-        optimizer_selector,
     ):
 
         # Logging fields
@@ -48,14 +46,7 @@ class DQNAgent:
         # use a squared-error loss just to get gradients,
         self.criterion = nn.MSELoss()
 
-        if optimizer_selector == 1:
-            self.weight_controller = ManhattanController(self.q_network)
-        elif optimizer_selector == 2:
-            self.weight_controller = LogarithmicManhattanController(self.q_network)
-        elif optimizer_selector == 3:
-            self.weight_controller = GDOptimizer(self.q_network)
-        elif optimizer_selector == 4:
-            self.weight_controller = RMSprop(self.q_network.parameters(), lr=0.001)
+        self.weight_controller = SynapticWeightController(self.q_network)
 
 
         # Target Network

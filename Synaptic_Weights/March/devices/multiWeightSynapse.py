@@ -1,6 +1,6 @@
-from crosspointState import CrosspointState
-from magnetoresistiveCrosspoint import MagnetoresistiveCrosspoint
-from nonMagnetoresistiveCrosspoint import NonMagnetoresistiveCrosspoint
+from .crosspointState import CrosspointState
+from .magnetoresistiveCrosspoint import MagnetoresistiveCrosspoint
+from .nonMagnetoresistiveCrosspoint import NonMagnetoresistiveCrosspoint
 
 class MultiWeightSynapseSpec:
     def __init__(self, n_problem, scaling_factor):
