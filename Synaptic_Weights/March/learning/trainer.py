@@ -4,8 +4,6 @@ import torch
 from agents.agent import DQNAgent
 from envs.cartpole import CartPoleEnv
 from envs.mountaincar import MountainCarEnv
-from prophet.utilities import warm_start_params
-
 
 class Trainer:
     def __init__(self, hyperparams, seed):
