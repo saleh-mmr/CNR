@@ -10,7 +10,7 @@ class SynapticWeightController:
     def __init__(self, model):
         self.model = model
 
-        params = CrossPointParams(a=1.566e-8, b=3.5e-9, g_s=3.5e-8, g_threshold=9e9, sigma_pulse_noise=0.0)
+        params = CrossPointParams(a=1.566e-8, b=3.5e-9, g_s=3.5e-8, g_threshold=3.482e-8, sigma_pulse_noise=0.0)
         spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=9e9)
 
         self.synapses = {}
@@ -47,6 +47,14 @@ class SynapticWeightController:
             pos = (grad > 0) & valid
             neg = (grad < 0) & valid
 
+            # Logging for debugging
+            if name == "FC.0.weight":
+                print("Before update:")
+                a = param[0, 0].item()
+                print(f'grad[0,0]: {grad[0, 0].item():.5f} | weight[0,0]: {param[0, 0].item():.5f} | pos[0,0]: {pos[0, 0].item()} | neg[0,0]: {neg[0, 0].item()}')
+                print("Synapse status before update:")
+                print(f'ap_index: {ap_index} | bias_crosspoint_index: {st[0][0].get_bias_crosspoint_state()} | positive_crosspoint_index: {st[0][0].get_positive_crosspoint_state(ap_index)}')
+
             if grad.ndim == 2:
                 if pos.any():
                     for i in range(pos.shape[0]):
@@ -77,3 +85,11 @@ class SynapticWeightController:
                             param[i].copy_(torch.tensor(st[i].weight(ap_index), dtype=param.dtype))
 
 
+            if name == "FC.0.weight":
+                print("After update:")
+                b = param[0, 0].item()
+                print(f"weight[0,0]: {param[0, 0].item():.5f} | weight change: {b - a} | change direction: {'+' if b - a > 0 else '-' if b - a < 0 else '0'}")
+                print("Synapse status after update:")
+                print(f'ap_index: {ap_index} | bias_crosspoint_index: {st[0][0].get_bias_crosspoint_state()} | positive_crosspoint_index_{ap_index}: {st[0][0].get_positive_crosspoint_state(ap_index)}')
+                print(f'calculated weight: {st[0][0].weight(ap_index):.5f}')
+                print("\n")
