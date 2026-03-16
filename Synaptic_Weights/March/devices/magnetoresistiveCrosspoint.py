@@ -14,4 +14,4 @@ class MagnetoresistiveCrosspoint(BaseCrosspoint):
         if g_p <= g_threshold:
             return float(g_p)
         g_s = self.params.g_s
-        return float(g_p * (1.0 + max(g_p - g_s, 0.0) ** (3.0 / 4.0)))
+        return float(g_p * (1.0 + (g_p / g_s) ** (3.0 / 4.0)))

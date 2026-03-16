@@ -96,6 +96,7 @@ class DQNAgent:
 
         # self.q_network(states) → outputs all Q-values
         # .gather(1, actions) → picks only Q-values of the taken actions
+        # self.weight_controller.load(ap_index)  # Load synaptic states before forward pass
         q_all = self.q_network(states)
         predicted_q = q_all.gather(1, actions)
 
