@@ -96,7 +96,7 @@ class DQNAgent:
 
         # self.q_network(states) → outputs all Q-values
         # .gather(1, actions) → picks only Q-values of the taken actions
-        # self.weight_controller.load(ap_index)  # Load synaptic states before forward pass
+        self.weight_controller.load(ap_index)  # Load synaptic states before forward pass
         q_all = self.q_network(states)
         predicted_q = q_all.gather(1, actions)
 
@@ -120,9 +120,7 @@ class DQNAgent:
         loss = self.criterion(predicted_q, targets)
 
         # Clear old gradients
-        for param in self.q_network.parameters():
-            if param.grad is not None:
-                param.grad.zero_()
+        self.q_network.zero_grad()
         loss.backward()
         self.weight_controller.step(ap_index)
 
