@@ -82,6 +82,7 @@ node_modules/
 # Ignore wheel and egg build artifacts
 *.egg
 *.whl
+*.pth
 *.pages
 # End of file
 
