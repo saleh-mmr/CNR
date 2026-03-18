@@ -11,7 +11,7 @@ class SynapticWeightController:
         self.model = model
 
         params = CrossPointParams(a=1.566e-8, b=3.5e-9, g_s=4.32e-7, g_threshold=9e9, sigma_pulse_noise=0.0)
-        spec = MultiWeightSynapseSpec(n_problem=1, scaling_factor=9e9)
+        spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=9e9)
 
         self.synapses = {}
 
@@ -33,7 +33,7 @@ class SynapticWeightController:
 
 
     @torch.no_grad()
-    def step(self):
+    def step(self, ap_index):
         for name, param in self.model.named_parameters():
             if not param.requires_grad:
                 continue
@@ -43,7 +43,6 @@ class SynapticWeightController:
                 continue
 
             st = self.synapses[name]
-
             valid = torch.isfinite(grad)
             pos = (grad > 0) & valid
             neg = (grad < 0) & valid
@@ -54,27 +53,32 @@ class SynapticWeightController:
                         for j in range(pos.shape[1]):
                             if pos[i, j]:
                                 st[i][j].increase_bias_crosspoint_index()
-                                param[i, j].copy_(torch.tensor(st[i][j].weight(0), dtype=param.dtype))
                 if neg.any():
                     for i in range(neg.shape[0]):
                         for j in range(neg.shape[1]):
                             if neg[i, j]:
-                                st[i][j].increase_positive_crosspoint_index(0)
-                                param[i, j].copy_(torch.tensor(st[i][j].weight(0), dtype=param.dtype))
-
-
-
+                                st[i][j].increase_positive_crosspoint_index(ap_index)
             elif grad.ndim == 1:
                 if pos.any():
                     for i in range(pos.shape[0]):
                         if pos[i]:
                             st[i].increase_bias_crosspoint_index()
-                            param[i].copy_(torch.tensor(st[i].weight(0), dtype=param.dtype))
-
                 if neg.any():
                     for i in range(neg.shape[0]):
                         if neg[i]:
-                            st[i].increase_positive_crosspoint_index(0)
-                            param[i].copy_(torch.tensor(st[i].weight(0), dtype=param.dtype))
+                            st[i].increase_positive_crosspoint_index(ap_index)
 
 
+
+
+    @torch.no_grad()
+    def load_weights(self, ap_index):
+        for name, param in self.model.named_parameters():
+            st = self.synapses[name]
+            if param.ndim == 2:
+                for i in range(param.shape[0]):
+                    for j in range(param.shape[1]):
+                        param[i, j].copy_(torch.tensor(st[i][j].weight(ap_index), dtype=param.dtype))
+            elif param.ndim == 1:
+                for i in range(param.shape[0]):
+                    param[i].copy_(torch.tensor(st[i].weight(ap_index), dtype=param.dtype))
