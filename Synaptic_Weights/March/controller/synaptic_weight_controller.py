@@ -10,8 +10,8 @@ class SynapticWeightController:
     def __init__(self, model, ):
         self.model = model
 
-        params = CrossPointParams(a=1.566e-8, b=3.5e-9, g_s=4.32e-7, g_threshold=9e9, sigma_pulse_noise=0.0)
-        spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=9e9)
+        params = CrossPointParams(a=1.566e-8, b=3.5e-9, g_s=4.32e-7, g_threshold=9e-15, sigma_pulse_noise=0.0)
+        spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=3e9)
 
         self.synapses = {}
 
@@ -84,6 +84,9 @@ class SynapticWeightController:
                 continue
 
             st = self.synapses[name]
+            # if name == 'FC.0.weight':
+            #     print(f"Loading weights for {name}: weight: {st[0][0].weight(ap_index):.4f} | ap_index: {ap_index}")
+
             if param.ndim == 2:
                 for i in range(param.shape[0]):
                     for j in range(param.shape[1]):

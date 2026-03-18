@@ -14,7 +14,7 @@ hyperparams = {
     "max_steps": 200,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
-    "epsilon_decay": 0.00005,
+    "epsilon_decay": 0.0005,
     "memory_capacity": 100000,
 }
 
@@ -25,31 +25,50 @@ if __name__ == "__main__":
 
     if train_mode:
         seeds = [49]
-        rewards_list = {}
-        loss_list = {}
+        rewards_cp_dic = {}
+        rewards_mc_dic = {}
         for seed in seeds:
             print(f"Training with seed: {seed}")
             random.seed(seed)
             np.random.seed(seed)
             torch.manual_seed(seed)
             trainer = Trainer(hyperparams, seed)
-            rewards, loss = trainer.train()
-            rewards_list[seed] = rewards
-            loss_list[seed] = loss
-        reward_runs = list(rewards_list.values())
-        mean_rewards = np.mean(reward_runs, axis=0)
-        std_rewards = np.std(reward_runs, axis=0)
+            rewards_cp, rewards_mc = trainer.train()
+            rewards_cp_dic[seed] = rewards_cp
+            rewards_mc_dic[seed] = rewards_mc
+        reward_runs_cp = list(rewards_cp_dic.values())
+        reward_runs_mc = list(rewards_mc_dic.values())
+        mean_rewards_cp = np.mean(reward_runs_cp, axis=0)
+        mean_rewards_mc = np.mean(reward_runs_mc, axis=0)
+        std_rewards_cp = np.std(reward_runs_cp, axis=0)
+        std_rewards_mc = np.std(reward_runs_mc, axis=0)
 
         # Plot results
-        plt.figure(figsize=(10,6))
-        for seed, rewards in rewards_list.items():
-            plt.plot(rewards, label=f"Seed {seed}", alpha=0.7)
-        plt.plot(mean_rewards, label="Mean Reward", linewidth=3)
-        plt.xlabel("Episode")
-        plt.ylabel("Reward")
-        plt.title(f"DQN Training on CP with Synaptic Weight Controller")
-        plt.legend()
-        plt.grid(True)
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6))  # 1 row, 2 columns
+
+        # ----- CP Plot -----
+        for seed, rewards in rewards_cp_dic.items():
+            axes[0].plot(rewards, label=f"Seed {seed}", alpha=0.7)
+
+        axes[0].plot(mean_rewards_cp, label="Mean Reward CP", linewidth=3)
+        axes[0].set_xlabel("Episode")
+        axes[0].set_ylabel("Reward")
+        axes[0].set_title("DQN Training on CP with Synaptic Weight Controller")
+        axes[0].legend()
+        axes[0].grid(True)
+
+        # ----- MC Plot -----
+        for seed, rewards in rewards_mc_dic.items():
+            axes[1].plot(rewards, label=f"Seed {seed}", alpha=0.7)
+
+        axes[1].plot(mean_rewards_mc, label="Mean Reward MC", linewidth=3)
+        axes[1].set_xlabel("Episode")
+        axes[1].set_ylabel("Reward")
+        axes[1].set_title("DQN Training on MC with Synaptic Weight Controller")
+        axes[1].legend()
+        axes[1].grid(True)
+
+        plt.tight_layout()
         plt.show()
 
     else:
