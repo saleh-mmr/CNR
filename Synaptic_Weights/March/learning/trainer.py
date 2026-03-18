@@ -73,10 +73,6 @@ class Trainer:
                     episode_reward_mc += reward_mc
                     self.agent.learn(self.batch_size, 1)
 
-                # for ap_index in [0,1]:  # 0 for CartPole, 1 for MountainCar
-                #     if len(self.agent.replay_memory[ap_index]) > self.batch_size:
-                #         self.agent.learn(self.batch_size, 0)
-
             total_rewards_in_episodes_cp.append(episode_reward_cp)
             total_rewards_in_episodes_mc.append(episode_reward_mc)
             # Update epsilon (step-based)
