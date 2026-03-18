@@ -32,69 +32,6 @@ class Trainer:
             memory_capacity=self.memory_capacity,
         )
 
-
-    # def train(self):
-    #     self.warmup_replay_memory(20000)
-    #     total_steps = 0
-    #     total_reward = []
-    #     loss_track = []
-    #     best_so_far = -float("inf")
-    #     window_size = 5
-    #
-    #     for episode in range(1, self.max_episodes + 1):
-    #         # Initial observation from environment
-    #         state = self.cartpole_env.reset()
-    #         # Flags to track episode completion for each environment
-    #         done = False
-    #         # Total reward accumulated in this episode each environment (for logging)
-    #         episode_reward = 0
-    #         step_counter = 0 # Step counter inside episode
-    #         while not done and step_counter < self.max_steps:
-    #             # For each environment, if it's not done, select action, step, store experience, and accumulate reward
-    #             action = self.agent.select_action(state)
-    #             # Step in the environment and get next state, reward, and done flag
-    #             next_state, reward, done = self.cartpole_env.step(action)
-    #             step_counter += 1
-    #
-    #             # Store experience in the corresponding replay memory
-    #             self.agent.cartpole_memory.store(state, action, next_state, reward, done)
-    #             state = next_state
-    #             episode_reward += reward
-    #
-    #             if len(self.agent.cartpole_memory) >= self.batch_size:
-    #                 loss = self.agent.learn(self.batch_size, 0)
-    #                 loss_track.append(loss)
-    #
-    #         total_steps += step_counter
-    #         total_reward.append(episode_reward)
-    #         # Update epsilon (step-based)
-    #         self.agent.update_epsilon(total_steps)
-    #
-    #         # Shows training progress in readable way
-    #         print(
-    #             f"Episode: {episode}, "
-    #             f"Steps: {step_counter}, "
-    #             f"Reward: {episode_reward:.2f}, "
-    #             f"Epsilon: {self.agent.epsilon:.2f}"
-    #         )
-    #         # SAVE BEST MODEL
-    #         if len(total_reward) >= window_size:
-    #             recent_avg = np.mean(total_reward[-window_size:])
-    #             if recent_avg >= best_so_far:
-    #                 best_so_far = recent_avg
-    #                 model_path = f"best_model_seed_{self.seed}.pth"
-    #                 torch.save(
-    #                     self.agent.q_network.state_dict(),
-    #                     model_path
-    #                 )
-    #                 print(f"New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
-    #
-    #
-    #
-    #     return total_reward, loss_track
-
-
-
     def train(self):
         self.warmup_replay_memory(20000)
         total_steps = 0
