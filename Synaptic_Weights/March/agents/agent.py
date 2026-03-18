@@ -14,17 +14,14 @@ from controller.synaptic_weight_controller import SynapticWeightController
 class DQNAgent:
     def __init__(
         self,
-        env,                                                      # Gym environment
+        cartpole_env,                                             # Gym cartpole environment
+        mountaincar_env,                                          # Gym mountaincar environment
         epsilon_max,                                              # Start with more exploration
         epsilon_min,                                              # Minimum exploration threshold
         epsilon_decay,                                            # How fast exploration decreases
         discount,                                                 # future reward discount factor
         memory_capacity,                                          # Replay buffer size
     ):
-
-        # Logging fields
-        self.loss_history = []
-
         # Hyperparameters
         self.epsilon = epsilon_max
         self.epsilon_max = epsilon_max
@@ -33,14 +30,22 @@ class DQNAgent:
         self.discount = discount
 
         # Environment
-        self.env = env
+        self.cartpole_env = cartpole_env
+        self.mountaincar_env = mountaincar_env
+        assert cartpole_env.action_space.n == mountaincar_env.action_space.n, "Action space dimensions must match"
+        assert cartpole_env.observation_space.shape[0] == mountaincar_env.observation_space.shape[0], "Observation space dimensions must match"
+        self.action_space_dim = cartpole_env.action_space.n
+        self.observation_space_dim = cartpole_env.observation_space.shape[0]
+
 
         # Replay buffer
-        self.replay_memory = ReplayMemory(capacity=memory_capacity)
+        self.cartpole_memory = ReplayMemory(capacity=memory_capacity)
+        self.mountaincar_memory = ReplayMemory(capacity=memory_capacity)
+        self.replay_memory = [self.cartpole_memory, self.mountaincar_memory]
 
         # Q-Network
-        input_dim = self.env.observation_space.shape[0]                       # network input = state size (4)
-        output_dim = self.env.action_space.n                                  # network output = number of actions (2)
+        input_dim = self.observation_space_dim                                # network input = state size (4)
+        output_dim = self.action_space_dim                                    # network output = number of actions (2)
         self.q_network = DQNNetwork(output_dim, input_dim).to(config.device)
 
         # use a squared-error loss just to get gradients,
@@ -66,7 +71,7 @@ class DQNAgent:
 
         # exploration
         if np.random.rand() < epsilon:
-            return np.random.randint(0, self.env.action_space.n)
+            return np.random.randint(0, self.action_space_dim)
 
         # exploration
         state = torch.as_tensor(state, dtype=torch.float32, device=config.device).unsqueeze(0)
@@ -76,27 +81,23 @@ class DQNAgent:
         return torch.argmax(q_values, dim=1).item()        # exploration
 
     # Learning step
-    def learn(self, batch_size):
-        if len(self.replay_memory) < batch_size:                # Not enough future in replay => Skip learning
+    def learn(self, batch_size, ap_index):
+        if len(self.replay_memory[ap_index]) < batch_size:                # Not enough future in replay => Skip learning
             return None
 
         # Pulls a random batch from replay memory for training
-        states, actions, next_states, rewards, dones = self.replay_memory.sample(batch_size)
+        states, actions, next_states, rewards, dones = self.replay_memory[ap_index].sample(batch_size)
 
         # Shape Fixing: Convert from shape (B,) [0, 1, 1, 0] → (B,1) [[0], [1], [1], [0]]
         actions = actions.unsqueeze(1)
         rewards = rewards.unsqueeze(1)
         dones = dones.unsqueeze(1)
 
-        # self.weight_controller.load_weights(0)  # Load current weights from the controller before forward pass
+        self.weight_controller.load_weights(ap_index)  # Load current weights from the controller before forward pass
         # self.q_network(states) → outputs all Q-values
         # .gather(1, actions) → picks only Q-values of the taken actions
         q_all = self.q_network(states)
         predicted_q = q_all.gather(1, actions)
-
-        # DEBUG: print Q-values
-        # if len(self.loss_history) % 200 == 0:
-        #     print("Sample Q-values:", q_all[0].detach().cpu().numpy())
 
         # Max future reward if the episode is not terminal
         with torch.no_grad():
@@ -112,9 +113,6 @@ class DQNAgent:
 
         # compare current guess vs target (criterion is MSELoss)
         loss = self.criterion(predicted_q, targets)
-
-        # store loss for future logging and visualization
-        self.loss_history.append(loss.item())
 
         # Clear old gradients
         for param in self.q_network.parameters():

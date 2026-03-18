@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from agents.agent import DQNAgent
 from envs.cartpole import CartPoleEnv
+from envs.mountaincar import MountainCarEnv
 
 
 class Trainer:
@@ -17,11 +18,13 @@ class Trainer:
         self.epsilon_decay = hyperparams["epsilon_decay"]               # Exploration decay speed
         self.memory_capacity = hyperparams["memory_capacity"]           # Replay buffer size
         self.seed = seed
-        self.env = CartPoleEnv(render_mode=None, seed=seed)
+        self.cartpole_env = CartPoleEnv(render_mode=None, seed=seed)
+        self.mountaincar_env = MountainCarEnv(render_mode=None, seed=seed)
 
 
         self.agent = DQNAgent(
-            env=self.env,
+            cartpole_env= self.cartpole_env,
+            mountaincar_env= self.mountaincar_env,
             epsilon_max=self.epsilon_max,
             epsilon_min=self.epsilon_min,
             epsilon_decay=self.epsilon_decay,
@@ -40,7 +43,7 @@ class Trainer:
 
         for episode in range(1, self.max_episodes + 1):
             # Initial observation from environment
-            state = self.env.reset()
+            state = self.cartpole_env.reset()
             # Flags to track episode completion for each environment
             done = False
             # Total reward accumulated in this episode each environment (for logging)
@@ -50,16 +53,16 @@ class Trainer:
                 # For each environment, if it's not done, select action, step, store experience, and accumulate reward
                 action = self.agent.select_action(state)
                 # Step in the environment and get next state, reward, and done flag
-                next_state, reward, done = self.env.step(action)
+                next_state, reward, done = self.cartpole_env.step(action)
                 step_counter += 1
 
                 # Store experience in the corresponding replay memory
-                self.agent.replay_memory.store(state, action, next_state, reward, done)
+                self.agent.cartpole_memory.store(state, action, next_state, reward, done)
                 state = next_state
                 episode_reward += reward
 
-                if len(self.agent.replay_memory) >= self.batch_size:
-                    loss = self.agent.learn(self.batch_size)
+                if len(self.agent.cartpole_memory) >= self.batch_size:
+                    loss = self.agent.learn(self.batch_size, 0)
                     loss_track.append(loss)
 
             total_steps += step_counter
@@ -124,12 +127,18 @@ class Trainer:
 
         return rewards
 
+
     def warmup_replay_memory(self, num_steps):
-        state = self.env.reset()
+        state_cp = self.cartpole_env.reset()
+        state_mc = self.mountaincar_env.reset()
         for _ in range(num_steps):
             # random action for exploration
-            action = self.env.action_space.sample()
-            next_state, reward, done = self.env.step(action)
-            self.agent.replay_memory.store(state, action, next_state, reward, done)
-            state = self.env.reset() if done else next_state
+            action_cp = self.cartpole_env.action_space.sample()
+            action_mc = self.mountaincar_env.action_space.sample()
+            next_state_cp, reward_cp, done_cp = self.cartpole_env.step(action_cp)
+            next_state_mc, reward_mc, done_mc = self.mountaincar_env.step(action_mc)
+            self.agent.cartpole_memory.store(state_cp, action_cp, next_state_cp, reward_cp, done_cp)
+            self.agent.mountaincar_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
+            state_cp = self.cartpole_env.reset() if done_cp else next_state_cp
+            state_mc = self.mountaincar_env.reset() if done_mc else next_state_mc
 
