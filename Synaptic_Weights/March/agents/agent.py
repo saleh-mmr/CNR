@@ -88,6 +88,7 @@ class DQNAgent:
         rewards = rewards.unsqueeze(1)
         dones = dones.unsqueeze(1)
 
+        # self.weight_controller.load_weights(0)  # Load current weights from the controller before forward pass
         # self.q_network(states) → outputs all Q-values
         # .gather(1, actions) → picks only Q-values of the taken actions
         q_all = self.q_network(states)
