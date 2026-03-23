@@ -78,7 +78,6 @@ class SynapticWeightController:
                     for i in range(pos.shape[0]):
                         if pos[i]:
                             self.synapses[name][i].increase_bias_crosspoint_index()
-
                 if neg.any():
                     for i in range(neg.shape[0]):
                         if neg[i]:
@@ -100,6 +99,7 @@ class SynapticWeightController:
         for name, param in self.model.named_parameters():
             if not param.requires_grad:
                 continue
+
             st = self.synapses[name]
             if param.ndim == 2:
                 for i in range(param.shape[0]):
