@@ -2,17 +2,8 @@ import random
 import numpy as np
 import torch
 from agents.agent import DQNAgent
-from envs.cartpole import MyCartPoleEnv
+from envs.cartpole import CartPoleEnv
 from envs.mountaincar import MountainCarEnv
-
-
-def warmup_env(env, memory, num_steps):
-    state = env.reset()
-    for _ in range(num_steps):
-        action = env.action_space.sample()
-        next_state, reward, done = env.step(action)
-        memory.store(state, action, next_state, reward, done)
-        state = env.reset() if done else next_state
 
 
 class Trainer:
@@ -27,7 +18,7 @@ class Trainer:
         self.epsilon_decay = hyperparams["epsilon_decay"]               # Exploration decay speed
         self.memory_capacity = hyperparams["memory_capacity"]           # Replay buffer size
         self.seed = seed
-        self.cartpole_env = MyCartPoleEnv(render_mode=None, seed=seed, length=0.5)
+        self.cartpole_env = CartPoleEnv(render_mode=None, seed=seed)
         self.mountaincar_env = MountainCarEnv(render_mode=None, seed=seed)
 
 
@@ -42,9 +33,7 @@ class Trainer:
         )
 
     def train(self):
-        warmup_env(self.cartpole_env, self.agent.cartpole_memory, 3000)
-        warmup_env(self.mountaincar_env, self.agent.mountaincar_memory, 3000)
-
+        self.warmup_replay_memory(20000)
         total_steps = 0
         window_size = 5
         best_so_far = -float("inf")
@@ -151,4 +140,19 @@ class Trainer:
         print("Std Reward:", np.std(rewards))
 
         return rewards
+
+
+    def warmup_replay_memory(self, num_steps):
+        state_cp = self.cartpole_env.reset()
+        state_mc = self.mountaincar_env.reset()
+        for _ in range(num_steps):
+            # random action for exploration
+            action_cp = self.cartpole_env.action_space.sample()
+            action_mc = self.mountaincar_env.action_space.sample()
+            next_state_cp, reward_cp, done_cp = self.cartpole_env.step(action_cp)
+            next_state_mc, reward_mc, done_mc = self.mountaincar_env.step(action_mc)
+            self.agent.cartpole_memory.store(state_cp, action_cp, next_state_cp, reward_cp, done_cp)
+            self.agent.mountaincar_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
+            state_cp = self.cartpole_env.reset() if done_cp else next_state_cp
+            state_mc = self.mountaincar_env.reset() if done_mc else next_state_mc
 
