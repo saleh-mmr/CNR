@@ -10,7 +10,7 @@ from learning.trainer import Trainer
 hyperparams = {
     "discount_factor": 0.99,
     "batch_size": 200,
-    "max_episodes": 3000,
+    "max_episodes": 3500,
     "max_steps": 200,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
