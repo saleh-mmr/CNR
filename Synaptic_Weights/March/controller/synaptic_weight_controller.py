@@ -46,6 +46,19 @@ class SynapticWeightController:
             pos = (grad > 0) & valid
             neg = (grad < 0) & valid
 
+
+            if name == "FC.0.weight":
+                print("BEFORE update for FC.0.weight neuron:")
+                print(f"Gradient: {grad[0, 0].item():.4f}")
+                print(f"AP Positive Crosspoint {ap_index} index: {self.synapses[name][0][0].get_positive_crosspoint_state(ap_index)}")
+                if ap_index == 0:
+                    print(f"P Positive Crosspoint 1 index: {self.synapses[name][0][0].get_positive_crosspoint_state(1)}")
+                else:
+                    print(f"P Positive Crosspoint 0 index: {self.synapses[name][0][0].get_positive_crosspoint_state(0)}")
+                print(f"bias crosspoint index: {self.synapses[name][0][0].get_bias_crosspoint_state()}")
+                print("\n")
+
+
             if grad.ndim == 2:
                 if pos.any():
                     for i in range(pos.shape[0]):
