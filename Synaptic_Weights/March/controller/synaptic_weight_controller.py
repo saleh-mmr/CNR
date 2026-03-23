@@ -109,3 +109,7 @@ class SynapticWeightController:
             elif param.ndim == 1:
                 for i in range(param.shape[0]):
                     param[i].copy_(torch.tensor(st[i].weight(ap_index), dtype=param.dtype))
+
+            if name == "FC.0.weight":
+                print(f"Loaded weights for {name} neuron (AP index {ap_index}):")
+                print(f"{param[0, 0].item():.4f}")
