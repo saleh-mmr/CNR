@@ -119,7 +119,7 @@ class DQNAgent:
             if param.grad is not None:
                 param.grad.zero_()
         loss.backward()
-        self.weight_controller.step()
+        self.weight_controller.step(ap_index)
 
         # Target Network
         # self.learn_steps += 1

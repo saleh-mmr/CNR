@@ -71,7 +71,7 @@ class Trainer:
                     self.agent.mountaincar_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
                     state_mc = next_state_mc
                     episode_reward_mc += reward_mc
-                    self.agent.learn(self.batch_size, 1)
+                    # self.agent.learn(self.batch_size, 1)
 
                 # for ap_index in [0,1]:  # 0 for CartPole, 1 for MountainCar
                 #     if len(self.agent.replay_memory[ap_index]) > self.batch_size:
