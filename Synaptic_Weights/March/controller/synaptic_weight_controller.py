@@ -11,7 +11,7 @@ class SynapticWeightController:
         self.model = model
 
         params = CrossPointParams(a=1.566e-8, b=3.5e-9, g_s=4.32e-7, g_threshold=9e-15, sigma_pulse_noise=0.0)
-        spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=3e9)
+        spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=9e9)
 
         self.synapses = {}
 
