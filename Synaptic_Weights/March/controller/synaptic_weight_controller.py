@@ -11,7 +11,7 @@ class SynapticWeightController:
         self.model = model
 
         params = CrossPointParams(a=1.566e-8, b=3.5e-9, g_s=4.32e-7, g_threshold=9e-15, sigma_pulse_noise=0.0)
-        spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=3e9)
+        spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=5e9)
 
         self.synapses = {}
 
@@ -42,6 +42,17 @@ class SynapticWeightController:
             if grad is None:
                 continue
 
+            # if name == "FC.0.weight":
+            #     print("*****Before update*****")
+            #     print(f"Gradient for param[0,0]: {grad[0,0].item()}")
+            #     print(f"AP state: {self.synapses['FC.0.weight'][0][0].get_positive_crosspoint_state(ap_index)}")
+            #     if ap_index == 0:
+            #         print(f"P state: {self.synapses['FC.0.weight'][0][0].get_positive_crosspoint_state(1)}")
+            #     else:
+            #         print(f"P state: {self.synapses['FC.0.weight'][0][0].get_positive_crosspoint_state(0)}")
+            #     print(f"Bias state : {self.synapses['FC.0.weight'][0][0].get_bias_crosspoint_state()}")
+
+
             valid = torch.isfinite(grad)
             pos = (grad > 0) & valid
             neg = (grad < 0) & valid
@@ -71,6 +82,7 @@ class SynapticWeightController:
 
     @torch.no_grad()
     def load_weights(self, ap_index):
+        # print(f"-------Loading weights for AP index: {ap_index}--------")
         for name, param in self.model.named_parameters():
             if not param.requires_grad:
                 continue
@@ -83,3 +95,7 @@ class SynapticWeightController:
             elif param.ndim == 1:
                 for i in range(param.shape[0]):
                     param[i].copy_(torch.tensor(st[i].weight(ap_index), dtype=param.dtype))
+
+
+            # if name == "FC.0.weight":
+            #     print(f"weight for param[0,0] after loading: {param[0,0].item()}")
