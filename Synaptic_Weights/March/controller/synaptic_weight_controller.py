@@ -81,6 +81,16 @@ class SynapticWeightController:
                         if neg[i]:
                             self.synapses[name][i].increase_positive_crosspoint_index(ap_index)
 
+            if name == "FC.0.weight":
+                print("After update for FC.0.weight neuron:")
+                print(f"Ap Positive Crosspoint {ap_index} index: {self.synapses[name][0][0].get_positive_crosspoint_state(ap_index)}")
+                if ap_index == 0:
+                    print(f"P Positive Crosspoint 1 index: {self.synapses[name][0][0].get_positive_crosspoint_state(1)}")
+                else:
+                    print(f"P Positive Crosspoint 0 index: {self.synapses[name][0][0].get_positive_crosspoint_state(0)}")
+                print(f"bias crosspoint index: {self.synapses[name][0][0].get_bias_crosspoint_state()}")
+                print("-------------------")
+                print("\n")
 
     @torch.no_grad()
     def load_weights(self, ap_index):
