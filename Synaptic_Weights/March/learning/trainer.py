@@ -35,6 +35,8 @@ class Trainer:
     def train(self):
         self.warmup_replay_memory(20000)
         total_steps = 0
+        window_size = 5
+        best_so_far = -float("inf")
         total_rewards_in_episodes_cp = []
         total_rewards_in_episodes_mc = []
 
@@ -49,7 +51,7 @@ class Trainer:
             episode_reward_cp = 0
             episode_reward_mc = 0
             step_counter = 0                # Step counter inside episode
-            while not done_cp and not done_mc:
+            while not done_cp and not done_mc and step_counter < self.max_steps:
                 step_counter += 1
                 total_steps += 1
                 # For each environment, if it's not done, select action, step, store experience, and accumulate reward
@@ -71,7 +73,7 @@ class Trainer:
                     self.agent.mountaincar_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
                     state_mc = next_state_mc
                     episode_reward_mc += reward_mc
-                    # self.agent.learn(self.batch_size, 1)
+                    self.agent.learn(self.batch_size, 1)
 
             total_rewards_in_episodes_cp.append(episode_reward_cp)
             total_rewards_in_episodes_mc.append(episode_reward_mc)
@@ -86,6 +88,19 @@ class Trainer:
                 f"MC_reward: {episode_reward_mc:.2f}, "
                 f"Epsilon: {self.agent.epsilon:.2f}"
             )
+
+            # SAVE BEST MODEL
+            if len(total_rewards_in_episodes_cp) >= window_size:
+                recent_avg = np.mean(total_rewards_in_episodes_cp[-window_size:])
+                if recent_avg >= best_so_far:
+                    best_so_far = recent_avg
+                    model_path = f"best_model_seed_{self.seed}.pth"
+                    torch.save(
+                        self.agent.q_network.state_dict(),
+                        model_path
+                    )
+                    print(
+                        f"New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
 
         return total_rewards_in_episodes_cp, total_rewards_in_episodes_mc
 
