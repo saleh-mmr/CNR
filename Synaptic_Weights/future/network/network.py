@@ -26,7 +26,7 @@ class DQNNetwork(nn.Module):
         )
 
         # Apply custom initialization
-        # self.FC.apply(init_weights)
+        self.FC.apply(init_weights)
 
     def forward(self, x):
         """

@@ -1,5 +1,13 @@
 from torch import nn
 
+
+def init_weights(layer):
+        if isinstance(layer, nn.Linear):
+            nn.init.constant_(layer.weight, 0.50)  # set weights
+            nn.init.constant_(layer.bias, 0.50)  # set bias
+
+
+
 class DQNNetwork(nn.Module):
     def __init__(self, num_actions, input_dim):
         super(DQNNetwork, self).__init__()
@@ -14,6 +22,10 @@ class DQNNetwork(nn.Module):
 
             nn.Linear(80, num_actions)        # [Q_left, Q_right]  → choose max action
         )
+
+        # Apply custom initialization
+        self.FC.apply(init_weights)
+
 
 
     def forward(self, x):

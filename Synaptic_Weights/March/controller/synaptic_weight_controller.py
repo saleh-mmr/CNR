@@ -42,7 +42,6 @@ class SynapticWeightController:
             if grad is None:
                 continue
 
-
             valid = torch.isfinite(grad)
             pos = (grad > 0) & valid
             neg = (grad < 0) & valid

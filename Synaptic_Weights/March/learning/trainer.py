@@ -82,7 +82,7 @@ class Trainer:
                     self.agent.mountaincar_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
                     state_mc = next_state_mc
                     episode_reward_mc += reward_mc
-                    self.agent.learn(self.batch_size, 1)
+                    # self.agent.learn(self.batch_size, 1)
 
             total_rewards_in_episodes_cp.append(episode_reward_cp)
             total_rewards_in_episodes_mc.append(episode_reward_mc)
