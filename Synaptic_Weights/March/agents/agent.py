@@ -101,7 +101,7 @@ class DQNAgent:
             if param.grad is not None:
                 param.grad.zero_()
         loss.backward()
-        self.weight_controller.step(ap_index)  # Update synaptic weights based on sign of gradients
+        self.weight_controller.step(ap_index)
 
         return loss.item()
 
