@@ -11,7 +11,7 @@ class SynapticWeightController:
         self.model = model
 
         params = CrossPointParams(a=1.566e-8, b=3.5e-9, g_s=4.32e-7, g_threshold=9e-15, sigma_pulse_noise=0.0)
-        spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=3e9)
+        spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=9e9)
 
         self.synapses = {}
 
@@ -33,7 +33,7 @@ class SynapticWeightController:
 
 
     @torch.no_grad()
-    def step(self):
+    def step(self, ap_index):
         for name, param in self.model.named_parameters():
             if not param.requires_grad:
                 continue
@@ -52,26 +52,22 @@ class SynapticWeightController:
                         for j in range(pos.shape[1]):
                             if pos[i, j]:
                                 self.synapses[name][i][j].increase_bias_crosspoint_index()
-                                # param[i, j].copy_(torch.tensor(self.synapses[name][i][j].weight(0), dtype=param.dtype))
                 if neg.any():
                     for i in range(neg.shape[0]):
                         for j in range(neg.shape[1]):
                             if neg[i, j]:
-                                self.synapses[name][i][j].increase_positive_crosspoint_index(0)
-                                # param[i, j].copy_(torch.tensor(self.synapses[name][i][j].weight(0), dtype=param.dtype))
+                                self.synapses[name][i][j].increase_positive_crosspoint_index(ap_index)
 
             elif grad.ndim == 1:
                 if pos.any():
                     for i in range(pos.shape[0]):
                         if pos[i]:
                             self.synapses[name][i].increase_bias_crosspoint_index()
-                            # param[i].copy_(torch.tensor(self.synapses[name][i].weight(0), dtype=param.dtype))
 
                 if neg.any():
                     for i in range(neg.shape[0]):
                         if neg[i]:
-                            self.synapses[name][i].increase_positive_crosspoint_index(0)
-                            # param[i].copy_(torch.tensor(self.synapses[name][i].weight(0), dtype=param.dtype))
+                            self.synapses[name][i].increase_positive_crosspoint_index(ap_index)
 
 
     @torch.no_grad()
@@ -79,14 +75,7 @@ class SynapticWeightController:
         for name, param in self.model.named_parameters():
             if not param.requires_grad:
                 continue
-            grad = param.grad
-            if grad is None:
-                continue
-
             st = self.synapses[name]
-            # if name == 'FC.0.weight':
-            #     print(f"Loading weights for {name}: weight: {st[0][0].weight(ap_index):.4f} | ap_index: {ap_index}")
-
             if param.ndim == 2:
                 for i in range(param.shape[0]):
                     for j in range(param.shape[1]):
