@@ -34,6 +34,7 @@ class SynapticWeightController:
 
     @torch.no_grad()
     def step(self, ap_index):
+        print("------------------Updating synaptic weights based on gradients for AP index: ", ap_index, "------------------")
         for name, param in self.model.named_parameters():
             if not param.requires_grad:
                 continue
