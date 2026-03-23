@@ -34,8 +34,6 @@ class SynapticWeightController:
 
     @torch.no_grad()
     def step(self, ap_index):
-        # print(f"-------Synapse Updating for: {ap_index}--------")
-
         for name, param in self.model.named_parameters():
             if not param.requires_grad:
                 continue
@@ -70,6 +68,7 @@ class SynapticWeightController:
                         for j in range(neg.shape[1]):
                             if neg[i, j]:
                                 self.synapses[name][i][j].increase_positive_crosspoint_index(ap_index)
+
             elif grad.ndim == 1:
                 if pos.any():
                     for i in range(pos.shape[0]):
@@ -80,16 +79,6 @@ class SynapticWeightController:
                         if neg[i]:
                             self.synapses[name][i].increase_positive_crosspoint_index(ap_index)
 
-            # if name == "FC.0.weight":
-            #     print("*****After update*****")
-            #     print(f"AP state: {self.synapses['FC.0.weight'][0][0].get_positive_crosspoint_state(ap_index)}")
-            #     if ap_index == 0:
-            #         print(f"P state: {self.synapses['FC.0.weight'][0][0].get_positive_crosspoint_state(1)}")
-            #     else:
-            #         print(f"P state: {self.synapses['FC.0.weight'][0][0].get_positive_crosspoint_state(0)}")
-            #     print(f"Bias state : {self.synapses['FC.0.weight'][0][0].get_bias_crosspoint_state()}")
-
-
 
     @torch.no_grad()
     def load_weights(self, ap_index):
@@ -97,8 +86,8 @@ class SynapticWeightController:
         for name, param in self.model.named_parameters():
             if not param.requires_grad:
                 continue
-            st = self.synapses[name]
 
+            st = self.synapses[name]
             if param.ndim == 2:
                 for i in range(param.shape[0]):
                     for j in range(param.shape[1]):
