@@ -11,7 +11,7 @@ class SynapticWeightController:
         self.model = model
 
         params = CrossPointParams(a=1.566e-8, b=3.5e-9, g_s=4.32e-7, g_threshold=9e-15, sigma_pulse_noise=0.0)
-        spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=9e9)
+        spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=9e7)
 
         self.synapses = {}
 
@@ -45,6 +45,12 @@ class SynapticWeightController:
             valid = torch.isfinite(grad)
             pos = (grad > 0) & valid
             neg = (grad < 0) & valid
+
+            if name == "FC.0.weight":
+                print(f"Updating indexes for {name} neuron [0,0] (AP index {ap_index}):")
+                print(f"Gradient: {grad[0, 0].item():.4f}")
+                print()
+
 
             if grad.ndim == 2:
                 if pos.any():
@@ -83,3 +89,8 @@ class SynapticWeightController:
             elif param.ndim == 1:
                 for i in range(param.shape[0]):
                     param[i].copy_(torch.tensor(st[i].weight(ap_index), dtype=param.dtype))
+
+
+            if name == "FC.0.weight":
+                print(f"Loaded weights for {name} neuron [0,0] (AP index {ap_index}):")
+                print(f"{param[0, 0].item():.4f}")

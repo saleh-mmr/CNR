@@ -5,8 +5,9 @@ class MagnetoresistiveCrosspoint(BaseCrosspoint):
     """
     Positive crosspoint with magnetoresistance.
     """
-    def conductance_p(self, state: CrosspointState):
-        return self.calculate_conductance_p(state) * 0.000000000001
+    def conductance_p(self, state: CrosspointState) -> float:
+        return self.calculate_conductance_p(state)
+        # return 0.0
 
 
 
