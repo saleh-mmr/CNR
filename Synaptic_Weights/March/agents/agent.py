@@ -70,7 +70,7 @@ class DQNAgent:
             # print(weight_matrix[0, 0].item())
             self.weight_controller.load_weights(ap_index)
             q_values = self.q_network(state)
-            print(f"Q-values for AP index {ap_index}: {q_values.cpu().numpy()}")
+            # print(f"Q-values for AP index {ap_index}: {q_values.cpu().numpy()}")
         return torch.argmax(q_values, dim=1).item()        # exploration
 
     # Learning step
