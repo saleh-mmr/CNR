@@ -54,9 +54,9 @@ class MountainCarEnv:
         mapped_action = 0 if action == 0 else 2
 
         next_state, reward, terminated, truncated, _ = self.env.step(mapped_action)
-        done = terminated or truncated
-
-        return self.transform_state(next_state), reward, done
+        if terminated:
+            reward = 100
+        return self.transform_state(next_state), reward, terminated, truncated
 
     def render(self):
         self.env.render()

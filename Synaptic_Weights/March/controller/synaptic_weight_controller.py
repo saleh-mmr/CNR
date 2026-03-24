@@ -10,8 +10,8 @@ class SynapticWeightController:
     def __init__(self, model):
         self.model = model
 
-        params = CrossPointParams(a=1.566e-8, b=3.5e-9, g_s=4.32e-7, g_threshold=9e-15, sigma_pulse_noise=0.0)
-        spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=9e9)
+        params = CrossPointParams(a=1.566e-8, b=3.5e-9, g_s=4.32e-7, g_threshold=9e15, sigma_pulse_noise=0.0)
+        spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=7e7)
 
         self.synapses = {}
 
@@ -34,7 +34,7 @@ class SynapticWeightController:
 
     @torch.no_grad()
     def step(self, ap_index):
-        print("------------------Updating synaptic weights based on gradients for AP index: ", ap_index, "------------------")
+        # print("------------------Updating synaptic weights based on gradients for AP index: ", ap_index, "------------------")
         for name, param in self.model.named_parameters():
             if not param.requires_grad:
                 continue
@@ -48,16 +48,16 @@ class SynapticWeightController:
             neg = (grad < 0) & valid
 
 
-            if name == "FC.0.weight":
-                print("BEFORE update for FC.0.weight neuron:")
-                print(f"Gradient: {grad[0, 0].item():.4f}")
-                print(f"AP Positive Crosspoint {ap_index} index: {self.synapses[name][0][0].get_positive_crosspoint_state(ap_index)}")
-                if ap_index == 0:
-                    print(f"P Positive Crosspoint 1 index: {self.synapses[name][0][0].get_positive_crosspoint_state(1)}")
-                else:
-                    print(f"P Positive Crosspoint 0 index: {self.synapses[name][0][0].get_positive_crosspoint_state(0)}")
-                print(f"bias crosspoint index: {self.synapses[name][0][0].get_bias_crosspoint_state()}")
-                print("\n")
+            # if name == "FC.0.weight":
+            #     print("BEFORE update for FC.0.weight neuron:")
+            #     print(f"Gradient: {grad[0, 0].item():.4f}")
+            #     print(f"AP Positive Crosspoint {ap_index} index: {self.synapses[name][0][0].get_positive_crosspoint_state(ap_index)}")
+            #     if ap_index == 0:
+            #         print(f"P Positive Crosspoint 1 index: {self.synapses[name][0][0].get_positive_crosspoint_state(1)}")
+            #     else:
+            #         print(f"P Positive Crosspoint 0 index: {self.synapses[name][0][0].get_positive_crosspoint_state(0)}")
+            #     print(f"bias crosspoint index: {self.synapses[name][0][0].get_bias_crosspoint_state()}")
+            #     print("\n")
 
 
             if grad.ndim == 2:
@@ -81,16 +81,16 @@ class SynapticWeightController:
                         if neg[i]:
                             self.synapses[name][i].increase_positive_crosspoint_index(ap_index)
 
-            if name == "FC.0.weight":
-                print("After update for FC.0.weight neuron:")
-                print(f"Ap Positive Crosspoint {ap_index} index: {self.synapses[name][0][0].get_positive_crosspoint_state(ap_index)}")
-                if ap_index == 0:
-                    print(f"P Positive Crosspoint 1 index: {self.synapses[name][0][0].get_positive_crosspoint_state(1)}")
-                else:
-                    print(f"P Positive Crosspoint 0 index: {self.synapses[name][0][0].get_positive_crosspoint_state(0)}")
-                print(f"bias crosspoint index: {self.synapses[name][0][0].get_bias_crosspoint_state()}")
-                print("-------------------")
-                print("\n")
+            # if name == "FC.0.weight":
+            #     print("After update for FC.0.weight neuron:")
+            #     print(f"Ap Positive Crosspoint {ap_index} index: {self.synapses[name][0][0].get_positive_crosspoint_state(ap_index)}")
+            #     if ap_index == 0:
+            #         print(f"P Positive Crosspoint 1 index: {self.synapses[name][0][0].get_positive_crosspoint_state(1)}")
+            #     else:
+            #         print(f"P Positive Crosspoint 0 index: {self.synapses[name][0][0].get_positive_crosspoint_state(0)}")
+            #     print(f"bias crosspoint index: {self.synapses[name][0][0].get_bias_crosspoint_state()}")
+            #     print("-------------------")
+            #     print("\n")
 
     @torch.no_grad()
     def load_weights(self, ap_index):
@@ -110,6 +110,19 @@ class SynapticWeightController:
                 for i in range(param.shape[0]):
                     param[i].copy_(torch.tensor(st[i].weight(ap_index), dtype=param.dtype))
 
-            if name == "FC.0.weight":
-                print(f"Loaded weights for {name} neuron (AP index {ap_index}):")
-                print(f"{param[0, 0].item():.4f}")
+            # if name == "FC.0.weight":
+            #     print(f"In Controller Loaded Weights for ap_index: {ap_index} is {param[0, 0].item():.4f} ")
+            #     print(f"Ap Positive Crosspoint {ap_index} index: {self.synapses[name][0][0].get_positive_crosspoint_state(ap_index)}")
+            #     if ap_index == 0:
+            #         print(f"P Positive Crosspoint 1 index: {self.synapses[name][0][0].get_positive_crosspoint_state(1)}")
+            #     else:
+            #         print(f"P Positive Crosspoint 0 index: {self.synapses[name][0][0].get_positive_crosspoint_state(0)}")
+            #     print(f"bias crosspoint index: {self.synapses[name][0][0].get_bias_crosspoint_state()}")
+            #     print(f"G_ap : {self.synapses[name][0][0].get_positive_crosspoint_conductance_ap(ap_index):.9e}")
+            #     if ap_index == 0:
+            #         print(f"G_p : {self.synapses[name][0][0].get_positive_crosspoint_conductance_p(1):.9e}")
+            #     else:
+            #         print(f"G_p : {self.synapses[name][0][0].get_positive_crosspoint_conductance_p(0):.9e}")
+            #     print(f"G_bias : {self.synapses[name][0][0].get_bias_crosspoint_conductance():.9e}")
+            #     print("-------------------")
+            #     print("\n")

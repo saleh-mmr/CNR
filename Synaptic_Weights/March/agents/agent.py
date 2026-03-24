@@ -53,19 +53,9 @@ class DQNAgent:
 
         self.weight_controller = SynapticWeightController(self.q_network)
 
-
-        # Target Network
-        # self.learn_steps = 0
-        # self.target_update_freq = 1000  # example
-        # # Target Q-Network
-        # self.target_network = DQNNetwork(output_dim, input_dim).to(config.device)
-        # self.target_network.load_state_dict(self.q_network.state_dict())
-        # self.target_network.eval()
-        # for p in self.target_network.parameters():
-        #     p.requires_grad = False
-
     # Action Selection (epsilon-greedy)
-    def select_action(self, state, epsilon=None):
+    def select_action(self, state, ap_index, epsilon=None):
+
         if epsilon is None:
             epsilon = self.epsilon
 
@@ -76,8 +66,11 @@ class DQNAgent:
         # exploration
         state = torch.as_tensor(state, dtype=torch.float32, device=config.device).unsqueeze(0)
         with torch.no_grad():
+            # weight_matrix = self.q_network.state_dict()["FC.0.weight"]
+            # print(weight_matrix[0, 0].item())
+            self.weight_controller.load_weights(ap_index)
             q_values = self.q_network(state)
-
+            print(f"Q-values for AP index {ap_index}: {q_values.cpu().numpy()}")
         return torch.argmax(q_values, dim=1).item()        # exploration
 
     # Learning step
@@ -105,12 +98,6 @@ class DQNAgent:
             next_q[dones] = 0.0
         targets = rewards + self.discount * next_q
 
-        # Target Network
-        # with torch.no_grad():
-        #     next_q = self.target_network(next_states).max(dim=1, keepdim=True).values
-        #     next_q[dones] = 0.0
-        # targets = rewards + self.discount * next_q
-
         # compare current guess vs target (criterion is MSELoss)
         loss = self.criterion(predicted_q, targets)
 
@@ -121,11 +108,6 @@ class DQNAgent:
         loss.backward()
         self.weight_controller.step(ap_index)
 
-        # Target Network
-        # self.learn_steps += 1
-        # if self.learn_steps % self.target_update_freq == 0:
-        #     self.update_target_network()
-
         return loss.item()
 
     # Epsilon update using ε(t) = ε_min + (ε_max − ε_min) * exp(−λ * t)
@@ -135,7 +117,3 @@ class DQNAgent:
     # Model saving
     def save(self, path):
         torch.save(self.q_network.state_dict(), path)             # Stores parameters (weights) to a file
-
-    # Target Network
-    # def update_target_network(self):
-    #     self.target_network.load_state_dict(self.q_network.state_dict())
