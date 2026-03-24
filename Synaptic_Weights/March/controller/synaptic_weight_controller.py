@@ -100,7 +100,6 @@ class SynapticWeightController:
             grad = param.grad
             if grad is None:
                 continue
-
             st = self.synapses[name]
             if param.ndim == 2:
                 for i in range(param.shape[0]):

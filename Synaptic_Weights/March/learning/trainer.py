@@ -35,6 +35,8 @@ class Trainer:
     def train(self):
         self.warmup_replay_memory(20000)
         total_steps = 0
+        window_size = 5
+        best_so_far = -float("inf")
         total_rewards_in_episodes_cp = []
         total_rewards_in_episodes_mc = []
         window_size = 5
