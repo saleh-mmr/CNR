@@ -55,31 +55,33 @@ class Trainer:
             episode_reward_cp = 0
             episode_reward_mc = 0
             step_counter = 0                # Step counter inside episode
-            while not done_mc and step_counter<200:
+            while not done_cp and step_counter<200:
                 step_counter += 1
                 total_steps += 1
 
                 # ---- CartPole ----
-                # if not done_cp:
-                #     action_cp = self.agent.select_action(state_cp, ap_index=0)
-                #     # Step in the environment and get next state, reward, and done flag
-                #     next_state_cp, reward_cp, done_cp = self.cartpole_env.step(action_cp)
-                #     # Store experience in the corresponding replay memory
-                #     self.agent.cartpole_memory.store(state_cp, action_cp, next_state_cp, reward_cp, done_cp)
-                #     state_cp = next_state_cp
-                #     episode_reward_cp += reward_cp
-                #     self.agent.learn(self.batch_size, ap_index=0)
+                if not done_cp:
+                    action_cp = self.agent.select_action(state_cp, ap_index=0)
+                    # Step in the environment and get next state, reward, and done flag
+                    next_state_cp, reward_cp, done_cp = self.cartpole_env.step(action_cp)
+                    if step_counter == 199:
+                        done_cp = True
+                    # Store experience in the corresponding replay memory
+                    self.agent.cartpole_memory.store(state_cp, action_cp, next_state_cp, reward_cp, done_cp)
+                    state_cp = next_state_cp
+                    episode_reward_cp += reward_cp
+                    self.agent.learn(self.batch_size, ap_index=0)
 
                 # ---- My Cart Pole ----
-                if not done_mc:
-                    action_mc = self.agent.select_action(state_mc, ap_index=1)
-                    next_state_mc, reward_mc, done_mc = self.mountaincar_env.step(action_mc)
-                    if step_counter == 199 and not done_mc:
-                        done_mc = True
-                    self.agent.mountaincar_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
-                    state_mc = next_state_mc
-                    episode_reward_mc += reward_mc
-                    self.agent.learn(self.batch_size, ap_index=1)
+                # if not done_mc:
+                #     action_mc = self.agent.select_action(state_mc, ap_index=1)
+                #     next_state_mc, reward_mc, done_mc = self.mountaincar_env.step(action_mc)
+                #     if step_counter == 199 and not done_mc:
+                #         done_mc = True
+                #     self.agent.mountaincar_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
+                #     state_mc = next_state_mc
+                #     episode_reward_mc += reward_mc
+                #     self.agent.learn(self.batch_size, ap_index=1)
 
             total_rewards_in_episodes_cp.append(episode_reward_cp)
             total_rewards_in_episodes_mc.append(episode_reward_mc)
@@ -96,17 +98,17 @@ class Trainer:
             )
 
             # SAVE BEST MODEL For CP based on recent average reward
-            # if len(total_rewards_in_episodes_cp) >= window_size:
-            #     recent_avg = np.mean(total_rewards_in_episodes_cp[-window_size:])
-            #     if recent_avg >= best_so_far_cp:
-            #         best_so_far_cp = recent_avg
-            #         model_path = f"CP_best_model_seed_{self.seed}.pth"
-            #         self.agent.weight_controller.load_weights(0)
-            #         torch.save(
-            #             self.agent.q_network.state_dict(),
-            #             model_path
-            #         )
-            #         print(f"Cartpole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
+            if len(total_rewards_in_episodes_cp) >= window_size:
+                recent_avg = np.mean(total_rewards_in_episodes_cp[-window_size:])
+                if recent_avg >= best_so_far_cp:
+                    best_so_far_cp = recent_avg
+                    model_path = f"CP_best_model_seed_{self.seed}.pth"
+                    self.agent.weight_controller.load_weights(0)
+                    torch.save(
+                        self.agent.q_network.state_dict(),
+                        model_path
+                    )
+                    print(f"Cartpole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
 
 
             # # SAVE BEST MODEL For MC based on recent average reward
