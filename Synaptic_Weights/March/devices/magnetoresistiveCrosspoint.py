@@ -8,11 +8,11 @@ class MagnetoresistiveCrosspoint(BaseCrosspoint):
     def conductance_p(self, state: CrosspointState) -> float:
         # return self.calculate_conductance_p(state)
         return 0.0
+
+
     def conductance_ap(self, state: CrosspointState) -> float:
         g_p = self.calculate_conductance_p(state)
-        return g_p
-        # g_threshold = self.params.g_threshold
-        # if g_p <= g_threshold:
-        #     return float(g_p)
-        # g_s = self.params.g_s
+        g_s = self.params.g_s
+        scale = 3e-10
+        return float(state.get_state() * scale)
         # return float(g_p * (1.0 + (g_p / g_s) ** (3.0 / 4.0)))

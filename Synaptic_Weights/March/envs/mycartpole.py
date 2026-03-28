@@ -4,13 +4,24 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import gymnasium as gym
 from gymnasium.wrappers import TimeLimit
 
+# Add parent directory to path if necessary
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-class CartPoleEnv:
+
+class MyCartPoleEnv:
     def __init__(self, render_mode=None, seed=None):
+        # Initialize the standard environment
         self.env = TimeLimit(
             gym.make("CartPole-v1", render_mode=render_mode),
             max_episode_steps=500
         )
+
+        # Access the internal physics parameters
+        # Default values: length=0.5, masscart=1.0, masspole=0.1
+        unwrapped = self.env.unwrapped
+        unwrapped.length = 0.7      # Increase pole length - defaults is 0.5
+        unwrapped.masspole = 0.2   # Increase pole mass -  defaults is 0.1
+
         # Set seeds for reproducibility
         if seed is not None:
             self.env.reset(seed=seed)
@@ -25,11 +36,13 @@ class CartPoleEnv:
         return self.env.observation_space
 
     def reset(self):
+        # Gymnasium reset returns (state, info)
         state, _ = self.env.reset()
         return state
 
     def step(self, action):
         next_state, reward, terminated, truncated, _ = self.env.step(action)
+        # Combine flags for a simpler 'done' signal
         done = terminated or truncated
         return next_state, reward, done
 

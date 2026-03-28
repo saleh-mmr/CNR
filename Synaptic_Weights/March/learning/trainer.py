@@ -4,6 +4,7 @@ import torch
 from agents.agent import DQNAgent
 from envs.cartpole import CartPoleEnv
 from envs.mountaincar import MountainCarEnv
+from envs.mycartpole import MyCartPoleEnv
 
 
 class Trainer:
@@ -12,14 +13,15 @@ class Trainer:
         self.discount_factor = hyperparams["discount_factor"]           # Bellman γ (future reward weight)
         self.batch_size = hyperparams["batch_size"]                     # Number of experiences per learning step
         self.max_episodes = hyperparams["max_episodes"]                 # number of episode for training or testing
-        self.max_steps = hyperparams["max_steps"]                       # Episode timeout
         self.epsilon_max = hyperparams["epsilon_max"]                   # Initial exploration rate
         self.epsilon_min = hyperparams["epsilon_min"]                   # Minimum allowed epsilon
         self.epsilon_decay = hyperparams["epsilon_decay"]               # Exploration decay speed
         self.memory_capacity = hyperparams["memory_capacity"]           # Replay buffer size
         self.seed = seed
         self.cartpole_env = CartPoleEnv(render_mode=None, seed=seed)
-        self.mountaincar_env = MountainCarEnv(render_mode=None, seed=seed)
+        # self.mountaincar_env = MountainCarEnv(render_mode=None, seed=seed)
+        self.mountaincar_env = MyCartPoleEnv(render_mode=None, seed=seed)
+
 
 
         self.agent = DQNAgent(
@@ -33,7 +35,7 @@ class Trainer:
         )
 
     def train(self):
-        self.warmup_replay_memory(20000)
+        self.warmup_replay_memory(100)
         total_steps = 0
         total_rewards_in_episodes_cp = []
         total_rewards_in_episodes_mc = []
@@ -48,39 +50,36 @@ class Trainer:
             state_mc = self.mountaincar_env.reset()
             # Flags to track episode completion for each environment
             done_cp = False
-            terminated_mc = False
-            truncated_mc = False
+            done_mc = False
             # Total reward accumulated in this episode each environment (for logging)
             episode_reward_cp = 0
             episode_reward_mc = 0
             step_counter = 0                # Step counter inside episode
-            # while not (done_cp and (terminated_mc or truncated_mc)):
-            while not done_cp:
+            while not done_mc and step_counter<200:
                 step_counter += 1
                 total_steps += 1
 
                 # ---- CartPole ----
-                if not done_cp:
-                    action_cp = self.agent.select_action(state_cp, ap_index=0)
-                    # Step in the environment and get next state, reward, and done flag
-                    next_state_cp, reward_cp, done_cp = self.cartpole_env.step(action_cp)
-                    # Store experience in the corresponding replay memory
-                    self.agent.cartpole_memory.store(state_cp, action_cp, next_state_cp, reward_cp, done_cp)
-                    state_cp = next_state_cp
-                    episode_reward_cp += reward_cp
-                    self.agent.learn(self.batch_size, ap_index=0)
-
-                # ---- MountainCar ----
-                # if not (terminated_mc or truncated_mc):
-                #     action_mc = self.agent.select_action(state_mc, ap_index=1)
+                # if not done_cp:
+                #     action_cp = self.agent.select_action(state_cp, ap_index=0)
                 #     # Step in the environment and get next state, reward, and done flag
-                #     next_state_mc, reward_mc, terminated_mc, truncated_mc = self.mountaincar_env.step(action_mc)
-                #     done_mc = terminated_mc
+                #     next_state_cp, reward_cp, done_cp = self.cartpole_env.step(action_cp)
                 #     # Store experience in the corresponding replay memory
-                #     self.agent.mountaincar_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
-                #     state_mc = next_state_mc
-                #     episode_reward_mc += reward_mc
-                    # self.agent.learn(self.batch_size, ap_index=1)
+                #     self.agent.cartpole_memory.store(state_cp, action_cp, next_state_cp, reward_cp, done_cp)
+                #     state_cp = next_state_cp
+                #     episode_reward_cp += reward_cp
+                #     self.agent.learn(self.batch_size, ap_index=0)
+
+                # ---- My Cart Pole ----
+                if not done_mc:
+                    action_mc = self.agent.select_action(state_mc, ap_index=1)
+                    next_state_mc, reward_mc, done_mc = self.mountaincar_env.step(action_mc)
+                    if step_counter == 199 and not done_mc:
+                        done_mc = True
+                    self.agent.mountaincar_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
+                    state_mc = next_state_mc
+                    episode_reward_mc += reward_mc
+                    self.agent.learn(self.batch_size, ap_index=1)
 
             total_rewards_in_episodes_cp.append(episode_reward_cp)
             total_rewards_in_episodes_mc.append(episode_reward_mc)
@@ -92,22 +91,22 @@ class Trainer:
                 f"Episode: {episode}, "
                 f"Steps: {step_counter}, "
                 f"CP_reward: {episode_reward_cp:.2f}, "
-                f"MC_reward: {episode_reward_mc:.2f}, "
+                f"MC\_reward: {episode_reward_mc:.2f}, "
                 f"Epsilon: {self.agent.epsilon:.2f}"
             )
 
             # SAVE BEST MODEL For CP based on recent average reward
-            if len(total_rewards_in_episodes_cp) >= window_size:
-                recent_avg = np.mean(total_rewards_in_episodes_cp[-window_size:])
-                if recent_avg >= best_so_far_cp:
-                    best_so_far_cp = recent_avg
-                    model_path = f"CP_best_model_seed_{self.seed}.pth"
-                    self.agent.weight_controller.load_weights(0)
-                    torch.save(
-                        self.agent.q_network.state_dict(),
-                        model_path
-                    )
-                    print(f"Cartpole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
+            # if len(total_rewards_in_episodes_cp) >= window_size:
+            #     recent_avg = np.mean(total_rewards_in_episodes_cp[-window_size:])
+            #     if recent_avg >= best_so_far_cp:
+            #         best_so_far_cp = recent_avg
+            #         model_path = f"CP_best_model_seed_{self.seed}.pth"
+            #         self.agent.weight_controller.load_weights(0)
+            #         torch.save(
+            #             self.agent.q_network.state_dict(),
+            #             model_path
+            #         )
+            #         print(f"Cartpole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
 
 
             # # SAVE BEST MODEL For MC based on recent average reward
@@ -121,7 +120,7 @@ class Trainer:
             #             self.agent.q_network.state_dict(),
             #             model_path
             #         )
-            #         print(f"MountainCar New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
+            #         print(f"My Cart Pole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
 
 
         return total_rewards_in_episodes_cp, total_rewards_in_episodes_mc
@@ -172,12 +171,8 @@ class Trainer:
             action_cp = self.cartpole_env.action_space.sample()
             action_mc = self.mountaincar_env.action_space.sample()
             next_state_cp, reward_cp, done_cp = self.cartpole_env.step(action_cp)
-            next_state_mc, reward_mc, terminated_mc, truncated_mc = self.mountaincar_env.step(action_mc)
-            done_mc = terminated_mc
+            next_state_mc, reward_mc, done_mc = self.mountaincar_env.step(action_mc)
             self.agent.cartpole_memory.store(state_cp, action_cp, next_state_cp, reward_cp, done_cp)
             self.agent.mountaincar_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
             state_cp = self.cartpole_env.reset() if done_cp else next_state_cp
-            if terminated_mc or truncated_mc:
-                state_mc = self.mountaincar_env.reset()
-            else:
-                state_mc = next_state_mc
+            state_mc = self.mountaincar_env.reset() if done_mc else next_state_mc
