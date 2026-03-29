@@ -13,7 +13,7 @@ class MyCartPoleEnv:
         # Initialize the standard environment
         self.env = TimeLimit(
             gym.make("CartPole-v1", render_mode=render_mode),
-            max_episode_steps=500
+            max_episode_steps=100
         )
 
         # Access the internal physics parameters

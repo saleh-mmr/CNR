@@ -73,6 +73,16 @@ class DQNAgent:
             # print(f"Q-values for AP index {ap_index}: {q_values.cpu().numpy()}")
         return torch.argmax(q_values, dim=1).item()        # exploration
 
+
+
+    def select_action_test(self, state):
+        # exploration
+        state = torch.as_tensor(state, dtype=torch.float32, device=config.device).unsqueeze(0)
+        with torch.no_grad():
+            q_values = self.q_network(state)
+        return torch.argmax(q_values, dim=1).item()        # exploration
+
+
     # Learning step
     def learn(self, batch_size, ap_index):
         if len(self.replay_memory[ap_index]) < batch_size:                # Not enough future in replay => Skip learning
