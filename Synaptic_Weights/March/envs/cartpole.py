@@ -9,7 +9,7 @@ class CartPoleEnv:
     def __init__(self, render_mode=None, seed=None):
         self.env = TimeLimit(
             gym.make("CartPole-v1", render_mode=render_mode),
-            max_episode_steps=500
+            max_episode_steps=100
         )
         # Set seeds for reproducibility
         if seed is not None:

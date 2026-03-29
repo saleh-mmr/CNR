@@ -27,5 +27,5 @@ class BaseCrosspoint:
         # b = float(self.params.b)
         # conductance_without_noise = float(a * np.log10(index) + b)
         # return float(conductance_without_noise)
-        scale = 3e-10
+        scale = 0.01
         return float(state.get_state() * scale)

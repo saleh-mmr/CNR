@@ -10,7 +10,7 @@ from learning.trainer import Trainer
 hyperparams = {
     "discount_factor": 0.99,
     "batch_size": 100,
-    "max_episodes": 1500,
+    "max_episodes": 350,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
     "epsilon_decay": 0.0003,
@@ -23,7 +23,7 @@ train_mode = True
 if __name__ == "__main__":
 
     if train_mode:
-        seeds = [603]
+        seeds = [49]
         rewards_cp_dic = {}
         rewards_mc_dic = {}
         for seed in seeds:
@@ -72,4 +72,4 @@ if __name__ == "__main__":
 
     else:
         trainer = Trainer(hyperparams, seed=None)
-        trainer.test("best_model_seed_49.pth")
+        trainer.test("12-MC_best_model_seed_49.pth")
