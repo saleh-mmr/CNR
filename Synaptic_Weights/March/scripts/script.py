@@ -9,11 +9,11 @@ from learning.trainer import Trainer
 
 hyperparams = {
     "discount_factor": 0.99,
-    "batch_size": 100,
-    "max_episodes": 3000,
+    "batch_size": 5,
+    "max_episodes": 30,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
-    "epsilon_decay": 0.0003,
+    "epsilon_decay": 0.0008,
     "memory_capacity": 100000,
 }
 
@@ -72,4 +72,4 @@ if __name__ == "__main__":
 
     else:
         trainer = Trainer(hyperparams, seed=None)
-        trainer.test("12-MC_best_model_seed_49.pth")
+        trainer.test("MC_best_model_seed_49_7803.pth")

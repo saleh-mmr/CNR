@@ -22,10 +22,8 @@ class BaseCrosspoint:
 
     # Following Method Compute noisy G_p for Current State **DOES NOT UPDATE STATE**
     def calculate_conductance_p(self, state):
-        # index = state.get_state()
-        # a = float(self.params.a)
-        # b = float(self.params.b)
-        # conductance_without_noise = float(a * np.log10(index) + b)
-        # return float(conductance_without_noise)
-        scale = 0.01
-        return float(state.get_state() * scale)
+        index = state.get_state()
+        a = float(self.params.a)
+        b = float(self.params.b)
+        conductance_without_noise = float(a * np.log10(index) + b)
+        return float(conductance_without_noise)
