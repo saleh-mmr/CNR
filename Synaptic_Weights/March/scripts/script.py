@@ -72,4 +72,4 @@ if __name__ == "__main__":
 
     else:
         trainer = Trainer(hyperparams, seed=None)
-        trainer.test("12-MC_best_model_seed_49.pth")
+        trainer.test("MC_best_model_seed_49_7803.pth")

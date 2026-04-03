@@ -49,7 +49,7 @@ class DQNAgent:
         self.q_network = DQNNetwork(output_dim, input_dim).to(config.device)
 
         # use a squared-error loss just to get gradients,
-        self.criterion = nn.MSELoss(reduction='none')
+        self.criterion = nn.MSELoss()
 
         self.weight_controller = SynapticWeightController(self.q_network)
 
@@ -110,49 +110,13 @@ class DQNAgent:
 
         # compare current guess vs target (criterion is MSELoss)
         loss = self.criterion(predicted_q, targets)
-        grads = []
 
-        for i in range(5):
-            loss_i = self.criterion(predicted_q[i], targets[i]).mean()
-
-            grad = torch.autograd.grad(
-                loss_i,
-                self.q_network.FC[0].weight,
-                retain_graph=True
-            )[0]
-
-            grads.append(grad[0, 0].item())
-
-        print(grads)
-
-
-
-        for i in range(loss.shape[0]):
-            self.q_network.zero_grad()
-
-            # if loss has extra dims (e.g. [100, 1]), make it scalar
-            sample_loss = loss[i].mean()
-
-            sample_loss.backward(retain_graph=True)
-
-            # print(f"\n--- Sample {i} ---")
-            # for name, param in self.q_network.named_parameters():
-            #     if param.grad is not None:
-            #         print(f"{name} grad:\n{param.grad}")
-
-
-
-
-        # -------- TRAINING STEP --------
+        # Clear old gradients
         self.q_network.zero_grad()
-
-        # now reduce properly
-        final_loss = loss.mean()  # <-- IMPORTANT
-
-        final_loss.backward()
-
+        loss.backward()
         self.weight_controller.step(ap_index)
-        return None
+
+        return loss.item()
 
     # Epsilon update using ε(t) = ε_min + (ε_max − ε_min) * exp(−λ * t)
     def update_epsilon(self, steps_done):
