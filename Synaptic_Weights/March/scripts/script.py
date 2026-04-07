@@ -13,7 +13,7 @@ hyperparams = {
     "max_episodes": 1000,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
-    "epsilon_decay": 0.0001,
+    "epsilon_decay": 0.0005,
     "memory_capacity": 100000,
 }
 

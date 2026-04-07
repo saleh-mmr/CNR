@@ -110,19 +110,19 @@ class SynapticWeightController:
                 for i in range(param.shape[0]):
                     param[i].copy_(torch.tensor(st[i].weight(ap_index), dtype=param.dtype))
 
-            if name == "FC.0.weight":
-                print(f"In Controller Loaded Weights for ap_index: {ap_index} is {param[0, 0].item():.4f} ")
-                print(f"Ap Positive Crosspoint {ap_index} index: {self.synapses[name][0][0].get_positive_crosspoint_state(ap_index)}")
-                if ap_index == 0:
-                    print(f"P Positive Crosspoint 1 index: {self.synapses[name][0][0].get_positive_crosspoint_state(1)}")
-                else:
-                    print(f"P Positive Crosspoint 0 index: {self.synapses[name][0][0].get_positive_crosspoint_state(0)}")
-                print(f"bias crosspoint index: {self.synapses[name][0][0].get_bias_crosspoint_state()}")
-                print(f"G_ap : {self.synapses[name][0][0].get_positive_crosspoint_conductance_ap(ap_index):.9e}")
-                if ap_index == 0:
-                    print(f"G_p : {self.synapses[name][0][0].get_positive_crosspoint_conductance_p(1):.9e}")
-                else:
-                    print(f"G_p : {self.synapses[name][0][0].get_positive_crosspoint_conductance_p(0):.9e}")
-                print(f"G_bias : {self.synapses[name][0][0].get_bias_crosspoint_conductance():.9e}")
-                print("-------------------")
-                print("\n")
+            # if name == "FC.0.weight":
+            #     print(f"In Controller Loaded Weights for ap_index: {ap_index} is {param[0, 0].item():.4f} ")
+            #     print(f"Ap Positive Crosspoint {ap_index} index: {self.synapses[name][0][0].get_positive_crosspoint_state(ap_index)}")
+            #     if ap_index == 0:
+            #         print(f"P Positive Crosspoint 1 index: {self.synapses[name][0][0].get_positive_crosspoint_state(1)}")
+            #     else:
+            #         print(f"P Positive Crosspoint 0 index: {self.synapses[name][0][0].get_positive_crosspoint_state(0)}")
+            #     print(f"bias crosspoint index: {self.synapses[name][0][0].get_bias_crosspoint_state()}")
+            #     print(f"G_ap : {self.synapses[name][0][0].get_positive_crosspoint_conductance_ap(ap_index):.9e}")
+            #     if ap_index == 0:
+            #         print(f"G_p : {self.synapses[name][0][0].get_positive_crosspoint_conductance_p(1):.9e}")
+            #     else:
+            #         print(f"G_p : {self.synapses[name][0][0].get_positive_crosspoint_conductance_p(0):.9e}")
+            #     print(f"G_bias : {self.synapses[name][0][0].get_bias_crosspoint_conductance():.9e}")
+            #     print("-------------------")
+            #     print("\n")
