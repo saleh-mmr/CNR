@@ -55,7 +55,7 @@ class Trainer:
             episode_reward_cp = 0
             episode_reward_mc = 0
             step_counter = 0                # Step counter inside episode
-            while not done_mc and not done_cp:  # Limit steps to 100 per episode or until both environments are done
+            while not done_cp:  # Limit steps to 100 per episode or until both environments are done
                 step_counter += 1
                 total_steps += 1
 
@@ -69,13 +69,13 @@ class Trainer:
                     self.agent.learn(self.batch_size, ap_index=0)
 
                 # ---- My Cart Pole ----
-                if not done_mc:
-                    action_mc = self.agent.select_action(state_mc, ap_index=1)
-                    next_state_mc, reward_mc, done_mc = self.mountaincar_env.step(action_mc)
-                    self.agent.mountaincar_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
-                    state_mc = next_state_mc
-                    episode_reward_mc += reward_mc
-                    self.agent.learn(self.batch_size, ap_index=1)
+                # if not done_mc:
+                #     action_mc = self.agent.select_action(state_mc, ap_index=1)
+                #     next_state_mc, reward_mc, done_mc = self.mountaincar_env.step(action_mc)
+                #     self.agent.mountaincar_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
+                #     state_mc = next_state_mc
+                #     episode_reward_mc += reward_mc
+                #     self.agent.learn(self.batch_size, ap_index=1)
 
             total_rewards_in_episodes_cp.append(episode_reward_cp)
             total_rewards_in_episodes_mc.append(episode_reward_mc)

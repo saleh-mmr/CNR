@@ -9,11 +9,11 @@ from learning.trainer import Trainer
 
 hyperparams = {
     "discount_factor": 0.99,
-    "batch_size": 100,
+    "batch_size": 199,
     "max_episodes": 1000,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
-    "epsilon_decay": 0.0001,
+    "epsilon_decay": 0.0005,
     "memory_capacity": 100000,
 }
 
