@@ -17,7 +17,7 @@ hyperparams = {
     "memory_capacity": 100000,
 }
 
-train_mode = True
+train_mode = False
 
 
 if __name__ == "__main__":
@@ -72,4 +72,4 @@ if __name__ == "__main__":
 
     else:
         trainer = Trainer(hyperparams, seed=None)
-        trainer.test("MC_best_model_seed_49_7803.pth")
+        trainer.test("MC_best_model_seed_49_5083.pth")

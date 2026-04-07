@@ -39,7 +39,7 @@ class Trainer:
         total_steps = 0
         total_rewards_in_episodes_cp = []
         total_rewards_in_episodes_mc = []
-        window_size = 20
+        window_size = 3
         best_so_far_cp = -float("inf")
         best_so_far_mc = -float("inf")
 
@@ -55,7 +55,7 @@ class Trainer:
             episode_reward_cp = 0
             episode_reward_mc = 0
             step_counter = 0                # Step counter inside episode
-            while not done_cp:  # Limit steps to 100 per episode or until both environments are done
+            while not done_cp and not done_mc:  # Limit steps to 100 per episode or until both environments are done
                 step_counter += 1
                 total_steps += 1
 
@@ -69,13 +69,13 @@ class Trainer:
                     self.agent.learn(self.batch_size, ap_index=0)
 
                 # ---- My Cart Pole ----
-                # if not done_mc:
-                #     action_mc = self.agent.select_action(state_mc, ap_index=1)
-                #     next_state_mc, reward_mc, done_mc = self.mountaincar_env.step(action_mc)
-                #     self.agent.mountaincar_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
-                #     state_mc = next_state_mc
-                #     episode_reward_mc += reward_mc
-                #     self.agent.learn(self.batch_size, ap_index=1)
+                if not done_mc:
+                    action_mc = self.agent.select_action(state_mc, ap_index=1)
+                    next_state_mc, reward_mc, done_mc = self.mountaincar_env.step(action_mc)
+                    self.agent.mountaincar_memory.store(state_mc, action_mc, next_state_mc, reward_mc, done_mc)
+                    state_mc = next_state_mc
+                    episode_reward_mc += reward_mc
+                    self.agent.learn(self.batch_size, ap_index=1)
 
             total_rewards_in_episodes_cp.append(episode_reward_cp)
             total_rewards_in_episodes_mc.append(episode_reward_mc)
@@ -102,21 +102,21 @@ class Trainer:
                         self.agent.q_network.state_dict(),
                         model_path
                     )
-                    print(f"Cartpole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
+                    print(f"1 Cartpole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
 
 
             # # SAVE BEST MODEL For MC based on recent average reward
-            #if len(total_rewards_in_episodes_mc) >= window_size:
-            #    recent_avg = np.mean(total_rewards_in_episodes_mc[-window_size:])
-            #    if recent_avg >= best_so_far_mc:
-            #        best_so_far_mc = recent_avg
-            #        model_path = f"MC_best_model_seed_{self.seed}.pth"
-            #        self.agent.weight_controller.load_weights(1)
-            #        torch.save(
-            #            self.agent.q_network.state_dict(),
-            #            model_path
-            #        )
-            #        print(f"My Cart Pole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
+            if len(total_rewards_in_episodes_mc) >= window_size:
+               recent_avg = np.mean(total_rewards_in_episodes_mc[-window_size:])
+               if recent_avg >= best_so_far_mc:
+                   best_so_far_mc = recent_avg
+                   model_path = f"MC_best_model_seed_{self.seed}_{total_steps}.pth"
+                   self.agent.weight_controller.load_weights(1)
+                   torch.save(
+                       self.agent.q_network.state_dict(),
+                       model_path
+                   )
+                   print(f"2 My Cart Pole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
 
 
         return total_rewards_in_episodes_cp, total_rewards_in_episodes_mc

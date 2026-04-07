@@ -9,3 +9,6 @@ class NonMagnetoresistiveCrosspoint(BaseCrosspoint):
         # return self.calculate_conductance_p(state)
         scale = 0.006
         return float(state.get_state() * scale)
+        # scale = 14
+        # index = state.get_state()
+        # return float(scale * np.log10(index))
