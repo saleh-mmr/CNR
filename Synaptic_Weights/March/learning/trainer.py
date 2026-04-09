@@ -92,31 +92,31 @@ class Trainer:
             )
 
             # SAVE BEST MODEL For CP based on recent average reward
-            if len(total_rewards_in_episodes_cp) >= window_size:
-                recent_avg = np.mean(total_rewards_in_episodes_cp[-window_size:])
-                if recent_avg >= best_so_far_cp:
-                    best_so_far_cp = recent_avg
-                    model_path = f"CP_best_model_seed_{self.seed}_{total_steps}.pth"
-                    self.agent.weight_controller.load_weights(0)
-                    torch.save(
-                        self.agent.q_network.state_dict(),
-                        model_path
-                    )
-                    print(f"1 Cartpole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
+            # if len(total_rewards_in_episodes_cp) >= window_size:
+            #     recent_avg = np.mean(total_rewards_in_episodes_cp[-window_size:])
+            #     if recent_avg >= best_so_far_cp:
+            #         best_so_far_cp = recent_avg
+            #         model_path = f"CP_best_model_seed_{self.seed}_{total_steps}.pth"
+            #         self.agent.weight_controller.load_weights(0)
+            #         torch.save(
+            #             self.agent.q_network.state_dict(),
+            #             model_path
+            #         )
+            #         print(f"1 Cartpole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
 
 
-            # # SAVE BEST MODEL For MC based on recent average reward
-            if len(total_rewards_in_episodes_mc) >= window_size:
-               recent_avg = np.mean(total_rewards_in_episodes_mc[-window_size:])
-               if recent_avg >= best_so_far_mc:
-                   best_so_far_mc = recent_avg
-                   model_path = f"MC_best_model_seed_{self.seed}_{total_steps}.pth"
-                   self.agent.weight_controller.load_weights(1)
-                   torch.save(
-                       self.agent.q_network.state_dict(),
-                       model_path
-                   )
-                   print(f"2 My Cart Pole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
+            # SAVE BEST MODEL For MC based on recent average reward
+            # if len(total_rewards_in_episodes_mc) >= window_size:
+            #    recent_avg = np.mean(total_rewards_in_episodes_mc[-window_size:])
+            #    if recent_avg >= best_so_far_mc:
+            #        best_so_far_mc = recent_avg
+            #        model_path = f"MC_best_model_seed_{self.seed}_{total_steps}.pth"
+            #        self.agent.weight_controller.load_weights(1)
+            #        torch.save(
+            #            self.agent.q_network.state_dict(),
+            #            model_path
+            #        )
+            #        print(f"2 My Cart Pole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
 
 
         return total_rewards_in_episodes_cp, total_rewards_in_episodes_mc

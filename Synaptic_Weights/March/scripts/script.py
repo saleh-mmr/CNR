@@ -17,7 +17,7 @@ hyperparams = {
     "memory_capacity": 100000,
 }
 
-train_mode = False
+train_mode = True
 
 
 if __name__ == "__main__":
