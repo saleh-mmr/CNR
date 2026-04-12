@@ -7,8 +7,10 @@ from envs.mountaincar import MountainCarEnv
 from envs.mycartpole import MyCartPoleEnv
 import pandas as pd
 
+
+
 class Trainer:
-    def __init__(self, hyperparams, seed):
+    def __init__(self, hyperparams, seed, folder):
         # Load parameters
         self.discount_factor = hyperparams["discount_factor"]           # Bellman γ (future reward weight)
         self.batch_size = hyperparams["batch_size"]                     # Number of experiences per learning step
@@ -20,13 +22,16 @@ class Trainer:
         self.warmup_size = hyperparams["warmup_size"]                   # Number of random steps to fill replay memory before learning starts
         self.network_size = hyperparams["network_size"]                 # Number of neurons in hidden layers
         self.max_steps_per_episode = hyperparams["max_steps_per_episode"] # Max steps per episode to prevent infinite loops
-        self.g_ap = hyperparams["G_ap"]                                  # Coefficient for Conductance ap
-        self.g_p = hyperparams["G_p"]                                    # Coefficient for Conductance p
-        self.g_bias = hyperparams["G_bias"]                              # Coefficient for Conductance bias
+        self.g_ap = hyperparams["g_ap"]                                  # Coefficient for Conductance ap
+        self.g_p = hyperparams["g_p"]                                    # Coefficient for Conductance p
+        self.g_bias = hyperparams["g_bias"]                              # Coefficient for Conductance bias
+        self.CP_pole_length_2 = hyperparams["CP_pole_length_2"]  # Pole length for My Cart Pole environment
+        self.CP_cart_mass_2 = hyperparams["CP_cart_mass_2"]  # Cart mass for My Cart Pole environment
         self.seed = seed
+        self.folder = folder
         self.cartpole_env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
         # self.mountaincar_env = MountainCarEnv(render_mode=None, seed=seed)
-        self.mountaincar_env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
+        self.mountaincar_env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, cart_mass=self.CP_cart_mass_2)
 
 
 
@@ -50,12 +55,13 @@ class Trainer:
         total_rewards_in_episodes_cp = []
         total_rewards_in_episodes_mc = []
         window_size = 1
+
+        # ---------Logging setup---------
+
         training_logs = pd.DataFrame(columns=["Episode", "Reward_CP_0.5", "Reward_CP_0.7", "Epsilon"])
-        details_logs = pd.DataFrame(columns=["batch_size", "epsilon_decay", "memory_size", "network_size", "warmup_size", "seed", "max_episodes", "max_steps_per_episode", "discount_factor", "G_ap_coefficient", "G_p_coefficient", "G_bias_coefficient"])
-        details_logs.loc[len(details_logs)] = [self.batch_size, self.epsilon_decay, self.memory_capacity, self.network_size, self.warmup_size, self.seed, self.max_episodes, self.max_steps_per_episode, self.discount_factor, self.g_ap, self.g_p, self.g_bias]
-        details_logs.to_csv(f"details_log.csv", index=False)
-
-
+        details_logs = pd.DataFrame(columns=["batch_size", "epsilon_decay", "memory_size", "network_size", "warmup_size", "seed", "max_episodes", "max_steps_per_episode", "discount_factor", "G_ap_coefficient", "G_p_coefficient", "G_bias_coefficient", "CP_pole_length_2", "CP_cart_mass_2"])
+        details_logs.loc[len(details_logs)] = [self.batch_size, self.epsilon_decay, self.memory_capacity, self.network_size, self.warmup_size, self.seed, self.max_episodes, self.max_steps_per_episode, self.discount_factor, self.g_ap, self.g_p, self.g_bias, self.CP_pole_length_2, self.CP_cart_mass_2]
+        details_logs.to_csv(self.folder / "details_log.csv", index=False)
 
         for episode in range(1, self.max_episodes + 1):
             # Initial observation from environment
@@ -113,7 +119,7 @@ class Trainer:
                     self.agent.weight_controller.load_weights(0)
                     torch.save(
                         self.agent.q_network.state_dict(),
-                        model_path
+                        self.folder /model_path
                     )
                     print(f"1 Cartpole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
 
@@ -126,12 +132,12 @@ class Trainer:
                    self.agent.weight_controller.load_weights(1)
                    torch.save(
                        self.agent.q_network.state_dict(),
-                       model_path
+                       self.folder /model_path
                    )
                    print(f"2 My Cart Pole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
 
 
-        training_logs.to_csv(f"training_log.csv", index=False)
+        training_logs.to_csv(self.folder /"training_log.csv", index=False)
         return total_rewards_in_episodes_cp, total_rewards_in_episodes_mc
 
 

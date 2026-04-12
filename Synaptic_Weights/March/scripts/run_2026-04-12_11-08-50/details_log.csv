@@ -1,0 +1,2 @@
+batch_size,epsilon_decay,memory_size,network_size,warmup_size,seed,max_episodes,max_steps_per_episode,discount_factor,G_ap_coefficient,G_p_coefficient,G_bias_coefficient,CP_pole_length_2,CP_cart_mass_2
+1000.0,0.0009,10000.0,40.0,2000.0,124.0,800.0,100.0,0.99,28.0,3.0,24.0,8.0,0.3

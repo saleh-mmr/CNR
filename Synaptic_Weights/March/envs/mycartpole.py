@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 class MyCartPoleEnv:
-    def __init__(self, render_mode=None, seed=None, max_steps=100):
+    def __init__(self, render_mode=None, seed=None, max_steps=100, pole_length=0.7, cart_mass=0.2):
         # Initialize the standard environment
         self.env = TimeLimit(
             gym.make("CartPole-v1", render_mode=render_mode),
@@ -17,10 +17,15 @@ class MyCartPoleEnv:
         )
 
         # Access the internal physics parameters
-        # Default values: length=0.5, masscart=1.0, masspole=0.1
         unwrapped = self.env.unwrapped
-        unwrapped.length = 0.7      # Increase pole length - defaults is 0.5
-        unwrapped.masspole = 0.2   # Increase pole mass -  defaults is 0.1
+        unwrapped.length = pole_length      # Increase pole length - defaults is 0.5
+        unwrapped.masspole = cart_mass   # Increase pole mass -  defaults is 0.1
+        unwrapped.length = pole_length
+        unwrapped.masspole = cart_mass
+
+        # recompute dependent values
+        unwrapped.total_mass = unwrapped.masspole + unwrapped.masscart
+        unwrapped.polemass_length = unwrapped.masspole * unwrapped.length
 
         # Set seeds for reproducibility
         if seed is not None:
