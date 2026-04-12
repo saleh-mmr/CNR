@@ -9,11 +9,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 class MyCartPoleEnv:
-    def __init__(self, render_mode=None, seed=None):
+    def __init__(self, render_mode=None, seed=None, max_steps=100):
         # Initialize the standard environment
         self.env = TimeLimit(
             gym.make("CartPole-v1", render_mode=render_mode),
-            max_episode_steps=100
+            max_episode_steps=max_steps
         )
 
         # Access the internal physics parameters

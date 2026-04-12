@@ -17,10 +17,16 @@ class Trainer:
         self.epsilon_min = hyperparams["epsilon_min"]                   # Minimum allowed epsilon
         self.epsilon_decay = hyperparams["epsilon_decay"]               # Exploration decay speed
         self.memory_capacity = hyperparams["memory_capacity"]           # Replay buffer size
+        self.warmup_size = hyperparams["warmup_size"]                   # Number of random steps to fill replay memory before learning starts
+        self.network_size = hyperparams["network_size"]                 # Number of neurons in hidden layers
+        self.max_steps_per_episode = hyperparams["max_steps_per_episode"] # Max steps per episode to prevent infinite loops
+        self.g_ap = hyperparams["G_ap"]                                  # Coefficient for Conductance ap
+        self.g_p = hyperparams["G_p"]                                    # Coefficient for Conductance p
+        self.g_bias = hyperparams["G_bias"]                              # Coefficient for Conductance bias
         self.seed = seed
-        self.cartpole_env = CartPoleEnv(render_mode=None, seed=seed)
+        self.cartpole_env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
         # self.mountaincar_env = MountainCarEnv(render_mode=None, seed=seed)
-        self.mountaincar_env = MyCartPoleEnv(render_mode=None, seed=seed)
+        self.mountaincar_env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
 
 
 
@@ -32,18 +38,22 @@ class Trainer:
             epsilon_decay=self.epsilon_decay,
             discount=self.discount_factor,
             memory_capacity=self.memory_capacity,
+            network_size=self.network_size,
+            g_ap=self.g_ap,
+            g_p=self.g_p,
+            g_bias=self.g_bias
         )
 
     def train(self):
-        self.warmup_replay_memory(2000)
+        self.warmup_replay_memory(self.warmup_size)
         total_steps = 0
         total_rewards_in_episodes_cp = []
         total_rewards_in_episodes_mc = []
         window_size = 1
-        best_so_far_cp = -float("inf")
-        best_so_far_mc = -float("inf")
         training_logs = pd.DataFrame(columns=["Episode", "Reward_CP_0.5", "Reward_CP_0.7", "Epsilon"])
-        details_logs = pd.DataFrame(columns=["batch_size", "epsilon_decay", "memory_size", "network_size", "warmup_size", "seed", "max_episodes"])
+        details_logs = pd.DataFrame(columns=["batch_size", "epsilon_decay", "memory_size", "network_size", "warmup_size", "seed", "max_episodes", "max_steps_per_episode", "discount_factor", "G_ap_coefficient", "G_p_coefficient", "G_bias_coefficient"])
+        details_logs.loc[len(details_logs)] = [self.batch_size, self.epsilon_decay, self.memory_capacity, self.network_size, self.warmup_size, self.seed, self.max_episodes, self.max_steps_per_episode, self.discount_factor, self.g_ap, self.g_p, self.g_bias]
+        details_logs.to_csv(f"details_log.csv", index=False)
 
 
 
@@ -98,8 +108,7 @@ class Trainer:
             # SAVE BEST MODEL For CP based on recent average reward
             if len(total_rewards_in_episodes_cp) >= window_size:
                 recent_avg = np.mean(total_rewards_in_episodes_cp[-window_size:])
-                if recent_avg >= 100:
-                    best_so_far_cp = recent_avg
+                if recent_avg >= self.max_steps_per_episode:
                     model_path = f"CP_best_model_seed_{self.seed}_{total_steps}.pth"
                     self.agent.weight_controller.load_weights(0)
                     torch.save(
@@ -112,8 +121,7 @@ class Trainer:
             # SAVE BEST MODEL For MC based on recent average reward
             if len(total_rewards_in_episodes_mc) >= window_size:
                recent_avg = np.mean(total_rewards_in_episodes_mc[-window_size:])
-               if recent_avg >= 100:
-                   best_so_far_mc = recent_avg
+               if recent_avg >= self.max_steps_per_episode:
                    model_path = f"MC_best_model_seed_{self.seed}_{total_steps}.pth"
                    self.agent.weight_controller.load_weights(1)
                    torch.save(

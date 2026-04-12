@@ -10,11 +10,18 @@ from learning.trainer import Trainer
 hyperparams = {
     "discount_factor": 0.99,
     "batch_size": 2000,
+    "warmup_size": 2000,
+    "network_size": 40,
+    "max_steps_per_episode": 100,
     "max_episodes": 300,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
     "epsilon_decay": 0.0007,
     "memory_capacity": 100000,
+    "G_ap": 28.0,
+    "G_p:": 3.0,
+    "G_bias": 24.0
+
 }
 
 train_mode = True

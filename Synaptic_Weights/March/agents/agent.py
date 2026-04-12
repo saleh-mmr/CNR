@@ -21,6 +21,10 @@ class DQNAgent:
         epsilon_decay,                                            # How fast exploration decreases
         discount,                                                 # future reward discount factor
         memory_capacity,                                          # Replay buffer size
+        network_size,                                             # Number of neurons in hidden layers
+        g_ap,                                                     # Coefficient for Conductance ap
+        g_p,                                                      # Coefficient for Conductance p
+        g_bias                                                    # Coefficient for Conductance bias
     ):
         # Hyperparameters
         self.epsilon = epsilon_max
@@ -46,12 +50,12 @@ class DQNAgent:
         # Q-Network
         input_dim = self.observation_space_dim                                # network input = state size (4)
         output_dim = self.action_space_dim                                    # network output = number of actions (2)
-        self.q_network = DQNNetwork(output_dim, input_dim).to(config.device)
+        self.q_network = DQNNetwork(output_dim, input_dim, network_size).to(config.device)
 
         # use a squared-error loss just to get gradients,
         self.criterion = nn.MSELoss()
 
-        self.weight_controller = SynapticWeightController(self.q_network)
+        self.weight_controller = SynapticWeightController(self.q_network, g_ap, g_p, g_bias)
 
     # Action Selection (epsilon-greedy)
     def select_action(self, state, ap_index, epsilon=None):

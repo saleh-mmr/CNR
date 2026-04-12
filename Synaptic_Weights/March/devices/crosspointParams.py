@@ -9,12 +9,15 @@ class CrossPointParams:
         - Noise: add Gaussian noise_realization to G
     """
 
-    def __init__(self, a, b, g_s, g_threshold, sigma_pulse_noise):
+    def __init__(self, a, b, g_s, g_threshold, sigma_pulse_noise, g_ap_coefficient, g_p_coefficient, g_bias_coefficient):
         self.a = a
         self.b = b
         self.g_s = g_s
         self.g_threshold = g_threshold
         self.sigma_pulse_noise = sigma_pulse_noise
+        self.g_ap_coefficient = g_ap_coefficient
+        self.g_p_coefficient = g_p_coefficient
+        self.g_bias_coefficient = g_bias_coefficient
 
     def get_sigma(self):
         return self.sigma_pulse_noise
