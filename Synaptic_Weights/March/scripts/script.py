@@ -29,17 +29,17 @@ hyperparams = {
     "CP_cart_mass_2": 0.3
 }
 
-train_mode = True
+train_mode = False
 
 
 if __name__ == "__main__":
+    seed = 124
     if train_mode:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         folder = Path(f"run_{timestamp}")
         # Create the folder
         folder.mkdir(parents=True, exist_ok=True)
 
-        seed = 124
         random.seed(seed)
         np.random.seed(seed)
         torch.manual_seed(seed)
@@ -69,5 +69,13 @@ if __name__ == "__main__":
         plt.savefig(plot_path, dpi=300)
         plt.show()
     else:
-        trainer = Trainer(hyperparams, seed=None)
-        trainer.test("CP_best_model_seed_124_8810.pth")
+        folder = "run_2026-04-12_12-05-11"
+        weigh_step = 29764
+        cartpole = 1
+        keyword = "CP" if cartpole == 0 else "MC"
+        path = f"{folder}/{keyword}_best_model_seed_124_{weigh_step}.pth"
+        num_tests = 1000
+        trainer_CP = Trainer(hyperparams, seed=None, folder=folder)
+        test_log = trainer_CP.test(model_path=path, num_tests=num_tests, cartpole=cartpole)
+        result_path = f"test_log_{keyword}.csv"
+        test_log.to_csv(f"{folder}/{result_path}", index=False)

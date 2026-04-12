@@ -6,6 +6,7 @@ from envs.cartpole import CartPoleEnv
 from envs.mountaincar import MountainCarEnv
 from envs.mycartpole import MyCartPoleEnv
 import pandas as pd
+from gym.wrappers import RecordVideo
 
 
 
@@ -115,7 +116,7 @@ class Trainer:
             if len(total_rewards_in_episodes_cp) >= window_size:
                 recent_avg = np.mean(total_rewards_in_episodes_cp[-window_size:])
                 if recent_avg >= self.max_steps_per_episode:
-                    model_path = f"CP_best_model_seed_{self.seed}_{total_steps}.pth"
+                    model_path = f"CP_best_model_{total_steps}.pth"
                     self.agent.weight_controller.load_weights(0)
                     torch.save(
                         self.agent.q_network.state_dict(),
@@ -128,7 +129,7 @@ class Trainer:
             if len(total_rewards_in_episodes_mc) >= window_size:
                recent_avg = np.mean(total_rewards_in_episodes_mc[-window_size:])
                if recent_avg >= self.max_steps_per_episode:
-                   model_path = f"MC_best_model_seed_{self.seed}_{total_steps}.pth"
+                   model_path = f"MC_best_model_{total_steps}.pth"
                    self.agent.weight_controller.load_weights(1)
                    torch.save(
                        self.agent.q_network.state_dict(),
@@ -143,16 +144,26 @@ class Trainer:
 
 
 
-    def test(self, model_path, num_tests=1000):
+    def test(self, model_path, num_tests, cartpole):
 
         # load trained weights
         self.agent.q_network.load_state_dict(torch.load(model_path))
         self.agent.q_network.eval()
         rewards = []
-        tests = pd.DataFrame(columns=["test", "reward"])
+        tests_logs = pd.DataFrame(columns=["test", "reward"])
         for test_num in range(num_tests):
             seed = random.randint(0, 4000)
-            env = CartPoleEnv(render_mode=None, seed=seed)
+            if cartpole == 0:
+                env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
+            else:
+                env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, cart_mass=self.CP_cart_mass_2)
+
+
+
+
+
+
+
             state = env.reset()
             done = False
             total_reward = 0
@@ -161,7 +172,6 @@ class Trainer:
             while not done:
                 # greedy action (no exploration)
                 action = self.agent.select_action_test(state)
-
                 next_state, reward, done = env.step(action)
                 # env.render()
 
@@ -172,14 +182,11 @@ class Trainer:
             rewards.append(total_reward)
 
             print(f"Test {test_num + 1} | Seed {seed} | Reward {total_reward}")
-            tests.loc[len(tests)] = [test_num + 1 , total_reward]
+            tests_logs.loc[len(tests_logs)] = [test_num + 1 , total_reward]
 
         print("\nMean Test Reward:", np.mean(rewards))
         print("Std Reward:", np.std(rewards))
-        tests.to_csv(f"tests_CP_0.5.csv", index=False)
-
-
-        return rewards
+        return tests_logs
 
 
     def warmup_replay_memory(self, num_steps):
