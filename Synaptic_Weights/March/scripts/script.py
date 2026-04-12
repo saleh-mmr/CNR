@@ -17,7 +17,7 @@ hyperparams = {
     "warmup_size": 2000,
     "network_size": 40,
     "max_steps_per_episode": 100,
-    "max_episodes": 3000,
+    "max_episodes": 1300,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
     "epsilon_decay": 0.00009,

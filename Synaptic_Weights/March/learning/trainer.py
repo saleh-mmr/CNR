@@ -58,7 +58,7 @@ class Trainer:
 
         # ---------Logging setup---------
 
-        training_logs = pd.DataFrame(columns=["Episode", "Reward_CP_0.5", "Reward_CP_0.7", "Epsilon"])
+        training_logs = pd.DataFrame(columns=["Episode", "Reward_CP_0.5", f"Reward_CP_{self.CP_pole_length_2}", "Epsilon"])
         details_logs = pd.DataFrame(columns=["batch_size", "epsilon_decay", "memory_size", "network_size", "warmup_size", "seed", "max_episodes", "max_steps_per_episode", "discount_factor", "G_ap_coefficient", "G_p_coefficient", "G_bias_coefficient", "CP_pole_length_2", "CP_cart_mass_2"])
         details_logs.loc[len(details_logs)] = [self.batch_size, self.epsilon_decay, self.memory_capacity, self.network_size, self.warmup_size, self.seed, self.max_episodes, self.max_steps_per_episode, self.discount_factor, self.g_ap, self.g_p, self.g_bias, self.CP_pole_length_2, self.CP_cart_mass_2]
         details_logs.to_csv(self.folder / "details_log.csv", index=False)
