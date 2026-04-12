@@ -20,8 +20,6 @@ class MyCartPoleEnv:
         unwrapped = self.env.unwrapped
         unwrapped.length = pole_length      # Increase pole length - defaults is 0.5
         unwrapped.masspole = cart_mass   # Increase pole mass -  defaults is 0.1
-        unwrapped.length = pole_length
-        unwrapped.masspole = cart_mass
 
         # recompute dependent values
         unwrapped.total_mass = unwrapped.masspole + unwrapped.masscart
