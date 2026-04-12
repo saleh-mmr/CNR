@@ -5,7 +5,7 @@ from agents.agent import DQNAgent
 from envs.cartpole import CartPoleEnv
 from envs.mountaincar import MountainCarEnv
 from envs.mycartpole import MyCartPoleEnv
-
+import pandas as pd
 
 class Trainer:
     def __init__(self, hyperparams, seed):
@@ -35,13 +35,16 @@ class Trainer:
         )
 
     def train(self):
-        self.warmup_replay_memory(100)
+        self.warmup_replay_memory(2000)
         total_steps = 0
         total_rewards_in_episodes_cp = []
         total_rewards_in_episodes_mc = []
-        window_size = 3
+        window_size = 1
         best_so_far_cp = -float("inf")
         best_so_far_mc = -float("inf")
+        training_logs = pd.DataFrame(columns=["Episode", "Reward_CP_0.5", "Reward_CP_0.7", "Epsilon"])
+        details_logs = pd.DataFrame(columns=["batch_size", "epsilon_decay", "memory_size", "network_size", "warmup_size", "seed", "max_episodes"])
+
 
 
         for episode in range(1, self.max_episodes + 1):
@@ -90,49 +93,52 @@ class Trainer:
                 f"MC_reward: {episode_reward_mc:.2f}, "
                 f"Epsilon: {self.agent.epsilon:.2f}"
             )
+            training_logs.loc[len(training_logs)] = [episode, episode_reward_cp, episode_reward_mc, self.agent.epsilon]
 
             # SAVE BEST MODEL For CP based on recent average reward
-            # if len(total_rewards_in_episodes_cp) >= window_size:
-            #     recent_avg = np.mean(total_rewards_in_episodes_cp[-window_size:])
-            #     if recent_avg >= best_so_far_cp:
-            #         best_so_far_cp = recent_avg
-            #         model_path = f"CP_best_model_seed_{self.seed}_{total_steps}.pth"
-            #         self.agent.weight_controller.load_weights(0)
-            #         torch.save(
-            #             self.agent.q_network.state_dict(),
-            #             model_path
-            #         )
-            #         print(f"1 Cartpole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
+            if len(total_rewards_in_episodes_cp) >= window_size:
+                recent_avg = np.mean(total_rewards_in_episodes_cp[-window_size:])
+                if recent_avg >= 100:
+                    best_so_far_cp = recent_avg
+                    model_path = f"CP_best_model_seed_{self.seed}_{total_steps}.pth"
+                    self.agent.weight_controller.load_weights(0)
+                    torch.save(
+                        self.agent.q_network.state_dict(),
+                        model_path
+                    )
+                    print(f"1 Cartpole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
 
 
             # SAVE BEST MODEL For MC based on recent average reward
-            # if len(total_rewards_in_episodes_mc) >= window_size:
-            #    recent_avg = np.mean(total_rewards_in_episodes_mc[-window_size:])
-            #    if recent_avg >= best_so_far_mc:
-            #        best_so_far_mc = recent_avg
-            #        model_path = f"MC_best_model_seed_{self.seed}_{total_steps}.pth"
-            #        self.agent.weight_controller.load_weights(1)
-            #        torch.save(
-            #            self.agent.q_network.state_dict(),
-            #            model_path
-            #        )
-            #        print(f"2 My Cart Pole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
+            if len(total_rewards_in_episodes_mc) >= window_size:
+               recent_avg = np.mean(total_rewards_in_episodes_mc[-window_size:])
+               if recent_avg >= 100:
+                   best_so_far_mc = recent_avg
+                   model_path = f"MC_best_model_seed_{self.seed}_{total_steps}.pth"
+                   self.agent.weight_controller.load_weights(1)
+                   torch.save(
+                       self.agent.q_network.state_dict(),
+                       model_path
+                   )
+                   print(f"2 My Cart Pole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
 
 
+        training_logs.to_csv(f"training_log.csv", index=False)
         return total_rewards_in_episodes_cp, total_rewards_in_episodes_mc
 
 
 
 
-    def test(self, model_path, num_tests=500):
+    def test(self, model_path, num_tests=1000):
 
         # load trained weights
         self.agent.q_network.load_state_dict(torch.load(model_path))
         self.agent.q_network.eval()
         rewards = []
+        tests = pd.DataFrame(columns=["test", "reward"])
         for test_num in range(num_tests):
             seed = random.randint(0, 4000)
-            env = MyCartPoleEnv(render_mode=None, seed=seed)
+            env = CartPoleEnv(render_mode=None, seed=seed)
             state = env.reset()
             done = False
             total_reward = 0
@@ -152,9 +158,12 @@ class Trainer:
             rewards.append(total_reward)
 
             print(f"Test {test_num + 1} | Seed {seed} | Reward {total_reward}")
+            tests.loc[len(tests)] = [test_num + 1 , total_reward]
 
         print("\nMean Test Reward:", np.mean(rewards))
         print("Std Reward:", np.std(rewards))
+        tests.to_csv(f"tests_CP_0.5.csv", index=False)
+
 
         return rewards
 
