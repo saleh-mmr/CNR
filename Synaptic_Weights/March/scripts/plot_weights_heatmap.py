@@ -7,8 +7,8 @@ import seaborn as sns
 plt.rcParams.update({'font.size': 16})
 
 # Paths to your models
-path1 = "CP_best_model_seed_124_8810.pth"
-path2 = "MC_best_model_seed_124_8810.pth"
+path1 = "CP_best_model_seed_124_31352.pth"
+path2 = "MC_best_model_seed_124_31352.pth"
 
 # Load weights
 state_dict1 = torch.load(path1, map_location="cpu")
