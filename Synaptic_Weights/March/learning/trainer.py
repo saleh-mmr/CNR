@@ -6,7 +6,7 @@ from envs.cartpole import CartPoleEnv
 from envs.mountaincar import MountainCarEnv
 from envs.mycartpole import MyCartPoleEnv
 import pandas as pd
-from gym.wrappers import RecordVideo
+import time
 
 
 
@@ -145,7 +145,6 @@ class Trainer:
 
 
     def test(self, model_path, num_tests, cartpole):
-
         # load trained weights
         self.agent.q_network.load_state_dict(torch.load(model_path))
         self.agent.q_network.eval()
@@ -157,33 +156,23 @@ class Trainer:
                 env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
             else:
                 env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, cart_mass=self.CP_cart_mass_2)
-
-
-
-
-
-
-
             state = env.reset()
             done = False
             total_reward = 0
             step_counter = 0
 
             while not done:
+                # env.render()  # ensure rendering
                 # greedy action (no exploration)
                 action = self.agent.select_action_test(state)
                 next_state, reward, done = env.step(action)
-                # env.render()
-
                 state = next_state
                 total_reward += reward
                 step_counter += 1
 
             rewards.append(total_reward)
-
             print(f"Test {test_num + 1} | Seed {seed} | Reward {total_reward}")
             tests_logs.loc[len(tests_logs)] = [test_num + 1 , total_reward]
-
         print("\nMean Test Reward:", np.mean(rewards))
         print("Std Reward:", np.std(rewards))
         return tests_logs
