@@ -86,5 +86,7 @@ node_modules/
 *.pages
 *.png
 *.csv
+*.pdf
+*.docx
 # End of file
 

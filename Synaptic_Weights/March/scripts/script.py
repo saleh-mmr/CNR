@@ -13,18 +13,18 @@ from pathlib import Path
 
 hyperparams = {
     "discount_factor": 0.99,
-    "batch_size": 300,
-    "warmup_size": 2000,
+    "batch_size": 700,
+    "warmup_size": 1000,
     "network_size": 40,
     "max_steps_per_episode": 200,
-    "max_episodes": 800,
+    "max_episodes": 3000,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
-    "epsilon_decay": 0.0005,
+    "epsilon_decay": 0.0001,
     "memory_capacity": 10000,
-    "g_ap": 28.0,
-    "g_p": 5.0,
-    "g_bias": 24.0,
+    "g_ap": 56.0,
+    "g_p": 50.0,
+    "g_bias": 48.0,
     "CP_pole_length_2": 1.0,
     "CP_cart_mass_2": 0.3
 }
@@ -33,7 +33,7 @@ train_mode = True
 
 
 if __name__ == "__main__":
-    seed = 152
+    seed = 177
     if train_mode:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         folder = Path(f"run_{timestamp}")
