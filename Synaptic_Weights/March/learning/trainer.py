@@ -6,8 +6,6 @@ from envs.cartpole import CartPoleEnv
 from envs.mountaincar import MountainCarEnv
 from envs.mycartpole import MyCartPoleEnv
 import pandas as pd
-import time
-
 
 
 class Trainer:
@@ -27,12 +25,12 @@ class Trainer:
         self.g_p = hyperparams["g_p"]                                    # Coefficient for Conductance p
         self.g_bias = hyperparams["g_bias"]                              # Coefficient for Conductance bias
         self.CP_pole_length_2 = hyperparams["CP_pole_length_2"]  # Pole length for My Cart Pole environment
-        self.CP_cart_mass_2 = hyperparams["CP_cart_mass_2"]  # Cart mass for My Cart Pole environment
+        self.CP_pole_mass_2 = hyperparams["CP_pole_mass_2"]  # Pole mass for My Cart Pole environment
         self.seed = seed
         self.folder = folder
         self.cartpole_env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
         # self.mountaincar_env = MountainCarEnv(render_mode=None, seed=seed)
-        self.mountaincar_env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, cart_mass=self.CP_cart_mass_2)
+        self.mountaincar_env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, pole_mass=self.CP_pole_mass_2)
 
 
 
