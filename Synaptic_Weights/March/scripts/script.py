@@ -23,17 +23,17 @@ hyperparams = {
     "epsilon_decay": 0.0001,
     "memory_capacity": 10000,
     "g_ap": 56.0,
-    "g_p": 50.0,
-    "g_bias": 48.0,
+    "g_p": 45.0,
+    "g_bias": 70.0,
     "CP_pole_length_2": 1.0,
-    "CP_cart_mass_2": 0.3
+    "CP_pole_mass_2": 0.3
 }
 
 train_mode = True
 
 
 if __name__ == "__main__":
-    seed = 177
+    seed = 178
     if train_mode:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         folder = Path(f"run_{timestamp}")
