@@ -1,6 +1,12 @@
 class CrosspointState:
-    def __init__(self):
-        self.x = 1
+    def __init__(self, params):
+        # Determine the initial index based on the ratio of g_ap_coefficient to g_p_coefficient and the shift parameter
+        k = params.g_ap_coefficient / params.g_p_coefficient
+        i = 1
+        while i**k<=i+params.shift_parameter:
+            i += 1
+        self.x = i
+        print("Initial index for crosspoint state: ", self.x)
         self.noise_realization = 0.0
 
     def update_noise(self, noise):
