@@ -24,6 +24,7 @@ class DQNAgent:
         network_size,                                             # Number of neurons in hidden layers
         g_ap,                                                     # Coefficient for Conductance ap
         g_p,                                                      # Coefficient for Conductance p
+        shift_parameter,                                          # used in log(index+shift_parameter) for conductance calculation
         g_bias                                                    # Coefficient for Conductance bias
     ):
         # Hyperparameters
@@ -55,7 +56,7 @@ class DQNAgent:
         # use a squared-error loss just to get gradients,
         self.criterion = nn.MSELoss()
 
-        self.weight_controller = SynapticWeightController(self.q_network, g_ap, g_p, g_bias)
+        self.weight_controller = SynapticWeightController(self.q_network, g_ap, g_p, shift_parameter, g_bias)
 
     # Action Selection (epsilon-greedy)
     def select_action(self, state, ap_index, epsilon=None):

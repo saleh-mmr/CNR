@@ -7,10 +7,10 @@ from devices.crosspointParams import CrossPointParams
 
 
 class SynapticWeightController:
-    def __init__(self, model, g_ap, g_p, g_bias):
+    def __init__(self, model, g_ap, g_p, shift_parameter, g_bias):
         self.model = model
 
-        params = CrossPointParams(a=1.566e-8, b=3.5e-9, g_s=4.32e-7, g_threshold=9e-15, sigma_pulse_noise=0.0, g_ap_coefficient=g_ap, g_p_coefficient=g_p, g_bias_coefficient=g_bias)
+        params = CrossPointParams(sigma_pulse_noise=0.0, g_ap_coefficient=g_ap, g_p_coefficient=g_p, shift_parameter=shift_parameter, g_bias_coefficient=g_bias)
         spec = MultiWeightSynapseSpec(n_problem=2, scaling_factor=1)
 
         self.synapses = {}

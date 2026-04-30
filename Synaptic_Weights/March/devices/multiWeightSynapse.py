@@ -12,10 +12,10 @@ class MultiWeightSynapse:
         self.spec = multiweight_spec
         self.params = crosspoint_params
 
-        self.bias_state = CrosspointState()
+        self.bias_state = CrosspointState(self.params)
         self.bias_crosspoint = NonMagnetoresistiveCrosspoint(self.params,self.bias_state)
 
-        self.positive_crosspoints_states = [CrosspointState() for _ in range(self.spec.n_problem)]
+        self.positive_crosspoints_states = [CrosspointState(self.params) for _ in range(self.spec.n_problem)]
         self.positive_crosspoint = []
         for state in self.positive_crosspoints_states:
             state.increment_index()

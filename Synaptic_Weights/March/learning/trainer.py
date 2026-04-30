@@ -23,6 +23,7 @@ class Trainer:
         self.max_steps_per_episode = hyperparams["max_steps_per_episode"] # Max steps per episode to prevent infinite loops
         self.g_ap = hyperparams["g_ap"]                                  # Coefficient for Conductance ap
         self.g_p = hyperparams["g_p"]                                    # Coefficient for Conductance p
+        self.shift_parameter = hyperparams["shift_parameter"]                                        # used in log(index + c) in conductance calculation
         self.g_bias = hyperparams["g_bias"]                              # Coefficient for Conductance bias
         self.CP_pole_length_2 = hyperparams["CP_pole_length_2"]  # Pole length for My Cart Pole environment
         self.CP_pole_mass_2 = hyperparams["CP_pole_mass_2"]  # Pole mass for My Cart Pole environment
@@ -45,6 +46,7 @@ class Trainer:
             network_size=self.network_size,
             g_ap=self.g_ap,
             g_p=self.g_p,
+            shift_parameter = self.shift_parameter,
             g_bias=self.g_bias
         )
 
