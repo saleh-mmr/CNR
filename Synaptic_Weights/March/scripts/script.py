@@ -16,7 +16,7 @@ hyperparams = {
     "batch_size": 100,
     "warmup_size": 1000,
     "network_size": 40,
-    "max_steps_per_episode": 100,
+    "max_steps_per_episode": 200,
     "max_episodes": 400,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
@@ -70,12 +70,12 @@ if __name__ == "__main__":
         plt.savefig(plot_path, dpi=300)
         plt.show()
     else:
-        folder = "run_2026-05-02_18-30-36"
-        weigh_step = 2355
-        cartpole = 0
+        folder = "run_2026-05-03_16-46-58"
+        weigh_step = 3752
+        cartpole = 1
         keyword = "CP" if cartpole == 0 else "MC"
         path = f"{folder}/{keyword}_best_model_{weigh_step}.pth"
-        num_tests = 1000
+        num_tests = 2000
         trainer_CP = Trainer(hyperparams, seed=None, folder=folder)
         test_log = trainer_CP.test(model_path=path, num_tests=num_tests, cartpole=cartpole)
         result_path = f"test_log_{keyword}.csv"
