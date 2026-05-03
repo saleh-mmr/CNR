@@ -151,7 +151,7 @@ class Trainer:
         rewards = []
         tests_logs = pd.DataFrame(columns=["test", "reward"])
         for test_num in range(num_tests):
-            seed = random.randint(0, 4000)
+            seed = random.randint(0, 50000)
             if cartpole == 0:
                 env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
             else:
