@@ -60,8 +60,8 @@ class Trainer:
         # ---------Logging setup---------
 
         training_logs = pd.DataFrame(columns=["Episode", "Reward_CP_0.5", f"Reward_CP_{self.CP_pole_length_2}", "Epsilon"])
-        details_logs = pd.DataFrame(columns=["batch_size", "epsilon_decay", "memory_size", "network_size", "warmup_size", "seed", "max_episodes", "max_steps_per_episode", "discount_factor", "G_ap_coefficient", "G_p_coefficient", "G_bias_coefficient", "CP_pole_length_2", "CP_pole_mass_2"])
-        details_logs.loc[len(details_logs)] = [self.batch_size, self.epsilon_decay, self.memory_capacity, self.network_size, self.warmup_size, self.seed, self.max_episodes, self.max_steps_per_episode, self.discount_factor, self.g_ap, self.g_p, self.g_bias, self.CP_pole_length_2, self.CP_pole_mass_2]
+        details_logs = pd.DataFrame(columns=["batch_size", "epsilon_decay", "memory_size", "network_size", "warmup_size", "seed", "max_episodes", "max_steps_per_episode", "discount_factor", "G_ap_coefficient", "G_p_coefficient", "shift parameter", "G_bias_coefficient", "CP_pole_length_2", "CP_pole_mass_2"])
+        details_logs.loc[len(details_logs)] = [self.batch_size, self.epsilon_decay, self.memory_capacity, self.network_size, self.warmup_size, self.seed, self.max_episodes, self.max_steps_per_episode, self.discount_factor, self.g_ap, self.g_p,self.shift_parameter, self.g_bias, self.CP_pole_length_2, self.CP_pole_mass_2]
         details_logs.to_csv(self.folder / "details_log.csv", index=False)
 
         for episode in range(1, self.max_episodes + 1):
@@ -155,7 +155,7 @@ class Trainer:
             if cartpole == 0:
                 env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
             else:
-                env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, cart_mass=self.CP_cart_mass_2)
+                env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, pole_mass=self.CP_pole_mass_2)
             state = env.reset()
             done = False
             total_reward = 0

@@ -2,13 +2,19 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 
 # Increase font size for all text elements
 plt.rcParams.update({'font.size': 16})
 
 # Paths to your models
-path1 = "CP_best_model_seed_124_31352.pth"
-path2 = "MC_best_model_seed_124_31352.pth"
+base_dir = os.path.dirname(os.path.abspath(__file__))
+folder = os.path.join(base_dir, "run_2026-05-02_18-30-36")
+path1 = os.path.join(folder, "CP_best_model_3555.pth")
+path2 = os.path.join(folder, "MC_best_model_3555.pth")
+
+
+
 
 # Load weights
 state_dict1 = torch.load(path1, map_location="cpu")
