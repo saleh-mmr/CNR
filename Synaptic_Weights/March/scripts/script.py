@@ -24,13 +24,13 @@ hyperparams = {
     "memory_capacity": 10000,
     "g_ap": 20.0,
     "g_p": 10.0,
-    "shift_parameter": 1,
+    "shift_parameter": 5,
     "g_bias": 26.0,
     "CP_pole_length_2": 0.7,
     "CP_pole_mass_2": 0.3
 }
 
-train_mode = True
+train_mode = False
 
 
 if __name__ == "__main__":
@@ -70,9 +70,9 @@ if __name__ == "__main__":
         plt.savefig(plot_path, dpi=300)
         plt.show()
     else:
-        folder = "run_2026-04-13_16-03-06"
-        weigh_step = 10878
-        cartpole = 1
+        folder = "run_2026-05-02_18-30-36"
+        weigh_step = 2355
+        cartpole = 0
         keyword = "CP" if cartpole == 0 else "MC"
         path = f"{folder}/{keyword}_best_model_{weigh_step}.pth"
         num_tests = 1000
