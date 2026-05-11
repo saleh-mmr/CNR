@@ -30,7 +30,7 @@ hyperparams = {
     "CP_pole_mass_2": 0.5
 }
 
-train_mode = True
+train_mode = False
 
 
 if __name__ == "__main__":
@@ -70,9 +70,9 @@ if __name__ == "__main__":
         plt.savefig(plot_path, dpi=300)
         plt.show()
     else:
-        folder = "run_2026-05-03_16-46-58"
-        weigh_step = 3752
-        cartpole = 1
+        folder = "run_2026-05-11_10-02-28"
+        weigh_step = 61169
+        cartpole = 2
         keyword = "CP" if cartpole == 0 else "MC"
         path = f"{folder}/{keyword}_best_model_{weigh_step}.pth"
         num_tests = 2000
