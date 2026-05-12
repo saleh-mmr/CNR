@@ -23,8 +23,9 @@ class Trainer:
         self.max_steps_per_episode = hyperparams["max_steps_per_episode"] # Max steps per episode to prevent infinite loops
         self.g_ap = hyperparams["g_ap"]                                  # Coefficient for Conductance ap
         self.g_p = hyperparams["g_p"]                                    # Coefficient for Conductance p
-        self.shift_parameter = hyperparams["shift_parameter"]                                        # used in log(index + c) in conductance calculation
+        self.shift_parameter = hyperparams["shift_parameter"]            # used in log(index + c) in conductance calculation
         self.g_bias = hyperparams["g_bias"]                              # Coefficient for Conductance bias
+        self.noise_stddev = hyperparams["noise_stddev"]                  # Standard deviation of noise added to weight updates (for realism)
         self.CP_pole_length_2 = hyperparams["CP_pole_length_2"]  # Pole length for My Cart Pole environment
         self.CP_pole_mass_2 = hyperparams["CP_pole_mass_2"]  # Pole mass for My Cart Pole environment
         self.seed = seed
@@ -47,7 +48,8 @@ class Trainer:
             g_ap=self.g_ap,
             g_p=self.g_p,
             shift_parameter = self.shift_parameter,
-            g_bias=self.g_bias
+            g_bias=self.g_bias,
+            noise_stddev=self.noise_stddev
         )
 
     def train(self):
@@ -60,8 +62,8 @@ class Trainer:
         # ---------Logging setup---------
 
         training_logs = pd.DataFrame(columns=["Episode", "Reward_CP_0.5", f"Reward_CP_{self.CP_pole_length_2}", "Epsilon"])
-        details_logs = pd.DataFrame(columns=["batch_size", "epsilon_decay", "memory_size", "network_size", "warmup_size", "seed", "max_episodes", "max_steps_per_episode", "discount_factor", "G_ap_coefficient", "G_p_coefficient", "shift parameter", "G_bias_coefficient", "CP_pole_length_2", "CP_pole_mass_2"])
-        details_logs.loc[len(details_logs)] = [self.batch_size, self.epsilon_decay, self.memory_capacity, self.network_size, self.warmup_size, self.seed, self.max_episodes, self.max_steps_per_episode, self.discount_factor, self.g_ap, self.g_p,self.shift_parameter, self.g_bias, self.CP_pole_length_2, self.CP_pole_mass_2]
+        details_logs = pd.DataFrame(columns=["batch_size", "epsilon_decay", "memory_size", "network_size", "warmup_size", "seed", "max_episodes", "max_steps_per_episode", "discount_factor", "G_ap_coefficient", "G_p_coefficient", "shift parameter", "G_bias_coefficient", "noise_stddev", "CP_pole_length_2", "CP_pole_mass_2"])
+        details_logs.loc[len(details_logs)] = [self.batch_size, self.epsilon_decay, self.memory_capacity, self.network_size, self.warmup_size, self.seed, self.max_episodes, self.max_steps_per_episode, self.discount_factor, self.g_ap, self.g_p,self.shift_parameter, self.g_bias, self.noise_stddev, self.CP_pole_length_2, self.CP_pole_mass_2]
         details_logs.to_csv(self.folder / "details_log.csv", index=False)
 
         for episode in range(1, self.max_episodes + 1):

@@ -10,10 +10,10 @@ class MagnetoresistiveCrosspoint(BaseCrosspoint):
     def conductance_p(self, state: CrosspointState) -> float:
         g_p_coefficient = self.params.g_p_coefficient
         shift_parameter = self.params.shift_parameter
-        index = state.get_state()
-        return float(g_p_coefficient * np.log10(index+shift_parameter))
+        index, noise = state.get_state()
+        return float((g_p_coefficient * np.log10(index+shift_parameter)) + noise)
 
     def conductance_ap(self, state: CrosspointState) -> float:
         g_ap_coefficient = self.params.g_ap_coefficient
-        index = state.get_state()
-        return float(g_ap_coefficient * np.log10(index))
+        index, noise = state.get_state()
+        return float((g_ap_coefficient * np.log10(index)) + noise)

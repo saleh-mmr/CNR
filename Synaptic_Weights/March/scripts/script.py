@@ -26,11 +26,12 @@ hyperparams = {
     "g_p": 21.0,
     "shift_parameter": 6,
     "g_bias": 45.0,
+    "noise_stddev": 0.0,
     "CP_pole_length_2": 1.5,
     "CP_pole_mass_2": 0.5
 }
 
-train_mode = False
+train_mode = True
 
 
 if __name__ == "__main__":

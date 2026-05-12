@@ -25,7 +25,8 @@ class DQNAgent:
         g_ap,                                                     # Coefficient for Conductance ap
         g_p,                                                      # Coefficient for Conductance p
         shift_parameter,                                          # used in log(index+shift_parameter) for conductance calculation
-        g_bias                                                    # Coefficient for Conductance bias
+        g_bias,                                                   # Coefficient for Conductance bias
+        noise_stddev,                                             # Standard deviation of noise added to weight updates
     ):
         # Hyperparameters
         self.epsilon = epsilon_max
@@ -56,7 +57,7 @@ class DQNAgent:
         # use a squared-error loss just to get gradients,
         self.criterion = nn.MSELoss()
 
-        self.weight_controller = SynapticWeightController(self.q_network, g_ap, g_p, shift_parameter, g_bias)
+        self.weight_controller = SynapticWeightController(self.q_network, g_ap, g_p, shift_parameter, g_bias, noise_stddev)
 
     # Action Selection (epsilon-greedy)
     def select_action(self, state, ap_index, epsilon=None):

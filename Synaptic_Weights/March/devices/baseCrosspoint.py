@@ -16,14 +16,6 @@ class BaseCrosspoint:
     # Following Method Changes State (increment X and redraw noise)
     def update_state(self):
         self.state.increment_index()
-        sigma = self.params.get_sigma()
+        sigma = self.params.get_noise_stddev()
         noise = self.redraw_noise(sigma)
         self.state.update_noise(noise)
-
-    # Following Method Compute noisy G_p for Current State **DOES NOT UPDATE STATE**
-    def calculate_conductance_p(self, state):
-        index = state.get_state()
-        a = float(self.params.a)
-        b = float(self.params.b)
-        conductance_without_noise = float(a * np.log10(index) + b)
-        return float(conductance_without_noise)
