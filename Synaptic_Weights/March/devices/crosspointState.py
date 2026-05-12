@@ -1,3 +1,5 @@
+import numpy as np
+
 class CrosspointState:
     def __init__(self, params):
         # Determine the initial index based on the ratio of g_ap_coefficient to g_p_coefficient and the shift parameter
@@ -7,7 +9,7 @@ class CrosspointState:
             i += 1
         self.x = i
         print("Initial index for crosspoint state: ", self.x)
-        self.noise_realization = 0.0
+        self.noise_realization = float(np.random.normal(0.0, params.noise_stddev))
 
     def update_noise(self, noise):
         self.noise_realization = noise
@@ -17,4 +19,4 @@ class CrosspointState:
         return self.x
 
     def get_state(self):
-        return self.x
+        return self.x, self.noise_realization

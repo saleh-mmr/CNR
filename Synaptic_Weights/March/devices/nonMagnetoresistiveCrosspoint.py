@@ -9,5 +9,5 @@ class NonMagnetoresistiveCrosspoint(BaseCrosspoint):
     """
     def conductance_p(self, state: CrosspointState) -> float:
         g_bias_coefficient = self.params.g_bias_coefficient
-        index = state.get_state()
-        return float(g_bias_coefficient * np.log10(index))
+        index, noise = state.get_state()
+        return float((g_bias_coefficient * np.log10(index)) + noise)
