@@ -10,6 +10,7 @@ class BaseCrosspoint:
 
     #  Following Method Redraws Noise
     def redraw_noise(self, sigma):
+        # Generates a single random number from a Gaussian (normal) distribution centered at 0.
         noise = float(np.random.normal(0.0, sigma)) if sigma > 0 else 0.0
         return noise
 
