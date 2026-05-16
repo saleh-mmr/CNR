@@ -4,7 +4,7 @@ from pathlib import Path
 def main():
 	# Paths to your models
 	base_dir = Path(__file__).resolve().parent
-	folder = base_dir / "run_2026-05-13_14-01-16"
+	folder = base_dir / "run_2026-05-15_23-37-49"
 	file = folder / "details_log.csv"
 
 	if not file.exists():
@@ -28,10 +28,6 @@ def main():
 		print(" ".join(str(cell).rjust(width) for cell, width in zip(row, widths)))
 		if row_index == 0:
 			print(" ".join("-" * width for width in widths))
-
-	print(f"\nRows shown: {len(preview_rows)} / {len(rows)}")
-	print("\nColumns:")
-	print(", ".join(columns))
 
 
 if __name__ == "__main__":
