@@ -16,7 +16,7 @@ hyperparams = {
     "batch_size": 3000,
     "warmup_size": 3000,
     "network_size": 100,
-    "max_steps_per_episode": 100,
+    "max_steps_per_episode": 200,
     "max_episodes": 9000,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
@@ -26,8 +26,8 @@ hyperparams = {
     "g_p": 21.0,
     "shift_parameter": 6,
     "g_bias": 45.0,
-    "noise_stddev": 0.5,
-    "CP_pole_length_2": 1.5,
+    "noise_stddev": 0.02,
+    "CP_pole_length_2": 5.0,
     "CP_pole_mass_2": 0.5
 }
 
