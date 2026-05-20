@@ -16,26 +16,28 @@ hyperparams = {
     "batch_size": 3000,
     "warmup_size": 3000,
     "network_size": 100,
-    "max_steps_per_episode": 100,
-    "max_episodes": 9000,
+    "max_steps_per_episode": 200,
+    "max_episodes": 8000,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
     "epsilon_decay": 0.00001,
     "memory_capacity": 10000,
     "g_ap": 25.0,
-    "g_p": 21.0,
+    "g_p": 20.0,
     "shift_parameter": 6,
-    "g_bias": 45.0,
-    "noise_stddev": 0.5,
+    "g_bias": 57.0,
+    "noise_stddev": 0.0,
     "CP_pole_length_2": 1.5,
-    "CP_pole_mass_2": 0.5
+    "CP_pole_mass_2": 0.5,
+    "CP_pole_length_3": 0.7,
+    "CP_pole_mass_3": 0.3,
 }
 
 train_mode = True
 
 
 if __name__ == "__main__":
-    seed = 890
+    seed = 331
     if train_mode:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         folder = Path(f"run_{timestamp}")
