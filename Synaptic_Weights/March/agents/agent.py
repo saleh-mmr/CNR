@@ -15,8 +15,7 @@ class DQNAgent:
     def __init__(
         self,
         cartpole_env,                                             # Gym cartpole environment
-        first_modified_cartpole_env,                              # Gym first_modified_cartpole environment
-        second_modified_cartpole_env,                             # Gym second_modified_cartpole environment
+        mountaincar_env,                                          # Gym mountaincar environment
         epsilon_max,                                              # Start with more exploration
         epsilon_min,                                              # Minimum exploration threshold
         epsilon_decay,                                            # How fast exploration decreases
@@ -38,21 +37,17 @@ class DQNAgent:
 
         # Environment
         self.cartpole_env = cartpole_env
-        self.first_modified_cartpole_env = first_modified_cartpole_env
-        self.second_modified_cartpole_env = second_modified_cartpole_env
-        assert cartpole_env.action_space.n == first_modified_cartpole_env.action_space.n, "Action space dimensions must match"
-        assert cartpole_env.observation_space.shape[0] == first_modified_cartpole_env.observation_space.shape[0], "Observation space dimensions must match"
-        assert cartpole_env.action_space.n == second_modified_cartpole_env.action_space.n, "Action space dimensions must match"
-        assert cartpole_env.observation_space.shape[0] == second_modified_cartpole_env.observation_space.shape[0], "Observation space dimensions must match"
+        self.mountaincar_env = mountaincar_env
+        assert cartpole_env.action_space.n == mountaincar_env.action_space.n, "Action space dimensions must match"
+        assert cartpole_env.observation_space.shape[0] == mountaincar_env.observation_space.shape[0], "Observation space dimensions must match"
         self.action_space_dim = cartpole_env.action_space.n
         self.observation_space_dim = cartpole_env.observation_space.shape[0]
 
 
         # Replay buffer
         self.cartpole_memory = ReplayMemory(capacity=memory_capacity)
-        self.first_modified_cartpole_memory = ReplayMemory(capacity=memory_capacity)
-        self.second_modified_cartpole_memory = ReplayMemory(capacity=memory_capacity)
-        self.replay_memory = [self.cartpole_memory, self.first_modified_cartpole_memory, self.second_modified_cartpole_memory]
+        self.mountaincar_memory = ReplayMemory(capacity=memory_capacity)
+        self.replay_memory = [self.cartpole_memory, self.mountaincar_memory]
 
         # Q-Network
         input_dim = self.observation_space_dim                                # network input = state size (4)
