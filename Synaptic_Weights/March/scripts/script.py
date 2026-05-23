@@ -15,7 +15,7 @@ hyperparams = {
     "discount_factor": 0.99,
     "batch_size": 3000,
     "warmup_size": 3000,
-    "network_size": 100,
+    "network_size": 60,
     "max_steps_per_episode": 200,
     "max_episodes": 9000,
     "epsilon_max": 1.0,

@@ -9,8 +9,8 @@ plt.rcParams.update({'font.size': 16})
 
 # Paths to your models
 base_dir = os.path.dirname(os.path.abspath(__file__))
-folder = os.path.join(base_dir, "run_2026-05-17_17-13-01")
-step = 330546
+folder = os.path.join(base_dir, "../weights/we")
+step = 305556
 path1 = os.path.join(folder, f"CP_best_model_{step}.pth")
 path2 = os.path.join(folder, f"MC_best_model_{step}.pth")
 
