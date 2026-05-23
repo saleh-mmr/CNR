@@ -146,7 +146,7 @@ class Trainer:
 
 
 
-    def test(self, model_path, num_tests, cartpole):
+    def test(self, model_path, num_tests, cartpole, render=False):
         # load trained weights
         self.agent.q_network.load_state_dict(torch.load(model_path))
         self.agent.q_network.eval()
@@ -154,20 +154,24 @@ class Trainer:
         tests_logs = pd.DataFrame(columns=["test", "reward"])
         for test_num in range(num_tests):
             seed = random.randint(0, 50000)
+            # Use human render mode when requested so env.render() will display the environment.
+            render_mode = "human" if render else None
             if cartpole == 0:
-                # env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
-                env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, pole_mass=self.CP_pole_mass_2)
+                env = CartPoleEnv(render_mode=render_mode, seed=seed, max_steps=self.max_steps_per_episode)
+                # env = MyCartPoleEnv(render_mode=render_mode, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, pole_mass=self.CP_pole_mass_2)
 
             else:
-                env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
-                # env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, pole_mass=self.CP_pole_mass_2)
+                # env = CartPoleEnv(render_mode=render_mode, seed=seed, max_steps=self.max_steps_per_episode)
+                env = MyCartPoleEnv(render_mode=render_mode, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, pole_mass=self.CP_pole_mass_2)
             state = env.reset()
             done = False
             total_reward = 0
             step_counter = 0
 
             while not done:
-                # env.render()  # ensure rendering
+                # Render only when requested (env must be created with a render_mode that supports rendering)
+                if render:
+                    env.render()
                 # greedy action (no exploration)
                 action = self.agent.select_action_test(state)
                 next_state, reward, done = env.step(action)
