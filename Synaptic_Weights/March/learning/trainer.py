@@ -155,9 +155,12 @@ class Trainer:
         for test_num in range(num_tests):
             seed = random.randint(0, 50000)
             if cartpole == 0:
-                env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
-            else:
+                # env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
                 env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, pole_mass=self.CP_pole_mass_2)
+
+            else:
+                env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
+                # env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, pole_mass=self.CP_pole_mass_2)
             state = env.reset()
             done = False
             total_reward = 0
