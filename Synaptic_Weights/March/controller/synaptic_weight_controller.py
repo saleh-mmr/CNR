@@ -211,11 +211,11 @@ class SynapticWeightController:
             param.copy_(weight)
 
 
-            # if name == "FC.2.weight":
-            #     print(
-            #         f"load_weights(ap_index={ap_index}) | FC.2.weight[0][0] = "
-            #         f"{param[0, 0].item():.6f}"
-            #     )
+            if name == "FC.2.weight":
+                print(
+                    f"load_weights(ap_index={ap_index}) | FC.2.weight[0][0] = "
+                    f"{param[0, 0].item():.6f}"
+                )
 
         self.current_loaded_ap_index = ap_index
         self.weights_dirty = False

@@ -13,8 +13,8 @@ from pathlib import Path
 
 hyperparams = {
     "discount_factor": 0.99,
-    "batch_size": 3000,
-    "warmup_size": 3000,
+    "batch_size": 128,
+    "warmup_size": 128,
     "network_size": 100,
     "max_steps_per_episode": 300,
     "max_episodes": 8000,
@@ -25,7 +25,7 @@ hyperparams = {
     "g_ap": 25.0,
     "g_p": 20.0,
     "shift_parameter": 20,
-    "g_bias": 57.0,
+    "g_bias": 60.0,
     "noise_stddev": 0.03,
     "CP_pole_length_2": 3.0,
     "CP_pole_mass_2": 1.0,
