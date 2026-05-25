@@ -25,7 +25,7 @@ hyperparams = {
     "g_ap": 25.0,
     "g_p": 20.0,
     "shift_parameter": 20,
-    "g_bias": 60.0,
+    "g_bias": 45.0,
     "noise_stddev": 0.03,
     "CP_pole_length_2": 3.0,
     "CP_pole_mass_2": 1.0,
@@ -37,7 +37,7 @@ train_mode = True
 
 
 if __name__ == "__main__":
-    seed = 331
+    seed = 800
     if train_mode:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         folder = Path(f"run_{timestamp}")
