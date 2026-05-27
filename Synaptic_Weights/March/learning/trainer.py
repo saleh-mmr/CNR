@@ -1,3 +1,9 @@
+import sys
+from pathlib import Path
+current_file = Path(__file__).resolve()
+project_root = current_file.parents[1]
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 import random
 import numpy as np
 import torch
@@ -85,7 +91,7 @@ class Trainer:
 
                 # ---- Modified Cart Pole 1 ----
                 if not done_mc1:
-                    action_mc1 = self.agent.select_action(state_mc1, ap_index=1)
+                    action_mc1 = self.agent.select_action(state_mc1, ap_index=0)
                     next_state_mc1, reward_mc1, done_mc1 = self.first_modified_cartpole_env.step(action_mc1)
                     self.agent.first_modified_cartpole_memory.store(state_mc1, action_mc1, next_state_mc1, reward_mc1, done_mc1)
                     state_mc1 = next_state_mc1
@@ -93,7 +99,7 @@ class Trainer:
 
                 # ---- Modified Cart Pole 2 ----
                 if not done_mc2:
-                    action_mc2 = self.agent.select_action(state_mc2, ap_index=2)
+                    action_mc2 = self.agent.select_action(state_mc2, ap_index=1)
                     next_state_mc2, reward_mc2, done_mc2 = self.second_modified_cartpole_env.step(action_mc2)
                     self.agent.second_modified_cartpole_memory.store(state_mc2, action_mc2, next_state_mc2, reward_mc2, done_mc2)
                     state_mc2 = next_state_mc2
@@ -101,7 +107,7 @@ class Trainer:
 
                 # ---- Modified Cart Pole 3 ----
                 if not  done_mc3:
-                    action_mc3 = self.agent.select_action(state_mc3, ap_index=3)
+                    action_mc3 = self.agent.select_action(state_mc3, ap_index=2)
                     next_state_mc3, reward_mc3, done_mc3 = self.third_modified_cartpole_env.step(action_mc3)
                     self.agent.third_modified_cartpole_memory.store(state_mc3, action_mc3, next_state_mc3, reward_mc3, done_mc3)
                     state_mc3 = next_state_mc3
@@ -141,9 +147,9 @@ class Trainer:
                     self.agent.q_network.state_dict(),
                     self.folder /model_path_3
                 )
-               print(f"First Modified Cart Pole New best model saved (seed {self.seed}) with recent average reward {step_counter:.2f} -> {model_path}")
-               print(f"Second Modified Cart Pole New best model saved (seed {self.seed}) with recent average reward {step_counter:.2f} -> {model_path}")
-               print(f"Third Modified Cart Pole New best model saved (seed {self.seed}) with recent average reward {step_counter:.2f} -> {model_path}")
+               print(f"First Modified Cart Pole New best model saved (seed {self.seed}) with recent average reward {step_counter:.2f} -> {model_path_1}")
+               print(f"Second Modified Cart Pole New best model saved (seed {self.seed}) with recent average reward {step_counter:.2f} -> {model_path_2}")
+               print(f"Third Modified Cart Pole New best model saved (seed {self.seed}) with recent average reward {step_counter:.2f} -> {model_path_3}")
 
         training_logs.to_csv(self.folder /"training_log.csv", index=False)
         return total_rewards_in_episodes
@@ -182,10 +188,7 @@ class Trainer:
                 step_counter += 1
 
             rewards.append(total_reward)
-            print(f"Test {test_num + 1} | Seed {seed} | Reward {total_reward}")
             tests_logs.loc[len(tests_logs)] = [test_num + 1 , total_reward]
-        print("\nMean Test Reward:", np.mean(rewards))
-        print("Std Reward:", np.std(rewards))
         return tests_logs
 
 
