@@ -29,9 +29,15 @@ if __name__ == "__main__":
         folder = "run_2026-05-25_00-56-52"
         weigh_step = 480256
         cartpole = 1
+        correspond_weight = 0
         render = False
-        keyword = "CP" if cartpole == 0 else "MC"
-        path = f"{folder}/{keyword}_best_model_{weigh_step}.pth"
+        if correspond_weight == 0:
+            keyword = "MC_1"
+        elif correspond_weight == 1:
+            keyword = "MC_2"
+        else:
+            keyword = "MC_3"
+        path = f"{folder}/{keyword}_{weigh_step}.pth"
         num_tests = 1000
         trainer_CP = Trainer(hyperparams, seed=None, folder=folder)
         test_log = trainer_CP.test(model_path=path, num_tests=num_tests, cartpole=cartpole, render=render)

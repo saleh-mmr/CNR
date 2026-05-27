@@ -14,9 +14,9 @@ from controller.synaptic_weight_controller import SynapticWeightController
 class DQNAgent:
     def __init__(
         self,
-        cartpole_env,                                             # Gym cartpole environment
         first_modified_cartpole_env,                              # Gym first_modified_cartpole environment
         second_modified_cartpole_env,                             # Gym second_modified_cartpole environment
+        third_modified_cartpole_env,                              # Gym third_modified_cartpole environment
         epsilon_max,                                              # Start with more exploration
         epsilon_min,                                              # Minimum exploration threshold
         epsilon_decay,                                            # How fast exploration decreases
@@ -37,22 +37,22 @@ class DQNAgent:
         self.discount = discount
 
         # Environment
-        self.cartpole_env = cartpole_env
         self.first_modified_cartpole_env = first_modified_cartpole_env
         self.second_modified_cartpole_env = second_modified_cartpole_env
-        assert cartpole_env.action_space.n == first_modified_cartpole_env.action_space.n, "Action space dimensions must match"
-        assert cartpole_env.observation_space.shape[0] == first_modified_cartpole_env.observation_space.shape[0], "Observation space dimensions must match"
-        assert cartpole_env.action_space.n == second_modified_cartpole_env.action_space.n, "Action space dimensions must match"
-        assert cartpole_env.observation_space.shape[0] == second_modified_cartpole_env.observation_space.shape[0], "Observation space dimensions must match"
-        self.action_space_dim = cartpole_env.action_space.n
-        self.observation_space_dim = cartpole_env.observation_space.shape[0]
+        self.third_modified_cartpole_env = third_modified_cartpole_env
+        assert first_modified_cartpole_env.action_space.n == second_modified_cartpole_env.action_space.n, "Action space dimensions must match"
+        assert first_modified_cartpole_env.observation_space.shape[0] == second_modified_cartpole_env.observation_space.shape[0], "Observation space dimensions must match"
+        assert first_modified_cartpole_env.action_space.n == third_modified_cartpole_env.action_space.n, "Action space dimensions must match"
+        assert first_modified_cartpole_env.observation_space.shape[0] == third_modified_cartpole_env.observation_space.shape[0], "Observation space dimensions must match"
+        self.action_space_dim = first_modified_cartpole_env.action_space.n
+        self.observation_space_dim = first_modified_cartpole_env.observation_space.shape[0]
 
 
         # Replay buffer
-        self.cartpole_memory = ReplayMemory(capacity=memory_capacity)
         self.first_modified_cartpole_memory = ReplayMemory(capacity=memory_capacity)
         self.second_modified_cartpole_memory = ReplayMemory(capacity=memory_capacity)
-        self.replay_memory = [self.cartpole_memory, self.first_modified_cartpole_memory, self.second_modified_cartpole_memory]
+        self.third_modified_cartpole_memory = ReplayMemory(capacity=memory_capacity)
+        self.replay_memory = [self.first_modified_cartpole_memory, self.second_modified_cartpole_memory, self.third_modified_cartpole_memory]
 
         # Q-Network
         input_dim = self.observation_space_dim                                # network input = state size (4)

@@ -3,7 +3,6 @@ import numpy as np
 import torch
 from agents.agent import DQNAgent
 from envs.cartpole import CartPoleEnv
-from envs.mountaincar import MountainCarEnv
 from envs.mycartpole import MyCartPoleEnv
 import pandas as pd
 
@@ -26,22 +25,24 @@ class Trainer:
         self.shift_parameter = hyperparams["shift_parameter"]            # used in log(index + c) in conductance calculation
         self.g_bias = hyperparams["g_bias"]                              # Coefficient for Conductance bias
         self.noise_stddev = hyperparams["noise_stddev"]                  # Standard deviation of noise added to weight updates (for realism)
+        self.CP_pole_length_1 = hyperparams["CP_pole_length_1"]          # Pole length for My Cart Pole environment
+        self.CP_pole_mass_1 = hyperparams["CP_pole_mass_1"]              # Pole mass for My Cart Pole environment
         self.CP_pole_length_2 = hyperparams["CP_pole_length_2"]          # Pole length for My Cart Pole environment
         self.CP_pole_mass_2 = hyperparams["CP_pole_mass_2"]              # Pole mass for My Cart Pole environment
-        self.CP_pole_length_3 = hyperparams["CP_pole_length_3"]          # Pole length for My Cart Pole environment
+        self.CP_pole_length_3 = hyperparams["CP_pole_length_3"]              # Pole length for My Cart Pole environment
         self.CP_pole_mass_3 = hyperparams["CP_pole_mass_3"]              # Pole mass for My Cart Pole environment
         self.seed = seed
         self.folder = folder
-        self.cartpole_env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
-        self.first_modified_cartpole_env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, pole_mass=self.CP_pole_mass_2)
-        self.second_modified_cartpole_env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_3, pole_mass=self.CP_pole_mass_3)
+        self.first_modified_cartpole_env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_1, pole_mass=self.CP_pole_mass_1)
+        self.second_modified_cartpole_env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, pole_mass=self.CP_pole_mass_2)
+        self.third_modified_cartpole_env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_3, pole_mass=self.CP_pole_mass_3)
 
 
 
         self.agent = DQNAgent(
-            cartpole_env= self.cartpole_env,
             first_modified_cartpole_env= self.first_modified_cartpole_env,
             second_modified_cartpole_env= self.second_modified_cartpole_env,
+            third_modified_cartpole_env= self.third_modified_cartpole_env,
             epsilon_max=self.epsilon_max,
             epsilon_min=self.epsilon_min,
             epsilon_decay=self.epsilon_decay,
@@ -58,44 +59,29 @@ class Trainer:
     def train(self):
         self.warmup_replay_memory(self.warmup_size)
         total_steps = 0
-        total_rewards_in_episodes_cp = []
-        total_rewards_in_episodes_mc1 = []
-        total_rewards_in_episodes_mc2 = []
-        window_size = 1
+        total_rewards_in_episodes = []
 
         # ---------Logging setup---------
 
-        training_logs = pd.DataFrame(columns=["Episode", "Reward_CP_0.5", f"Reward_CP_{self.CP_pole_length_2}", f"Reward_CP_{self.CP_pole_length_3}", "Epsilon"])
-        details_logs = pd.DataFrame(columns=["batch_size", "epsilon_decay", "memory_size", "network_size", "warmup_size", "seed", "max_episodes", "max_steps_per_episode", "discount_factor", "G_ap_coefficient", "G_p_coefficient", "shift parameter", "G_bias_coefficient", "noise_stddev", "CP_pole_length_2", "CP_pole_mass_2", "CP_pole_length_3", "CP_pole_mass_3"])
-        details_logs.loc[len(details_logs)] = [self.batch_size, self.epsilon_decay, self.memory_capacity, self.network_size, self.warmup_size, self.seed, self.max_episodes, self.max_steps_per_episode, self.discount_factor, self.g_ap, self.g_p,self.shift_parameter, self.g_bias, self.noise_stddev, self.CP_pole_length_2, self.CP_pole_mass_2, self.CP_pole_length_3, self.CP_pole_mass_3]
+        training_logs = pd.DataFrame(columns=["Episode", "Reward", "Epsilon"])
+        details_logs = pd.DataFrame(columns=["batch_size", "epsilon_decay", "memory_size", "network_size", "warmup_size", "seed", "max_episodes", "max_steps_per_episode", "discount_factor", "G_ap_coefficient", "G_p_coefficient", "shift parameter", "G_bias_coefficient", "noise_stddev", "CP_pole_length_1","CP_pole_mass_1", "CP_pole_length_2", "CP_pole_mass_2", "CP_pole_length_3", "CP_pole_mass_3"])
+        details_logs.loc[len(details_logs)] = [self.batch_size, self.epsilon_decay, self.memory_capacity, self.network_size, self.warmup_size, self.seed, self.max_episodes, self.max_steps_per_episode, self.discount_factor, self.g_ap, self.g_p,self.shift_parameter, self.g_bias, self.noise_stddev, self.CP_pole_length_1, self.CP_pole_mass_1, self.CP_pole_length_2, self.CP_pole_mass_2, self.CP_pole_length_3, self.CP_pole_mass_3]
         details_logs.to_csv(self.folder / "details_log.csv", index=False)
 
         for episode in range(1, self.max_episodes + 1):
             # Initial observation from environment
-            state_cp = self.cartpole_env.reset()
             state_mc1 = self.first_modified_cartpole_env.reset()
             state_mc2 = self.second_modified_cartpole_env.reset()
+            state_mc3 = self.third_modified_cartpole_env.reset()
             # Flags to track episode completion for each environment
-            done_cp = False
             done_mc1 = False
             done_mc2 = False
+            done_mc3 = False
             # Total reward accumulated in this episode each environment (for logging)
-            episode_reward_cp = 0
-            episode_reward_mc1 = 0
-            episode_reward_mc2 = 0
             step_counter = 0                # Step counter inside episode
-            while not done_cp and not done_mc1 and not done_mc2:
+            while not done_mc1 and not done_mc2 and not done_mc3:
                 step_counter += 1
                 total_steps += 1
-
-                # ---- CartPole ----
-                if not done_cp:
-                    action_cp = self.agent.select_action(state_cp, ap_index=0)
-                    next_state_cp, reward_cp, done_cp = self.cartpole_env.step(action_cp)
-                    self.agent.cartpole_memory.store(state_cp, action_cp, next_state_cp, reward_cp, done_cp)
-                    state_cp = next_state_cp
-                    episode_reward_cp += reward_cp
-                    self.agent.learn(self.batch_size, ap_index=0)
 
                 # ---- Modified Cart Pole 1 ----
                 if not done_mc1:
@@ -103,8 +89,7 @@ class Trainer:
                     next_state_mc1, reward_mc1, done_mc1 = self.first_modified_cartpole_env.step(action_mc1)
                     self.agent.first_modified_cartpole_memory.store(state_mc1, action_mc1, next_state_mc1, reward_mc1, done_mc1)
                     state_mc1 = next_state_mc1
-                    episode_reward_mc1 += reward_mc1
-                    self.agent.learn(self.batch_size, ap_index=1)
+                    self.agent.learn(self.batch_size, ap_index=0)
 
                 # ---- Modified Cart Pole 2 ----
                 if not done_mc2:
@@ -112,12 +97,17 @@ class Trainer:
                     next_state_mc2, reward_mc2, done_mc2 = self.second_modified_cartpole_env.step(action_mc2)
                     self.agent.second_modified_cartpole_memory.store(state_mc2, action_mc2, next_state_mc2, reward_mc2, done_mc2)
                     state_mc2 = next_state_mc2
-                    episode_reward_mc2 += reward_mc2
+                    self.agent.learn(self.batch_size, ap_index=1)
+
+                # ---- Modified Cart Pole 3 ----
+                if not  done_mc3:
+                    action_mc3 = self.agent.select_action(state_mc3, ap_index=3)
+                    next_state_mc3, reward_mc3, done_mc3 = self.third_modified_cartpole_env.step(action_mc3)
+                    self.agent.third_modified_cartpole_memory.store(state_mc3, action_mc3, next_state_mc3, reward_mc3, done_mc3)
+                    state_mc3 = next_state_mc3
                     self.agent.learn(self.batch_size, ap_index=2)
 
-            total_rewards_in_episodes_cp.append(episode_reward_cp)
-            total_rewards_in_episodes_mc1.append(episode_reward_mc1)
-            total_rewards_in_episodes_mc2.append(episode_reward_mc2)
+            total_rewards_in_episodes.append(step_counter)
 
             # Update epsilon (step-based)
             self.agent.update_epsilon(total_steps)
@@ -126,53 +116,37 @@ class Trainer:
             print(
                 f"Episode: {episode}, "
                 f"Steps: {step_counter}, "
-                f"CP_reward: {episode_reward_cp:.2f}, "
-                f"MC1_reward: {episode_reward_mc1:.2f}, "
-                f"MC2_reward: {episode_reward_mc2:.2f}, "
                 f"Epsilon: {self.agent.epsilon:.2f}"
             )
-            training_logs.loc[len(training_logs)] = [episode, episode_reward_cp, episode_reward_mc1, episode_reward_mc2, self.agent.epsilon]
-
-            # SAVE BEST MODEL For CP based on recent average reward
-            if len(total_rewards_in_episodes_cp) >= window_size:
-                recent_avg = np.mean(total_rewards_in_episodes_cp[-window_size:])
-                if recent_avg >= self.max_steps_per_episode:
-                    model_path = f"CP_best_model_{total_steps}.pth"
-                    self.agent.weight_controller.load_weights(0)
-                    torch.save(
-                        self.agent.q_network.state_dict(),
-                        self.folder /model_path
-                    )
-                    print(f"Default Cartpole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
-
-
-            # SAVE BEST MODEL For MC1 based on recent average reward
-            if len(total_rewards_in_episodes_mc1) >= window_size:
-               recent_avg = np.mean(total_rewards_in_episodes_mc1[-window_size:])
-               if recent_avg >= self.max_steps_per_episode:
-                   model_path = f"MC1_best_model_{total_steps}.pth"
-                   self.agent.weight_controller.load_weights(1)
-                   torch.save(
-                       self.agent.q_network.state_dict(),
-                       self.folder /model_path
-                   )
-                   print(f"First Modified Cart Pole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
-
-            # SAVE BEST MODEL For MC2 based on recent average reward
-            if len(total_rewards_in_episodes_mc2) >= window_size:
-                recent_avg = np.mean(total_rewards_in_episodes_mc2[-window_size:])
-                if recent_avg >= self.max_steps_per_episode:
-                     model_path = f"MC2_best_model_{total_steps}.pth"
-                     self.agent.weight_controller.load_weights(2)
-                     torch.save(
-                          self.agent.q_network.state_dict(),
-                          self.folder /model_path
-                     )
-                     print(f"Second Modified Cart Pole New best model saved (seed {self.seed}) with recent average reward {recent_avg:.2f} -> {model_path}")
-
+            training_logs.loc[len(training_logs)] = [episode, step_counter, self.agent.epsilon]
+            # Save model for each environment when a new best reward is achieved
+            if step_counter >= self.max_steps_per_episode:
+                # Problem 1
+               model_path_1 = f"MC1_{total_steps}.pth"
+               self.agent.weight_controller.load_weights(0)
+               torch.save(
+                   self.agent.q_network.state_dict(),
+                   self.folder /model_path_1
+               )
+               # Problem 2
+               model_path_2 = f"MC2_{total_steps}.pth"
+               self.agent.weight_controller.load_weights(1)
+               torch.save(
+                    self.agent.q_network.state_dict(),
+                    self.folder /model_path_2)
+               # Problem 3
+               model_path_3 = f"MC3_{total_steps}.pth"
+               self.agent.weight_controller.load_weights(2)
+               torch.save(
+                    self.agent.q_network.state_dict(),
+                    self.folder /model_path_3
+                )
+               print(f"First Modified Cart Pole New best model saved (seed {self.seed}) with recent average reward {step_counter:.2f} -> {model_path}")
+               print(f"Second Modified Cart Pole New best model saved (seed {self.seed}) with recent average reward {step_counter:.2f} -> {model_path}")
+               print(f"Third Modified Cart Pole New best model saved (seed {self.seed}) with recent average reward {step_counter:.2f} -> {model_path}")
 
         training_logs.to_csv(self.folder /"training_log.csv", index=False)
-        return total_rewards_in_episodes_cp, total_rewards_in_episodes_mc1, total_rewards_in_episodes_mc2
+        return total_rewards_in_episodes
 
 
 
@@ -186,9 +160,13 @@ class Trainer:
         for test_num in range(num_tests):
             seed = random.randint(0, 50000)
             if cartpole == 0:
-                env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode)
-            else:
+                env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_1, pole_mass=self.CP_pole_mass_1)
+            elif cartpole == 1:
                 env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, pole_mass=self.CP_pole_mass_2)
+            elif cartpole == 2:
+                env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_3, pole_mass=self.CP_pole_mass_3)
+            else:
+                raise ValueError("Invalid cartpole index. Must be 0, 1, or 2.")
             state = env.reset()
             done = False
             total_reward = 0
@@ -212,20 +190,20 @@ class Trainer:
 
 
     def warmup_replay_memory(self, num_steps):
-        state_cp = self.cartpole_env.reset()
         state_mc1 = self.first_modified_cartpole_env.reset()
         state_mc2 = self.second_modified_cartpole_env.reset()
+        state_mc3 = self.third_modified_cartpole_env.reset()
         for _ in range(num_steps):
             # random action for exploration
-            action_cp = self.cartpole_env.action_space.sample()
             action_mc1 = self.first_modified_cartpole_env.action_space.sample()
             action_mc2 = self.second_modified_cartpole_env.action_space.sample()
-            next_state_cp, reward_cp, done_cp = self.cartpole_env.step(action_cp)
+            action_mc3 = self.third_modified_cartpole_env.action_space.sample()
             next_state_mc1, reward_mc1, done_mc1 = self.first_modified_cartpole_env.step(action_mc1)
             next_state_mc2, reward_mc2, done_mc2 = self.second_modified_cartpole_env.step(action_mc2)
-            self.agent.cartpole_memory.store(state_cp, action_cp, next_state_cp, reward_cp, done_cp)
-            self.agent.second_modified_cartpole_memory.store(state_mc1, action_mc1, next_state_mc1, reward_mc1, done_mc1)
+            next_state_mc3, reward_mc3, done_mc3 = self.third_modified_cartpole_env.step(action_mc3)
+            self.agent.first_modified_cartpole_memory.store(state_mc1, action_mc1, next_state_mc1, reward_mc1, done_mc1)
             self.agent.second_modified_cartpole_memory.store(state_mc2, action_mc2, next_state_mc2, reward_mc2, done_mc2)
-            state_cp = self.cartpole_env.reset() if done_cp else next_state_cp
+            self.agent.third_modified_cartpole_memory.store(state_mc3, action_mc3, next_state_mc3, reward_mc3, done_mc3)
             state_mc1 = self.first_modified_cartpole_env.reset() if done_mc1 else next_state_mc1
             state_mc2 = self.second_modified_cartpole_env.reset() if done_mc2 else next_state_mc2
+            state_mc3 = self.third_modified_cartpole_env.reset() if done_mc3 else next_state_mc3
