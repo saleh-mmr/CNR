@@ -12,32 +12,35 @@ from pathlib import Path
 
 
 hyperparams = {
-    "discount_factor": 0.99,
-    "batch_size": 3000,
-    "warmup_size": 3000,
-    "network_size": 60,
-    "max_steps_per_episode": 200,
-    "max_episodes": 3000,
-    "epsilon_max": 1.0,
-    "epsilon_min": 0.01,
-    "epsilon_decay": 0.00001,
-    "memory_capacity": 10000,
-    "g_ap": 25.0,
-    "g_p": 22.0,
-    "shift_parameter": 6,
-    "g_bias": 45.0,
-    "noise_stddev": 0.01,
-    "CP_pole_length_2": 3.5,
-    "CP_pole_mass_2": 1.5
+	"discount_factor": 0.99,
+	"batch_size": 3000,
+	"warmup_size": 3000,
+	"network_size": 140,
+	"max_steps_per_episode": 100,
+	"max_episodes": 4000,
+	"epsilon_max": 1.0,
+	"epsilon_min": 0.01,
+	"epsilon_decay": 0.00007,
+	"memory_capacity": 10000,
+	"g_ap": 15.0,
+	"g_p": 12.0,
+	"shift_parameter": 20,
+	"g_bias": 28.0,
+	"noise_stddev": 0.001,
+	"CP_pole_length_1": 5.0,
+	"CP_pole_mass_1": 1.0,
+	"CP_pole_length_2": 10.0,
+	"CP_pole_mass_2": 2.0,
+	"CP_pole_length_3": 20.0,
+	"CP_pole_mass_3": 5.0,
 }
 
 
-
 if __name__ == "__main__":
-    seed = 800
+    seed = 837
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    folder = Path(f"run_{timestamp}")
-    # Create the folder
+
+    folder = Path("three_problems") / f"run_{timestamp}"
     folder.mkdir(parents=True, exist_ok=True)
 
     random.seed(seed)
@@ -45,24 +48,21 @@ if __name__ == "__main__":
     torch.manual_seed(seed)
 
     trainer = Trainer(hyperparams, seed, folder)
-    rewards_cp, rewards_mc = trainer.train()
+    rewards = trainer.train()
 
-    # Plot results
-    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    fig, ax = plt.subplots(figsize=(14, 6))
 
-    # ----- CP Plot -----
-    axes[0].plot(rewards_cp, label="Reward CP", linewidth=2)
-    axes[0].set_xlabel("Episode", fontsize=14)
-    axes[0].set_ylabel("Reward", fontsize=14)
-    axes[0].set_title("Training on CP with Pole Length 0.5", fontsize=16)
-    axes[0].grid(True)
-
-    # ----- MC Plot -----
-    axes[1].plot(rewards_mc, label="Reward MC", linewidth=2)
-    axes[1].set_xlabel("Episode", fontsize=14)
-    axes[1].set_ylabel("Reward", fontsize=14)
-    axes[1].set_title(f"Training on CP with Pole Length {hyperparams["CP_pole_length_2"]}", fontsize=16)
-    axes[1].grid(True)
+    ax.plot(rewards, label="Reward", linewidth=4)
+    ax.set_xlabel("Episode", fontsize=15)
+    ax.set_ylabel("Reward", fontsize=15)
+    ax.set_title(
+        f"Training on Cartpole Problems with Pole Length "
+        f"{hyperparams['CP_pole_length_1']}, "
+        f"{hyperparams['CP_pole_length_2']}, "
+        f"{hyperparams['CP_pole_length_3']}",
+        fontsize=16
+    )
+    ax.grid(True)
 
     plt.tight_layout()
     plot_path = folder / "training_plot.png"
