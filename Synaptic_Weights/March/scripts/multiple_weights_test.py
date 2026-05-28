@@ -1,82 +1,75 @@
 import sys
 from pathlib import Path
 
+import pandas as pd
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
-if str(PROJECT_ROOT) not in sys.path:
-	sys.path.append(str(PROJECT_ROOT))
+sys.path.append(str(PROJECT_ROOT))
 
 from learning.trainer import Trainer
 
 
-hyperparams = {
-	"discount_factor": 0.99,
-	"batch_size": 3000,
-	"warmup_size": 3000,
-	"network_size": 80,
-	"max_steps_per_episode": 100,
-	"max_episodes": 4000,
-	"epsilon_max": 1.0,
-	"epsilon_min": 0.01,
-	"epsilon_decay": 0.00007,
-	"memory_capacity": 10000,
-	"g_ap": 18.0,
-	"g_p": 15.0,
-	"shift_parameter": 20,
-	"g_bias": 30.0,
-	"noise_stddev": 0.001,
-	"CP_pole_length_1": 5.0,
-	"CP_pole_mass_1": 1.0,
-	"CP_pole_length_2": 10.0,
-	"CP_pole_mass_2": 2.0,
-	"CP_pole_length_3": 20.0,
-	"CP_pole_mass_3": 5.0,
-}
+def load_hyperparams(folder):
+	row = pd.read_csv(folder / "details_log.csv").iloc[0]
+
+	return {
+		"discount_factor": float(row["discount_factor"]),
+		"batch_size": int(row["batch_size"]),
+		"warmup_size": int(row["warmup_size"]),
+		"network_size": int(row["network_size"]),
+		"max_steps_per_episode": int(row["max_steps_per_episode"]),
+		"max_episodes": int(row["max_episodes"]),
+		"epsilon_max": 1.0,
+		"epsilon_min": 0.01,
+		"epsilon_decay": float(row["epsilon_decay"]),
+		"memory_capacity": int(row["memory_size"]),
+
+		"g_ap": float(row["G_ap_coefficient"]),
+		"g_p": float(row["G_p_coefficient"]),
+		"shift_parameter": float(row["shift parameter"]),
+		"g_bias": float(row["G_bias_coefficient"]),
+		"noise_stddev": float(row["noise_stddev"]),
+
+		"CP_pole_length_1": float(row["CP_pole_length_1"]),
+		"CP_pole_mass_1": float(row["CP_pole_mass_1"]),
+		"CP_pole_length_2": float(row["CP_pole_length_2"]),
+		"CP_pole_mass_2": float(row["CP_pole_mass_2"]),
+		"CP_pole_length_3": float(row["CP_pole_length_3"]),
+		"CP_pole_mass_3": float(row["CP_pole_mass_3"]),
+	}
 
 
 def main():
-	folder_name = "run_2026-05-27_19-38-33"
-	cartpole_selector = 2
-	weight_selector = 2
-	num_tests = 3
+	folder_name = "run_2026-05-28_11-12-07"
+	cartpole_selector = 0
+	weight_selector = 0
+	num_tests = 100
+	folder = SCRIPT_DIR / "three_problems" / folder_name
+	hyperparams = load_hyperparams(folder)
 
-	base_folder = SCRIPT_DIR / "three_problems"
-	folder = base_folder / folder_name
-	if not folder.exists():
-		print(f"Run folder not found: {folder}")
-		return
-
-	keyword_by_selector = {0: "MC1", 1: "MC2", 2: "MC3"}
-	keyword = keyword_by_selector.get(weight_selector)
-	if keyword is None:
-		print("Invalid weight_selector. Use 0, 1, or 2.")
-		return
+	keyword = ["MC1", "MC2", "MC3"][weight_selector]
 
 	checkpoint_paths = sorted(
-		[path for path in folder.iterdir() if path.is_file() and path.suffix == ".pth" and path.name.startswith(f"{keyword}_")],
-		key=lambda path: int(path.stem.split("_")[-1]) if path.stem.split("_")[-1].isdigit() else -1,
+		folder.glob(f"{keyword}_*.pth"),
+		key=lambda p: int(p.stem.split("_")[-1])
 	)
-
-	if not checkpoint_paths:
-		print(f"No checkpoints found in {folder} for prefix {keyword}_")
-		return
 
 	trainer = Trainer(hyperparams, seed=None, folder=folder)
 
 	for checkpoint_path in checkpoint_paths:
 		print(f"\n=== Testing checkpoint: {checkpoint_path.name} ===")
+
 		test_log = trainer.test(
 			model_path=checkpoint_path,
 			num_tests=num_tests,
 			cartpole=cartpole_selector,
 		)
 
-		mean_reward = float(test_log["reward"].mean())
-		std_reward = float(test_log["reward"].std(ddof=0))
-
 		print(
 			f"Summary for {checkpoint_path.name} | "
-			f"mean={mean_reward:.6f} | std={std_reward:.6f}"
+			f"mean={test_log['reward'].mean():.6f} | "
+			f"std={test_log['reward'].std(ddof=0):.6f}"
 		)
 
 

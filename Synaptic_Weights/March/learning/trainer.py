@@ -113,6 +113,7 @@ class Trainer:
                     state_mc3 = next_state_mc3
                     self.agent.learn(self.batch_size, ap_index=2)
 
+
             total_rewards_in_episodes.append(step_counter)
 
             # Update epsilon (step-based)
@@ -122,7 +123,8 @@ class Trainer:
             print(
                 f"Episode: {episode}, "
                 f"Steps: {step_counter}, "
-                f"Epsilon: {self.agent.epsilon:.2f}"
+                f"Epsilon: {self.agent.epsilon:.2f}, ",
+                f"flags: {done_mc1, done_mc2, done_mc3}"
             )
             training_logs.loc[len(training_logs)] = [episode, step_counter, self.agent.epsilon]
             # Save model for each environment when a new best reward is achieved

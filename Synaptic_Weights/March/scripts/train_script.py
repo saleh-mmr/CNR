@@ -13,31 +13,31 @@ from pathlib import Path
 
 hyperparams = {
 	"discount_factor": 0.99,
-	"batch_size": 3000,
-	"warmup_size": 3000,
-	"network_size": 140,
+	"batch_size": 1000,
+	"warmup_size": 1000,
+	"network_size": 50,
 	"max_steps_per_episode": 100,
 	"max_episodes": 4000,
 	"epsilon_max": 1.0,
 	"epsilon_min": 0.01,
-	"epsilon_decay": 0.00007,
+	"epsilon_decay": 0.00005,
 	"memory_capacity": 10000,
-	"g_ap": 15.0,
-	"g_p": 12.0,
+	"g_ap": 13.0,
+	"g_p": 11.0,
 	"shift_parameter": 20,
-	"g_bias": 28.0,
-	"noise_stddev": 0.001,
-	"CP_pole_length_1": 5.0,
-	"CP_pole_mass_1": 1.0,
-	"CP_pole_length_2": 10.0,
-	"CP_pole_mass_2": 2.0,
-	"CP_pole_length_3": 20.0,
-	"CP_pole_mass_3": 5.0,
+	"g_bias": 20.0,
+	"noise_stddev": 0.0001,
+	"CP_pole_length_1": 0.5,
+	"CP_pole_mass_1": 0.1,
+	"CP_pole_length_2": 1,
+	"CP_pole_mass_2": 0.2,
+	"CP_pole_length_3": 1.5,
+	"CP_pole_mass_3": 0.3,
 }
 
 
 if __name__ == "__main__":
-    seed = 837
+    seed = 873
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     folder = Path("three_problems") / f"run_{timestamp}"
