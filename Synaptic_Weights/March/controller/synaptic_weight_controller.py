@@ -189,7 +189,7 @@ class SynapticWeightController:
             x_bias = self.bias_x[name]
             noise_bias = self.bias_noise[name]
 
-            g_bias = self.g_bias * torch.log10(x_bias) + (1.0 + noise_bias)
+            g_bias = (self.g_bias * torch.log10(x_bias)) * (1.0 + noise_bias)
 
             # ----- Positive crosspoint conductance total -----
             g_total = torch.zeros_like(param)
@@ -200,10 +200,10 @@ class SynapticWeightController:
 
                 if problem_index == ap_index:
                     # AP conductance
-                    g = self.g_ap * torch.log10(x_pos) + (1.0 + noise_pos)
+                    g = (self.g_ap * torch.log10(x_pos)) * (1.0 + noise_pos)
                 else:
                     # P conductance
-                    g = self.g_p * torch.log10(x_pos + self.shift_parameter) + (1.0 + noise_pos)
+                    g = (self.g_p * torch.log10(x_pos + self.shift_parameter)) * (1.0 + noise_pos)
 
                 g_total += g
 
