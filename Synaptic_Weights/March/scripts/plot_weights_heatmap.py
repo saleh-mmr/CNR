@@ -9,10 +9,10 @@ plt.rcParams.update({'font.size': 16})
 
 # Paths to your models
 base_dir = os.path.dirname(os.path.abspath(__file__))
-folder = os.path.join(base_dir, "../weights/we")
-step = 305556
-path1 = os.path.join(folder, f"CP_best_model_{step}.pth")
-path2 = os.path.join(folder, f"MC_best_model_{step}.pth")
+folder = os.path.join(base_dir, "three_problems/run_2026-05-31_11-07-56")
+step = 163101
+path1 = os.path.join(folder, f"MC1_{step}.pth")
+path2 = os.path.join(folder, f"MC2_{step}.pth")
 
 
 
@@ -39,7 +39,7 @@ plt.figure(figsize=(14, 6))
 plt.subplot(1, 2, 1)
 sns.heatmap(w1, center=0, vmin=-max_abs, vmax=max_abs,
             xticklabels=5, yticklabels=5)
-plt.title("FC.2.weight - CartPole (L=0.5)")
+plt.title("FC.2.weight - MC1")
 plt.xticks(rotation=0)  # text stands upright
 plt.yticks(rotation=0)  # text stands upright
 
@@ -47,7 +47,7 @@ plt.yticks(rotation=0)  # text stands upright
 plt.subplot(1, 2, 2)
 sns.heatmap(w2, center=0, vmin=-max_abs, vmax=max_abs,
             xticklabels=5, yticklabels=5)
-plt.title("FC.2.weight - CartPole (L=0.7)")
+plt.title("FC.2.weight - MC2")
 plt.xticks(rotation=0)
 plt.yticks(rotation=0)
 
