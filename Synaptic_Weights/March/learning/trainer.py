@@ -66,6 +66,8 @@ class Trainer:
         self.warmup_replay_memory(self.warmup_size)
         total_steps = 0
         total_rewards_in_episodes = []
+        window_size = 4  # choose your window
+        best_mean_reward = -float("inf")
 
         # ---------Logging setup---------
 
@@ -127,32 +129,39 @@ class Trainer:
                 f"flags: {done_mc1, done_mc2, done_mc3}"
             )
             training_logs.loc[len(training_logs)] = [episode, step_counter, self.agent.epsilon]
-            # Save model for each environment when a new best reward is achieved
-            if step_counter >= self.max_steps_per_episode:
-                # Problem 1
-               model_path_1 = f"MC1_{total_steps}.pth"
-               self.agent.weight_controller.load_weights(0)
-               torch.save(
-                   self.agent.q_network.state_dict(),
-                   self.folder /model_path_1
-               )
-               # Problem 2
-               model_path_2 = f"MC2_{total_steps}.pth"
-               self.agent.weight_controller.load_weights(1)
-               torch.save(
-                    self.agent.q_network.state_dict(),
-                    self.folder /model_path_2)
-               # Problem 3
-               model_path_3 = f"MC3_{total_steps}.pth"
-               self.agent.weight_controller.load_weights(2)
-               torch.save(
-                    self.agent.q_network.state_dict(),
-                    self.folder /model_path_3
-                )
-               print(f"First Modified Cart Pole New best model saved (seed {self.seed}) with recent average reward {step_counter:.2f} -> {model_path_1}")
-               print(f"Second Modified Cart Pole New best model saved (seed {self.seed}) with recent average reward {step_counter:.2f} -> {model_path_2}")
-               print(f"Third Modified Cart Pole New best model saved (seed {self.seed}) with recent average reward {step_counter:.2f} -> {model_path_3}")
 
+            recent_rewards = total_rewards_in_episodes[-window_size:]
+            recent_mean_reward = sum(recent_rewards) / len(recent_rewards)
+
+            should_save_by_mean = recent_mean_reward > best_mean_reward
+            should_save_by_goal = step_counter >= self.max_steps_per_episode
+
+            if should_save_by_mean or should_save_by_goal:
+                if should_save_by_mean:
+                    best_mean_reward = recent_mean_reward
+
+                model_path_1 = f"MC1_{total_steps}.pth"
+                self.agent.weight_controller.load_weights(0)
+                torch.save(self.agent.q_network.state_dict(), self.folder / model_path_1)
+
+                model_path_2 = f"MC2_{total_steps}.pth"
+                self.agent.weight_controller.load_weights(1)
+                torch.save(self.agent.q_network.state_dict(), self.folder / model_path_2)
+
+                model_path_3 = f"MC3_{total_steps}.pth"
+                self.agent.weight_controller.load_weights(2)
+                torch.save(self.agent.q_network.state_dict(), self.folder / model_path_3)
+
+                reason = []
+                if should_save_by_mean:
+                    reason.append(f"new best recent mean {recent_mean_reward:.2f}")
+                if should_save_by_goal:
+                    reason.append(f"goal reached with reward {step_counter}")
+
+                print(
+                    f"Models saved | seed {self.seed} | "
+                    f"reason: {', '.join(reason)}"
+                )
         training_logs.to_csv(self.folder /"training_log.csv", index=False)
         return total_rewards_in_episodes
 

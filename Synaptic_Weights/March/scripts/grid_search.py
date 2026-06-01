@@ -48,7 +48,7 @@ if __name__ == "__main__":
     seed = 873
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    root_folder = Path("grid_search") / f"grid_{timestamp}"
+    root_folder = Path("../weights/grid_search") / f"grid_{timestamp}"
     root_folder.mkdir(parents=True, exist_ok=True)
 
     for g_ap, g_p, g_bias, CP_pole_length_1  in itertools.product(G_ap, G_p, G_bias, CP_pole_length_1):
