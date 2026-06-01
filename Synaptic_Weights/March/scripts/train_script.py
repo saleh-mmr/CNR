@@ -28,7 +28,7 @@ hyperparams = {
     "shift_parameter": 20,
     "g_bias": 54.0,
 
-    "noise_stddev": 0.0,
+    "noise_stddev": 0.2,
     "CP_pole_length_1": 2.8,
     "CP_pole_mass_1": 0.3,
     "CP_pole_length_2": 16.0,
