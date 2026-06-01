@@ -12,32 +12,34 @@ from pathlib import Path
 
 
 hyperparams = {
-	"discount_factor": 0.99,
-	"batch_size": 1000,
-	"warmup_size": 1000,
-	"network_size": 80,
-	"max_steps_per_episode": 100,
-	"max_episodes": 2000,
-	"epsilon_max": 1.0,
-	"epsilon_min": 0.01,
-	"epsilon_decay": 0.00005,
-	"memory_capacity": 10000,
-	"g_ap": 25.0,
-	"g_p": 22.0,
-	"shift_parameter": 20,
-	"g_bias": 52.0,
-	"noise_stddev": 0.0001,
-	"CP_pole_length_1": 0.5,
-	"CP_pole_mass_1": 0.1,
-	"CP_pole_length_2": 5,
-	"CP_pole_mass_2": 0.5,
-	"CP_pole_length_3": 5,
-	"CP_pole_mass_3": 0.5,
+    "discount_factor": 0.99,
+    "batch_size": 128,
+    "warmup_size": 128,
+    "network_size": 128,
+    "max_steps_per_episode": 100,
+    "max_episodes": 200000,
+    "epsilon_max": 1.0,
+    "epsilon_min": 0.01,
+    "epsilon_decay": 0.00001,
+    "memory_capacity": 10000,
+
+    "g_ap": 26.0,
+    "g_p": 22.0,
+    "shift_parameter": 20,
+    "g_bias": 54.0,
+
+    "noise_stddev": 0.0,
+    "CP_pole_length_1": 2.8,
+    "CP_pole_mass_1": 0.3,
+    "CP_pole_length_2": 16.0,
+    "CP_pole_mass_2": 0.6,
+    "CP_pole_length_3": 24.0,
+    "CP_pole_mass_3": 0.9,
 }
 
 
 if __name__ == "__main__":
-    seed = 877
+    seed = 873
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     folder = Path("three_problems") / f"run_{timestamp}"

@@ -15,6 +15,9 @@ class DQNNetwork(nn.Module):
             nn.Linear(network_size, network_size),
             nn.LeakyReLU(negative_slope=0.01),
 
+            nn.Linear(network_size, network_size),
+            nn.LeakyReLU(negative_slope=0.01),
+
             nn.Linear(network_size, num_actions)        # [Q_left, Q_right]  → choose max action
         )
 
