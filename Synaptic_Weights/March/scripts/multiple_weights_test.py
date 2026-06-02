@@ -1,8 +1,6 @@
 import sys
 from pathlib import Path
-
 import pandas as pd
-
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 sys.path.append(str(PROJECT_ROOT))
@@ -41,9 +39,9 @@ def load_hyperparams(folder):
 
 
 def main():
-	folder_name = "run_2026-06-02_07-44-54"
+	folder_name = "run_2026-06-02_17-58-32"
 	cartpole_selector = 0
-	weight_selector = 1
+	weight_selector = 0
 	num_tests = 100
 	folder = SCRIPT_DIR / "three_problems" / folder_name
 	hyperparams = load_hyperparams(folder)
@@ -65,8 +63,7 @@ def main():
 			cartpole=cartpole_selector,
 		)
 
-		if test_log['reward'].mean() > hyperparams['max_steps_per_episode'] * 0.9:
-		# if test_log['reward'].mean() < hyperparams['max_steps_per_episode'] * 0.9:
+		if test_log['reward'].mean() > hyperparams['max_steps_per_episode'] * 0.8:
 			print(f"\n=== Testing checkpoint: {checkpoint_path.name} ===")
 			print(
 				f"Summary for {checkpoint_path.name} | "

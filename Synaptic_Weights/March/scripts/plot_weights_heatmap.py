@@ -10,15 +10,16 @@ plt.rcParams.update({'font.size': 16})
 
 # Paths to your models
 base_dir = os.path.dirname(os.path.abspath(__file__))
-folder = os.path.join(base_dir, "three_problems/run_2026-06-02_07-44-54")
-step = 23007
-step = 50998
-step = 66995
-step = 98665
-step = 115631
-step = 131703
+folder = os.path.join(base_dir, "three_problems/run_2026-06-02_17-58-32")
+# step = 43242 / 43242 / 43242
+# step = 68593 / 140075 / 95443
+# step = 95443 / 146637 / 113815
+# step = 113815 / - / 140075
+# step = 140075 / - / 146637
+# step = 146637 / - / 146637
+step = 24199
 path1 = os.path.join(folder, f"MC1_{step}.pth")
-path2 = os.path.join(folder, f"MC3_{step}.pth")
+path2 = os.path.join(folder, f"MC2_{step}.pth")
 
 # ---------------------------------------------------------
 # Read pole lengths dynamically from details_log.csv
