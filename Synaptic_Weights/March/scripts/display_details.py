@@ -1,35 +1,43 @@
-from csv import DictReader
 from pathlib import Path
+import pandas as pd
+import matplotlib.pyplot as plt
 
 def main():
-	# Paths to your models
-	base_dir = Path(__file__).resolve().parent
-	folder = base_dir / "run_2026-05-15_23-37-49"
-	file = folder / "details_log.csv"
+    base_dir = Path(__file__).resolve().parent
+    folder = base_dir / "three_problems/run_2026-06-01_22-01-54"
+    file = folder / "details_log.csv"
 
-	if not file.exists():
-		raise FileNotFoundError(f"Could not find details log at: {file}")
+    df = pd.read_csv(file)
 
-	# Load and display the CSV file
-	with file.open(newline="", encoding="utf-8") as handle:
-		reader = DictReader(handle)
-		rows = list(reader)
-		columns = reader.fieldnames or []
+    table_df = df.iloc[0].reset_index()
+    table_df.columns = ["Parameter", "Value"]
 
-	if not columns:
-		raise ValueError(f"No columns found in CSV: {file}")
+    fig, ax = plt.subplots(figsize=(7, len(table_df) * 0.55))
+    ax.axis("off")
 
-	preview_rows = rows[:5]
-	table = [columns] + [[row.get(column, "") for column in columns] for row in preview_rows]
-	widths = [max(len(str(cell)) for cell in column_values) for column_values in zip(*table)]
+    table = ax.table(
+        cellText=table_df.values,
+        colLabels=table_df.columns,
+        loc="center",
+        cellLoc="center",
+        colLoc="center",
+        colWidths=[0.45, 0.55]
+    )
 
-	print("Details log preview:\n")
-	for row_index, row in enumerate(table):
-		print(" ".join(str(cell).rjust(width) for cell, width in zip(row, widths)))
-		if row_index == 0:
-			print(" ".join("-" * width for width in widths))
+    table.auto_set_font_size(False)
+    table.set_fontsize(13)
+    table.scale(1, 1.6)
 
+    for (row, col), cell in table.get_celld().items():
+        cell.set_text_props(ha="center", va="center")
+
+        if row == 0:
+            cell.set_facecolor("#D9EAF7")
+            cell.set_text_props(weight="bold", ha="center", va="center")
+
+    output_file = folder / "parameters_table.png"
+    plt.savefig(output_file, bbox_inches="tight", dpi=300)
+    plt.close()
 
 if __name__ == "__main__":
-	main()
-
+    main()

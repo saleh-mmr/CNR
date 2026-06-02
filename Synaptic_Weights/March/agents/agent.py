@@ -8,7 +8,7 @@ import torch
 from utils import config
 from memory.replay_memory import ReplayMemory
 from network.network import DQNNetwork
-from controller.synaptic_weight_controller_optimize import SynapticWeightController
+from controller.synaptic_weight_controller import SynapticWeightController
 
 
 class DQNAgent:
