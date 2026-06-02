@@ -8,7 +8,6 @@ class CrosspointState:
         while i**k<=i+params.shift_parameter:
             i += 1
         self.x = i
-        print("Initial index for crosspoint state: ", self.x)
         # Generates a single random number from a Gaussian (normal) distribution centered at 0.
         self.noise_realization = float(np.random.normal(0.0, params.noise_stddev))
 
