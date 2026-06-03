@@ -118,9 +118,21 @@ class DQNAgent:
             next_q = self.q_network(next_states).max(dim=1, keepdim=True).values   # Choose max Q-value for each next state
             next_q[dones] = 0.0
         targets = rewards + self.discount * next_q
+        targets = torch.clamp(targets, min=-100.0, max=100.0)
 
         # compare current guess vs target (criterion is MSELoss)
-        loss = self.criterion(predicted_q, targets)
+        base_loss = self.criterion(predicted_q, targets)
+        regularization_C = 0.00001
+
+        weight_sum = torch.tensor(0.0, device=config.device)
+        for param in self.q_network.parameters():
+            weight_sum = weight_sum + param.sum()
+
+        loss = base_loss + regularization_C * weight_sum
+        print(f"Ap index: {ap_index}, Base Loss: {base_loss.item():.4f}, Regularization Term: {(regularization_C * weight_sum).item():.4f}, Total Loss: {loss.item():.4f}")
+        # loss = self.criterion(predicted_q, targets) + C * (Sum of values of weights)
+        #                                             + C * (Sum of absolute values)
+        #                                             + C * (sum of squared values) ~ 10e34
 
         # Clear old gradients
         self.q_network.zero_grad()

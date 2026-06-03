@@ -41,11 +41,11 @@ def load_hyperparams(folder):
 
 
 if __name__ == "__main__":
-    folder_name = "run_2026-06-02_17-58-32"
-    cartpole_selector = 2
-    weight_selector = 1
-    weigh_step = 24199
-    num_tests = 5000
+    folder_name = "run_2026-06-03_01-00-41"
+    cartpole_selector = 1
+    weight_selector = 2
+    weigh_step = 9994
+    num_tests = 10000
     folder = SCRIPT_DIR / "three_problems" / folder_name
     hyperparams = load_hyperparams(folder)
     keyword = ["MC1", "MC2", "MC3"][weight_selector]

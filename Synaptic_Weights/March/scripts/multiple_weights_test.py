@@ -39,9 +39,9 @@ def load_hyperparams(folder):
 
 
 def main():
-	folder_name = "run_2026-06-02_17-58-32"
-	cartpole_selector = 0
-	weight_selector = 0
+	folder_name = "run_2026-06-03_22-18-06"
+	cartpole_selector = 2
+	weight_selector = 2
 	num_tests = 100
 	folder = SCRIPT_DIR / "three_problems" / folder_name
 	hyperparams = load_hyperparams(folder)
@@ -63,13 +63,12 @@ def main():
 			cartpole=cartpole_selector,
 		)
 
-		if test_log['reward'].mean() > hyperparams['max_steps_per_episode'] * 0.8:
-			print(f"\n=== Testing checkpoint: {checkpoint_path.name} ===")
-			print(
-				f"Summary for {checkpoint_path.name} | "
-				f"mean={test_log['reward'].mean():.6f} | "
-				f"std={test_log['reward'].std(ddof=0):.6f}"
-			)
+		print(f"\n=== Testing checkpoint: {checkpoint_path.name} ===")
+		print(
+			f"Summary for {checkpoint_path.name} | "
+			f"mean={test_log['reward'].mean():.6f} | "
+			f"std={test_log['reward'].std(ddof=0):.6f}"
+		)
 
 
 if __name__ == "__main__":

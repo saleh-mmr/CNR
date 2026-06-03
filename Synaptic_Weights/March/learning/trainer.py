@@ -135,8 +135,9 @@ class Trainer:
 
             should_save_by_mean = recent_mean_reward > best_mean_reward
             should_save_by_goal = step_counter >= self.max_steps_per_episode
+            should_save_by_last_episode = episode == self.max_episodes
 
-            if should_save_by_mean or should_save_by_goal:
+            if should_save_by_mean or should_save_by_goal or should_save_by_last_episode:
                 if should_save_by_mean:
                     best_mean_reward = recent_mean_reward
 
