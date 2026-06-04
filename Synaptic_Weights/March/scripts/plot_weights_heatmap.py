@@ -10,8 +10,8 @@ plt.rcParams.update({'font.size': 16})
 
 # Paths to your models
 base_dir = os.path.dirname(os.path.abspath(__file__))
-folder = os.path.join(base_dir, "three_problems/run_2026-06-03_22-18-06")
-step = 109629
+folder = os.path.join(base_dir, "../weights/three_problem/run_2026-06-04_14-33-43")
+step = 76329
 path1 = os.path.join(folder, f"MC1_{step}.pth")
 path2 = os.path.join(folder, f"MC2_{step}.pth")
 
@@ -34,8 +34,8 @@ state_dict2 = torch.load(path2, map_location="cpu")
 # 1. FC.2 Weight Heatmaps
 # ---------------------------------------------------------
 # Extract FC.2.weight
-w1 = state_dict1["FC.4.weight"].detach().cpu().numpy()
-w2 = state_dict2["FC.4.weight"].detach().cpu().numpy()
+w1 = state_dict1["FC.2.weight"].detach().cpu().numpy()
+w2 = state_dict2["FC.2.weight"].detach().cpu().numpy()
 
 max_abs = max(
     abs(w1.min()), abs(w1.max()),
