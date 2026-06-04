@@ -28,6 +28,7 @@ def load_hyperparams(folder):
         "g_p": float(row["G_p_coefficient"]),
         "shift_parameter": float(row["shift parameter"]),
         "g_bias": float(row["G_bias_coefficient"]),
+        "regularization_C": float(row["regularization_C"]),
         "noise_stddev": float(row["noise_stddev"]),
 
         "CP_pole_length_1": float(row["CP_pole_length_1"]),
