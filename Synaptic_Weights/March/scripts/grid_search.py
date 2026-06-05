@@ -19,29 +19,29 @@ g_bias = [30, 40, 50]
 regularization_C = [10000, 100000, 1000000]
 
 
-base_hyperparams = {
+hyperparams = {
     "discount_factor": 0.99,
-    "batch_size": 1000,
-    "warmup_size": 1000,
+    "batch_size": 1200,
+    "warmup_size": 1200,
     "network_size": 100,
-    "max_steps_per_episode": 100,
-    "max_episodes": 4000,
+    "max_steps_per_episode": 140,
+    "max_episodes": 80000,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
-    "epsilon_decay": 0.00005,
+    "epsilon_decay": 0.000009,
     "memory_capacity": 10000,
     "g_ap": 25.0,
-    "g_p": 10.0,
+    "g_p": 22.0,
     "shift_parameter": 20,
-    "g_bias": 40.0,
-    "noise_stddev": 0.001,
+    "g_bias": 62.0,
+    "regularization_C": 100000.0,
+    "noise_stddev": 0.0001,
     "CP_pole_length_1": 0.5,
     "CP_pole_mass_1": 0.1,
-    "CP_pole_length_2": 7.0,
-    "CP_pole_mass_2": 2.0,
+    "CP_pole_length_2": 8.0,
+    "CP_pole_mass_2": 1.3,
     "CP_pole_length_3": 20.0,
     "CP_pole_mass_3": 4.0,
-    "regularization_C": 10000,
 }
 
 

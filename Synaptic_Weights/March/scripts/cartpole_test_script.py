@@ -28,7 +28,7 @@ def load_hyperparams(folder):
         "g_p": float(row["G_p_coefficient"]),
         "shift_parameter": float(row["shift parameter"]),
         "g_bias": float(row["G_bias_coefficient"]),
-        "regularization_C": float(row["regularization_C"]),
+        "regularization_C": 9,
         "noise_stddev": float(row["noise_stddev"]),
 
         "CP_pole_length_1": float(row["CP_pole_length_1"]),
@@ -42,11 +42,11 @@ def load_hyperparams(folder):
 
 
 if __name__ == "__main__":
-    folder_name = "run_2026-06-04_20-15-48"
-    cartpole_selector = 1
-    weight_selector = 2
-    weigh_step = 33432
-    num_tests = 100
+    folder_name = "run_2026-06-03_23-41-01"
+    cartpole_selector = 2
+    weight_selector = 0
+    weigh_step = 1347460
+    num_tests = 1000
     folder = SCRIPT_DIR / "three_problems" / folder_name
     hyperparams = load_hyperparams(folder)
     keyword = ["MC1", "MC2", "MC3"][weight_selector]
