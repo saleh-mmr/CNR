@@ -9,8 +9,6 @@ class DQNNetwork(nn.Module):
             nn.Linear(input_dim, network_size),
             nn.LeakyReLU(negative_slope=0.01),          # LeakyReLU activation function helps learn non-linear patterns.
 
-            nn.Linear(network_size, network_size),
-            nn.LeakyReLU(negative_slope=0.01),
 
             nn.Linear(network_size, network_size),
             nn.LeakyReLU(negative_slope=0.01),
