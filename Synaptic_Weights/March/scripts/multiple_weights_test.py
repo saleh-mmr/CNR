@@ -27,7 +27,6 @@ def load_hyperparams(folder):
 		"g_ap": float(row["G_ap_coefficient"]),
 		"g_p": float(row["G_p_coefficient"]),
 		"shift_parameter": float(row["shift parameter"]),
-		"regularization_C": float(row["regularization_C"]),
 		"noise_stddev": float(row["noise_stddev"]),
 
 
@@ -37,14 +36,15 @@ def load_hyperparams(folder):
 		"CP_pole_mass_2": float(row["CP_pole_mass_2"]),
 		"CP_pole_length_3": float(row["CP_pole_length_3"]),
 		"CP_pole_mass_3": float(row["CP_pole_mass_3"]),
+		"regularization_C": 0.00000001,
 	}
 
 
 def main():
-	folder_name = "run_2026-06-04_15-20-37"
+	folder_name = "run_2026-06-05_08-05-50"
 	cartpole_selector = 0
 	weight_selector = 0
-	num_tests = 1000
+	num_tests = 10000
 	folder = SCRIPT_DIR / "three_problems" / folder_name
 	hyperparams = load_hyperparams(folder)
 
