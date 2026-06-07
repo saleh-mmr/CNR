@@ -41,10 +41,10 @@ def load_hyperparams(folder):
 
 
 def main():
-	folder_name = "run_2026-06-03_23-41-01"
+	folder_name = "run_2026-06-05_08-05-50"
 	cartpole_selector = 0
 	weight_selector = 0
-	num_tests = 100
+	num_tests = 10000
 	folder = SCRIPT_DIR / "three_problems" / folder_name
 	hyperparams = load_hyperparams(folder)
 

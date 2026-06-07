@@ -114,10 +114,10 @@ def main():
     # ---------------------------------------------------------
     # Settings
     # ---------------------------------------------------------
-    folder_name = "run_2026-06-03_23-41-01"
+    folder_name = "run_2026-06-06_19-59-29"
     folder = SCRIPT_DIR / "three_problems" / folder_name
 
-    num_tests = 100
+    num_tests = 2000
     pass_ratio = 0.80
 
     hyperparams = load_hyperparams(folder)

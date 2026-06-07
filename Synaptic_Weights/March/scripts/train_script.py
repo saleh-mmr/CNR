@@ -16,7 +16,7 @@ hyperparams = {
     "batch_size": 1200,
     "warmup_size": 1200,
     "network_size": 100,
-    "max_steps_per_episode": 150,
+    "max_steps_per_episode": 100,
     "max_episodes": 80000,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
@@ -26,8 +26,8 @@ hyperparams = {
     "g_p": 22.0,
     "shift_parameter": 20,
     "g_bias": 62.0,
-    "regularization_C": 100000.0,
-    "noise_stddev": 0.0001,
+    "regularization_C": 0.00000001,
+    "noise_stddev": 0.1,
     "CP_pole_length_1": 0.8,
     "CP_pole_mass_1": 0.3,
     "CP_pole_length_2": 10.0,
@@ -35,7 +35,6 @@ hyperparams = {
     "CP_pole_length_3": 20.0,
     "CP_pole_mass_3": 2.4,
 }
-
 
 if __name__ == "__main__":
     seed = 873
