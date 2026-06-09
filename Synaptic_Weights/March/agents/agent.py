@@ -60,7 +60,8 @@ class DQNAgent:
         self.q_network = DQNNetwork(output_dim, input_dim, network_size).to(config.device)
 
         # use a squared-error loss just to get gradients,
-        self.criterion = nn.MSELoss()
+        # self.criterion = nn.MSELoss()
+        self.criterion = nn.SmoothL1Loss()
 
         self.weight_controller = SynapticWeightController(self.q_network, g_ap, g_p, shift_parameter, g_bias, noise_stddev)
 
@@ -113,23 +114,45 @@ class DQNAgent:
         q_all = self.q_network(states)
         predicted_q = q_all.gather(1, actions)
 
-        # Max future reward if the episode is not terminal
+        q_max = (1.0 - self.discount ** 150) / (1.0 - self.discount)
+
         with torch.no_grad():
-            next_q = self.q_network(next_states).max(dim=1, keepdim=True).values   # Choose max Q-value for each next state
+            next_q = self.q_network(next_states).max(dim=1, keepdim=True).values
             next_q[dones] = 0.0
-        targets = rewards + self.discount * next_q
-        targets = torch.clamp(targets, min=-100.0, max=100.0)
 
-        # compare current guess vs target (criterion is MSELoss)
+            next_q = torch.clamp(next_q, min=0.0, max=q_max)
+
+            targets = rewards + self.discount * next_q
+            targets = torch.clamp(targets, min=0.0, max=q_max)
+
+
         base_loss = self.criterion(predicted_q, targets)
-        regularization_C = 0.00001
 
-        weight_sum = torch.tensor(0.0, device=config.device)
+        regularization_C = 0.0000001
+
+        l2_reg = torch.tensor(0.0, device=config.device)
         for param in self.q_network.parameters():
-            weight_sum = weight_sum + param.sum()
+            l2_reg = l2_reg + torch.sum(param ** 2)
 
-        loss = base_loss + regularization_C * weight_sum
-        print(f"Ap index: {ap_index}, Base Loss: {base_loss.item():.4f}, Regularization Term: {(regularization_C * weight_sum).item():.4f}, Total Loss: {loss.item():.4f}")
+        loss = base_loss + regularization_C * l2_reg
+
+
+
+
+        #weight_sum = torch.tensor(0.0, device=config.device)
+        #for param in self.q_network.parameters():
+        #    weight_sum = weight_sum + param.sum()
+        #loss = base_loss + regularization_C * weight_sum
+        #print(
+        #    f"ap={ap_index} "
+        #    f"pred_q min={predicted_q.min().item():.3e}, "
+        #    f"pred_q max={predicted_q.max().item():.3e}, "
+        #    f"target min={targets.min().item():.3e}, "
+        #    f"target max={targets.max().item():.3e}, "
+        #    f"next_q min={next_q.min().item():.3e}, "
+        #    f"next_q max={next_q.max().item():.3e}"
+        #)
+        #print(f"Ap index: {ap_index}, Base Loss: {base_loss.item():.4f}, Regularization Term: {(regularization_C * l2_reg).item():.4f}, Total Loss: {loss.item():.4f}")
         # loss = self.criterion(predicted_q, targets) + C * (Sum of values of weights)
         #                                             + C * (Sum of absolute values)
         #                                             + C * (sum of squared values) ~ 10e34
