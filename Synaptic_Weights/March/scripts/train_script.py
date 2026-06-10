@@ -36,7 +36,6 @@ hyperparams = {
     "CP_pole_mass_3": 2.4,
 }
 
-
 if __name__ == "__main__":
     seed = 873
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

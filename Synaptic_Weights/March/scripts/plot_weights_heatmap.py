@@ -1,129 +1,159 @@
+from pathlib import Path
+
 import numpy as np
+import pandas as pd
 import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
-import os
-import pandas as pd  # Added to read the CSV log file
 
-# Increase font size for all text elements
-plt.rcParams.update({'font.size': 16})
 
-# Paths to your models
-base_dir = os.path.dirname(os.path.abspath(__file__))
-folder = os.path.join(base_dir, "three_problems/run_2026-06-03_22-18-06")
-step = 109629
-path1 = os.path.join(folder, f"MC1_{step}.pth")
-path2 = os.path.join(folder, f"MC2_{step}.pth")
+plt.rcParams.update({"font.size": 14})
 
 # ---------------------------------------------------------
-# Read pole lengths dynamically from details_log.csv
+# Change only these
 # ---------------------------------------------------------
-log_path = os.path.join(folder, "details_log.csv")
-df_log = pd.read_csv(log_path)
+RUN_FOLDER = "run_2026-06-06_08-12-43"
+STEP = 1775640
+LAYER = "FC.4"
 
-# Extract the values from the first row of the log
-pole_length_1 = df_log["CP_pole_length_1"].iloc[0]
-pole_length_2 = df_log["CP_pole_length_2"].iloc[0]
-pole_length_3 = df_log["CP_pole_length_3"].iloc[0]
+BASE_DIR = Path(__file__).resolve().parent
+BASE_FOLDER = BASE_DIR / "three_problems"
 
-# Load weights
-state_dict1 = torch.load(path1, map_location="cpu")
-state_dict2 = torch.load(path2, map_location="cpu")
 
-# ---------------------------------------------------------
-# 1. FC.2 Weight Heatmaps
-# ---------------------------------------------------------
-# Extract FC.2.weight
-w1 = state_dict1["FC.4.weight"].detach().cpu().numpy()
-w2 = state_dict2["FC.4.weight"].detach().cpu().numpy()
+def load_state_dict(path):
+    if not path.exists():
+        raise FileNotFoundError(f"Checkpoint not found: {path}")
 
-max_abs = max(
-    abs(w1.min()), abs(w1.max()),
-    abs(w2.min()), abs(w2.max())
-)
+    return torch.load(path, map_location="cpu")
 
-plt.figure(figsize=(14, 6))
 
-# Plot 1
-plt.subplot(1, 2, 1)
-sns.heatmap(w1, center=0, vmin=-max_abs, vmax=max_abs,
-            xticklabels=5, yticklabels=5)
-plt.title(f"FC.2.weight - MC1 (L={pole_length_1})")
-plt.xticks(rotation=0)  # text stands upright
-plt.yticks(rotation=0)  # text stands upright
+def get_tensor(state_dict, key):
+    if key not in state_dict:
+        raise KeyError(f"{key} not found. Available keys: {list(state_dict.keys())}")
 
-# Plot 2
-plt.subplot(1, 2, 2)
-sns.heatmap(w2, center=0, vmin=-max_abs, vmax=max_abs,
-            xticklabels=5, yticklabels=5)
-plt.title(f"FC.2.weight - MC2 (L={pole_length_2})")
-plt.xticks(rotation=0)
-plt.yticks(rotation=0)
+    return state_dict[key].detach().cpu().numpy()
 
-plt.tight_layout()
-plt.show()
 
-# ---------------------------------------------------------
-# 2. FC.2 Weight Difference
-# ---------------------------------------------------------
-diff = w1 - w2
-max_abs_diff = np.max(np.abs(diff))
+def plot_heatmaps(items, key, title_prefix, xlabel, ylabel, figsize):
+    max_abs = max(np.max(np.abs(values)) for _, values, _, _ in items)
 
-plt.figure(figsize=(8, 6))
-sns.heatmap(diff, cmap="seismic", center=0,
-            vmin=-max_abs_diff, vmax=max_abs_diff,
-            xticklabels=5, yticklabels=5)
-plt.title(f"Difference in FC.2.weight (L={pole_length_1} - L={pole_length_2})")
-plt.xticks(rotation=0)
-plt.yticks(rotation=0)
-plt.show()
+    fig, axes = plt.subplots(1, 3, figsize=figsize, sharey=True)
 
-# ---------------------------------------------------------
-# 3. FC.2 Bias Heatmaps
-# ---------------------------------------------------------
-# Extract bias
-b1 = state_dict1["FC.2.bias"].detach().cpu().numpy().reshape(1, -1)
-b2 = state_dict2["FC.2.bias"].detach().cpu().numpy().reshape(1, -1)
+    for ax, (name, values, pole_length, pole_mass) in zip(axes, items):
+        sns.heatmap(
+            values,
+            ax=ax,
+            cmap="seismic",
+            center=0,
+            vmin=-max_abs,
+            vmax=max_abs,
+            xticklabels=5,
+            yticklabels=5 if values.shape[0] > 1 else False,
+            cbar=True,
+        )
 
-# Shared color scale
-max_abs_b = max(
-    abs(b1.min()), abs(b1.max()),
-    abs(b2.min()), abs(b2.max())
-)
+        ax.set_title(f"{title_prefix} {key} - {name}\nL={pole_length}, M={pole_mass}")
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.tick_params(axis="x", rotation=0)
+        ax.tick_params(axis="y", rotation=0)
 
-plt.figure(figsize=(14, 4))
+    plt.tight_layout()
+    plt.show()
 
-plt.subplot(1, 2, 1)
-sns.heatmap(b1, cmap="seismic", center=0,
-            vmin=-max_abs_b, vmax=max_abs_b,
-            xticklabels=5, cbar=True)
-plt.title(f"FC.2.bias - CartPole (L={pole_length_1})")
-plt.xticks(rotation=0)
-plt.yticks([]) # Biases only have 1 row, so we hide y-ticks
 
-plt.subplot(1, 2, 2)
-sns.heatmap(b2, cmap="seismic", center=0,
-            vmin=-max_abs_b, vmax=max_abs_b,
-            xticklabels=5, cbar=True)
-plt.title(f"FC.2.bias - CartPole (L={pole_length_2})")
-plt.xticks(rotation=0)
-plt.yticks([])
+def main():
+    folder = (BASE_FOLDER / RUN_FOLDER).resolve()
+    print("Looking in:", folder)
 
-plt.tight_layout()
-plt.show()
+    if not folder.exists():
+        raise FileNotFoundError(f"Folder does not exist: {folder}")
 
-# ---------------------------------------------------------
-# 4. FC.2 Bias Difference
-# ---------------------------------------------------------
-# Difference
-diff_b = b1 - b2
-max_abs_diff_b = np.max(np.abs(diff_b))
+    log_path = folder / "details_log.csv"
+    if not log_path.exists():
+        raise FileNotFoundError(f"details_log.csv not found: {log_path}")
 
-plt.figure(figsize=(10, 3))
-sns.heatmap(diff_b, cmap="seismic", center=0,
-            vmin=-max_abs_diff_b, vmax=max_abs_diff_b,
-            xticklabels=5, cbar=True)
-plt.title(f"Bias Difference (L={pole_length_1} - L={pole_length_2})")
-plt.xticks(rotation=0)
-plt.yticks([])
-plt.show()
+    weight_key = f"{LAYER}.weight"
+    bias_key = f"{LAYER}.bias"
+
+    paths = [
+        folder / f"MC1_{STEP}.pth",
+        folder / f"MC2_{STEP}.pth",
+        folder / f"MC3_{STEP}.pth",
+    ]
+
+    log = pd.read_csv(log_path).iloc[0]
+
+    state_dicts = [load_state_dict(path) for path in paths]
+
+    weights = [get_tensor(sd, weight_key) for sd in state_dicts]
+    biases = [get_tensor(sd, bias_key).reshape(1, -1) for sd in state_dicts]
+
+    pole_lengths = [
+        log.get("CP_pole_length_1", "N/A"),
+        log.get("CP_pole_length_2", "N/A"),
+        log.get("CP_pole_length_3", "N/A"),
+    ]
+
+    pole_masses = [
+        log.get("CP_pole_mass_1", "N/A"),
+        log.get("CP_pole_mass_2", "N/A"),
+        log.get("CP_pole_mass_3", "N/A"),
+    ]
+
+    model_names = ["MC1", "MC2", "MC3"]
+
+    weight_items = list(zip(model_names, weights, pole_lengths, pole_masses))
+    bias_items = list(zip(model_names, biases, pole_lengths, pole_masses))
+
+    plot_heatmaps(
+        weight_items,
+        key=weight_key,
+        title_prefix="",
+        xlabel="Input neuron index",
+        ylabel="Output neuron index",
+        figsize=(22, 6),
+    )
+
+    plot_heatmaps(
+        bias_items,
+        key=bias_key,
+        title_prefix="",
+        xlabel="Bias neuron index",
+        ylabel="",
+        figsize=(22, 4),
+    )
+
+    weight_diff_items = [
+        ("MC1 - MC2", weights[0] - weights[1], f"{pole_lengths[0]} - {pole_lengths[1]}", ""),
+        ("MC1 - MC3", weights[0] - weights[2], f"{pole_lengths[0]} - {pole_lengths[2]}", ""),
+        ("MC2 - MC3", weights[1] - weights[2], f"{pole_lengths[1]} - {pole_lengths[2]}", ""),
+    ]
+
+    plot_heatmaps(
+        weight_diff_items,
+        key=weight_key,
+        title_prefix="Difference",
+        xlabel="Input neuron index",
+        ylabel="Output neuron index",
+        figsize=(22, 6),
+    )
+
+    bias_diff_items = [
+        ("MC1 - MC2", biases[0] - biases[1], f"{pole_lengths[0]} - {pole_lengths[1]}", ""),
+        ("MC1 - MC3", biases[0] - biases[2], f"{pole_lengths[0]} - {pole_lengths[2]}", ""),
+        ("MC2 - MC3", biases[1] - biases[2], f"{pole_lengths[1]} - {pole_lengths[2]}", ""),
+    ]
+
+    plot_heatmaps(
+        bias_diff_items,
+        key=bias_key,
+        title_prefix="Difference",
+        xlabel="Bias neuron index",
+        ylabel="",
+        figsize=(22, 4),
+    )
+
+
+if __name__ == "__main__":
+    main()

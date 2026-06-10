@@ -31,17 +31,18 @@ hyperparams = {
     "CP_pole_mass_2": 2.0,
     "CP_pole_length_3": 20.0,
     "CP_pole_mass_3": 5.0,
+    "regularization_C": 0.00000001,
 }
 
 if __name__ == "__main__":
     base_folder = SCRIPT_DIR / "three_problems"
-    run_folder = "run_2026-05-27_18-54-15"
+    run_folder = "run_2026-06-05_08-05-50"
 
     folder = base_folder / run_folder
 
-    weigh_step = 29587
-    cartpole = 2
-    correspond_weight = 2
+    weigh_step = 377060
+    cartpole = 0
+    correspond_weight = 0
 
     if correspond_weight == 0:
         keyword = "MC1"
@@ -54,7 +55,7 @@ if __name__ == "__main__":
     if not path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {path}")
 
-    num_tests = 1000
+    num_tests = 5000
     trainer = Trainer(hyperparams, seed=None, folder=folder)
 
     test_log = trainer.test(

@@ -13,34 +13,35 @@ from pathlib import Path
 
 
 network_size = [80, 256]
-batch_size = [22]
+g_ap = [20, 25, 30]
+g_p = [8, 10, 15]
+g_bias = [30, 40, 50]
+regularization_C = [10000, 100000, 1000000]
 
 
-
-base_hyperparams = {
+hyperparams = {
     "discount_factor": 0.99,
-    "batch_size": 128,
-    "warmup_size": 128,
-    "network_size": 128,
-    "max_steps_per_episode": 100,
-    "max_episodes": 200000,
+    "batch_size": 1200,
+    "warmup_size": 1200,
+    "network_size": 100,
+    "max_steps_per_episode": 140,
+    "max_episodes": 80000,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
-    "epsilon_decay": 0.00001,
+    "epsilon_decay": 0.000009,
     "memory_capacity": 10000,
-
-    "g_ap": 26.0,
+    "g_ap": 25.0,
     "g_p": 22.0,
     "shift_parameter": 20,
-    "g_bias": 54.0,
-
-    "noise_stddev": 0.0,
-    "CP_pole_length_1": 2.8,
-    "CP_pole_mass_1": 0.3,
-    "CP_pole_length_2": 16.0,
-    "CP_pole_mass_2": 0.6,
-    "CP_pole_length_3": 24.0,
-    "CP_pole_mass_3": 0.9,
+    "g_bias": 62.0,
+    "regularization_C": 100000.0,
+    "noise_stddev": 0.0001,
+    "CP_pole_length_1": 0.5,
+    "CP_pole_mass_1": 0.1,
+    "CP_pole_length_2": 8.0,
+    "CP_pole_mass_2": 1.3,
+    "CP_pole_length_3": 20.0,
+    "CP_pole_mass_3": 4.0,
 }
 
 
@@ -50,16 +51,14 @@ if __name__ == "__main__":
 
     root_folder = Path("../weights/grid_search") / f"grid_{timestamp}"
     root_folder.mkdir(parents=True, exist_ok=True)
-
-    for g_ap, g_p, g_bias, CP_pole_length_1  in itertools.product(G_ap, G_p, G_bias, CP_pole_length_1):
-
+    for network_size, g_ap, g_p, g_bias, regularization_C in itertools.product(network_size, g_ap, g_p, g_bias, regularization_C):
         hyperparams = base_hyperparams.copy()
         hyperparams["g_ap"] = float(g_ap)
         hyperparams["g_p"] = float(g_p)
         hyperparams["g_bias"] = float(g_bias)
-        hyperparams["CP_pole_length_1"] = float(CP_pole_length_1)
-
-        run_name = f"g_ap_{g_ap}_g_p_{g_p}_g_bias_{g_bias}_CP_pole_length_1_{CP_pole_length_1}"
+        hyperparams["regularization_C"] = float(regularization_C)
+        hyperparams["network_size"] = int(network_size)
+        run_name = f"network_size_{network_size}_g_ap_{g_ap}_g_p_{g_p}_g_bias_{g_bias}_regularization_C_{regularization_C}"
         folder = root_folder / run_name
         folder.mkdir(parents=True, exist_ok=True)
 

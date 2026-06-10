@@ -23,11 +23,12 @@ def load_hyperparams(folder):
 		"epsilon_decay": float(row["epsilon_decay"]),
 		"memory_capacity": int(row["memory_size"]),
 
+		"g_bias": float(row["G_bias_coefficient"]),
 		"g_ap": float(row["G_ap_coefficient"]),
 		"g_p": float(row["G_p_coefficient"]),
 		"shift_parameter": float(row["shift parameter"]),
-		"g_bias": float(row["G_bias_coefficient"]),
 		"noise_stddev": float(row["noise_stddev"]),
+
 
 		"CP_pole_length_1": float(row["CP_pole_length_1"]),
 		"CP_pole_mass_1": float(row["CP_pole_mass_1"]),
@@ -35,14 +36,15 @@ def load_hyperparams(folder):
 		"CP_pole_mass_2": float(row["CP_pole_mass_2"]),
 		"CP_pole_length_3": float(row["CP_pole_length_3"]),
 		"CP_pole_mass_3": float(row["CP_pole_mass_3"]),
+		"regularization_C": 0.00000001,
 	}
 
 
 def main():
-	folder_name = "run_2026-06-03_22-18-06"
-	cartpole_selector = 2
-	weight_selector = 2
-	num_tests = 100
+	folder_name = "run_2026-06-05_08-05-50"
+	cartpole_selector = 0
+	weight_selector = 0
+	num_tests = 10000
 	folder = SCRIPT_DIR / "three_problems" / folder_name
 	hyperparams = load_hyperparams(folder)
 

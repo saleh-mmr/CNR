@@ -28,6 +28,8 @@ class DQNAgent:
         shift_parameter,                                          # used in log(index+shift_parameter) for conductance calculation
         g_bias,                                                   # Coefficient for Conductance bias
         noise_stddev,                                             # Standard deviation of noise added to weight updates
+        regularization_C,                                         # Coefficient for regularization term in loss function
+        max_stps_per_episode,                                     # Maximum steps per episode to prevent infinite loops
     ):
         # Hyperparameters
         self.epsilon = epsilon_max
