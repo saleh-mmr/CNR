@@ -26,7 +26,7 @@ hyperparams = {
     "g_p": 22.0,
     "shift_parameter": 20,
     "g_bias": 62.0,
-    "regularization_C": 100000.0,
+    "regularization_C": 0.00000001,
     "noise_stddev": 0.0001,
     "CP_pole_length_1": 0.8,
     "CP_pole_mass_1": 0.3,
