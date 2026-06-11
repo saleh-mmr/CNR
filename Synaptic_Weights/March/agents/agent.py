@@ -29,7 +29,7 @@ class DQNAgent:
         g_bias,                                                   # Coefficient for Conductance bias
         noise_stddev,                                             # Standard deviation of noise added to weight updates
         regularization_C,                                         # Coefficient for regularization term in loss function
-        max_stps_per_episode,                                     # Maximum steps per episode to prevent infinite loops
+        max_steps_per_episode,                                     # Maximum steps per episode to prevent infinite loops
     ):
         # Hyperparameters
         self.epsilon = epsilon_max
@@ -37,6 +37,8 @@ class DQNAgent:
         self.epsilon_min = epsilon_min
         self.epsilon_decay = epsilon_decay
         self.discount = discount
+        self.max_steps_per_episode = max_steps_per_episode
+        self.regularization_C = regularization_C
 
         # Environment
         self.first_modified_cartpole_env = first_modified_cartpole_env
@@ -120,17 +122,16 @@ class DQNAgent:
             next_q = self.q_network(next_states).max(dim=1, keepdim=True).values   # Choose max Q-value for each next state
             next_q[dones] = 0.0
         targets = rewards + self.discount * next_q
-        targets = torch.clamp(targets, min=-100.0, max=100.0)
+        targets = torch.clamp(targets, min=-self.max_steps_per_episode, max=self.max_steps_per_episode)  # Clip targets to prevent exploding gradients
 
         # compare current guess vs target (criterion is MSELoss)
         base_loss = self.criterion(predicted_q, targets)
-        regularization_C = 0.00000001
 
         weight_sum = torch.tensor(0.0, device=config.device)
         for param in self.q_network.parameters():
             weight_sum = weight_sum + param.sum()
 
-        loss = base_loss + regularization_C * weight_sum
+        loss = base_loss + self.regularization_C * weight_sum
         # print(f"Ap index: {ap_index}, Base Loss: {base_loss.item():.4f}, Regularization Term: {(regularization_C * weight_sum).item():.4f}, Total Loss: {loss.item():.4f}")
         # loss = self.criterion(predicted_q, targets) + C * (Sum of values of weights)
         #                                             + C * (Sum of absolute values)

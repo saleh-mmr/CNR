@@ -61,8 +61,8 @@ class Trainer:
             shift_parameter = self.shift_parameter,
             g_bias=self.g_bias,
             noise_stddev=self.noise_stddev,
-            # max_stps_per_episode=self.max_steps_per_episode,
-            # regularization_C=self.regularization_C
+            max_steps_per_episode=self.max_steps_per_episode,
+            regularization_C=self.regularization_C
         )
 
     def train(self):

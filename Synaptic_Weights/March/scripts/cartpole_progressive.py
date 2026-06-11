@@ -114,7 +114,7 @@ def main():
     # ---------------------------------------------------------
     # Settings
     # ---------------------------------------------------------
-    folder_name = "run_2026-06-06_19-59-29"
+    folder_name = "run_2026-06-11_01-30-35"
     folder = SCRIPT_DIR / "three_problems" / folder_name
 
     num_tests = 2000
