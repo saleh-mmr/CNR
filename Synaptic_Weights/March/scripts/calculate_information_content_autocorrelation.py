@@ -12,9 +12,9 @@ plt.rcParams.update({"font.size": 14})
 # ---------------------------------------------------------
 # Change only these
 # ---------------------------------------------------------
-RUN_FOLDER = "run_2026-06-09_21-39-02"
-STEP = 689243
-LAYER = "FC.0"
+RUN_FOLDER = "run_2026-06-13_07-38-17"
+STEP = 48395
+LAYER = "FC.2"
 
 # Number of bins used to estimate entropy / information content
 N_BINS = 50

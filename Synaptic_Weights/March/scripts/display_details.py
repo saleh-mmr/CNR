@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 def main():
     base_dir = Path(__file__).resolve().parent
-    folder = base_dir / "three_problems/run_2026-06-06_19-59-29"
+    folder = base_dir / "three_problems/run_2026-06-13_07-38-17"
     file = folder / "details_log.csv"
 
     df = pd.read_csv(file)
