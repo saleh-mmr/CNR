@@ -12,10 +12,9 @@ plt.rcParams.update({"font.size": 14})
 # ---------------------------------------------------------
 # Change only these
 # ---------------------------------------------------------
-# 3418, 24365, 129421, 129521, 172931
-RUN_FOLDER = "run_2026-06-25_09-33-50"
-STEP = 24365
-LAYER = "FC.4"
+RUN_FOLDER = "run_2026-06-25_14-17-50"
+STEP = 39347
+LAYER = "FC.2"
 
 BASE_DIR = Path(__file__).resolve().parent
 BASE_FOLDER = BASE_DIR / "three_problems"
