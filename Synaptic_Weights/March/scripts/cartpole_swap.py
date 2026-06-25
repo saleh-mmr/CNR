@@ -108,10 +108,10 @@ def main():
     # ---------------------------------------------------------
     # Settings
     # ---------------------------------------------------------
-    folder_name = "run_2026-06-13_07-38-17"
+    folder_name = "run_2026-06-25_09-33-50"
     folder = SCRIPT_DIR / "three_problems" / folder_name
 
-    num_tests = 1000
+    num_tests = 200
 
     # Minimum required decrease when using swapped weights.
     # 0.0 means correct weight only needs to be greater than swapped weights.
