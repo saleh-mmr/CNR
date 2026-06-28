@@ -1,5 +1,4 @@
 from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import torch
@@ -12,8 +11,8 @@ plt.rcParams.update({"font.size": 14})
 # ---------------------------------------------------------
 # Change only these
 # ---------------------------------------------------------
-RUN_FOLDER = "run_2026-06-25_14-17-50"
-STEP = 39347
+RUN_FOLDER = "run_2026-06-26_00-54-50"
+STEP = 4659159
 LAYER = "FC.2"
 
 BASE_DIR = Path(__file__).resolve().parent
